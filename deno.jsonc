@@ -1,0 +1,17 @@
+{
+  "fmt": {
+    "files": {
+      "include": ["src"]
+    }
+  },
+  "lint": {
+    "files": {
+      "include": ["src"]
+    }
+  },
+  "tasks": {
+    "run": "deno run --allow-env examples/main.ts",
+    "test": "deno test --allow-env src",
+    "test:watch": "deno test --allow-env --watch src"
+  }
+}
