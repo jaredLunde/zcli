@@ -1,70 +1,45 @@
 // deno-lint-ignore-file no-explicit-any ban-types
 import * as flags from "https://deno.land/std@0.176.0/flags/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.20.2/mod.ts";
 import { zodToJsonSchema } from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { Merge } from "https://deno.land/x/typefest@0.16.0/mod.ts";
-import { Arg } from "./arg.ts";
+import { Arg, ArgsTuple } from "./arg.ts";
 import { isArray, isBoolean, isString } from "./lib/json-schema.ts";
-import { isOpt, Opt } from "./opt.ts";
+import { isOpt, Opt, OptsObject } from "./opt.ts";
+import { omit } from "./lib/omit.ts";
+import { Prettify } from "./lib/types.ts";
+import { z } from "./z.ts";
+import { EnvError } from "./env.ts";
 
 export function cmd<
-  Context extends Record<string, unknown> | undefined = undefined,
-  ZodType extends Arg<string, z.ZodTypeAny> | unknown = unknown,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[] = [],
-  VariadicType extends Arg<string, z.ZodTypeAny> | null = null,
-  Opts extends
-    | z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">
-    | z.ZodUnion<
-        [
-          z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">,
-          ...z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">[]
-        ]
+  Context extends Record<string, unknown>,
+  Args extends
+    | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
       >
-    | unknown = unknown
+    | unknown = unknown,
+  Opts extends OptsObject | unknown = unknown
 >(
   name: string,
-  {
-    ctx,
-    args,
-    cmds,
-    opts,
-    run,
-  }: {
-    example?: string;
-    ctx?: Context;
-    // @ts-expect-error: unknown is not assignable to ZodType
-    args?: z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>;
-    cmds?: Cmd<Context>[];
-    opts?: Opts;
-    run: (
-      argopts: Prettify<
-        Merge<
-          ZodType extends Arg<any, z.ZodTypeAny>
-            ? TupleToMap<ZodType, ZodTypes, VariadicType>
-            : {},
-          (Opts extends
-            | z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">
-            | z.ZodUnion<
-                [
-                  z.ZodObject<
-                    Record<string, Opt<z.ZodTypeAny, string>>,
-                    "strict"
-                  >,
-                  ...z.ZodObject<
-                    Record<string, Opt<z.ZodTypeAny, string>>,
-                    "strict"
-                  >[]
-                ]
-              >
-            ? z.infer<Opts>
-            : {}) & { "--": string[] }
-        >
-      >,
-      ctx: Context
-    ) => Promise<void> | void;
-  }
-): Cmd<Context> {
-  const hasArgs = args instanceof z.ZodTuple;
+  { args, cmds, opts }: CmdConfig<Context, Args, Opts> = {}
+): Cmd<Context, Args, Opts> {
+  const hasArgs =
+    args instanceof z.ZodTuple ||
+    args instanceof z.ZodOptional ||
+    args instanceof z.ZodDefault;
+  const variadicArg = !hasArgs
+    ? null
+    : args instanceof z.ZodOptional || args instanceof z.ZodDefault
+    ? args._def.innerType._def.rest
+    : args._def.rest;
+  const argsItems =
+    (args instanceof z.ZodOptional || args instanceof z.ZodDefault) &&
+    args._def.innerType instanceof z.ZodTuple
+      ? args._def.innerType.items
+      : args instanceof z.ZodTuple
+      ? args.items
+      : [];
   const hasOpts = opts instanceof z.ZodUnion || opts instanceof z.ZodObject;
   const argsSchema =
     hasArgs &&
@@ -139,19 +114,28 @@ export function cmd<
   };
 
   const aliases = Object.values(alias).flat();
+  let action: Action<Context, Args, Opts> | undefined;
 
   return {
     name,
     description: "",
+
     describe(str: string) {
       this.description = str;
       return this;
     },
+
     jsonSchema: {
       args: argsSchema || undefined,
       opts: optsSchema || undefined,
     },
-    async parse(argv = Deno.args, ctx: Context) {
+
+    run(action_) {
+      action = action_;
+      return this;
+    },
+
+    async parse(argv = Deno.args, ctx) {
       if (cmds?.length) {
         const [cmd, ...rest] = argv;
         const c = cmds.find((c) => c.name === cmd);
@@ -171,37 +155,50 @@ export function cmd<
       const o = hasOpts && (await opts.parseAsync(omit(parsed, aliases)));
       const a =
         hasArgs &&
-        ((await args.parseAsync(_)) as any[]).reduce((acc, a, i) => {
-          const item = args.items[i] as any;
+        (
+          (await args.parseAsync(
+            _.length === 0 && args instanceof z.ZodOptional
+              ? undefined
+              : _.length === 0 && args instanceof z.ZodDefault
+              ? args._def.defaultValue()
+              : _
+          )) ?? []
+        ).reduce(
+          (acc: any, a: any, i: any) => {
+            const item = argsItems[i];
 
-          if (item && item.name === args._def.rest?.name) {
-            acc[item.name] = (acc[item.name] ?? []).concat(a);
-          } else if (item) {
-            acc[item.name] = a;
-          } else {
-            acc[args._def.rest!.name] = (
-              acc[args._def.rest!.name] ?? []
-            ).concat([a]);
-          }
+            if (item && item.name === variadicArg?.name) {
+              acc[item.name] = (acc[item.name] ?? []).concat(a);
+            } else if (item) {
+              acc[item.name] = a;
+            } else if (variadicArg) {
+              acc[variadicArg.name] = (acc[variadicArg.name] ?? []).concat([a]);
+            }
 
-          return acc;
-        }, {} as Record<string, any>);
+            return acc;
+          },
+          argsItems.reduce((acc: any, item: any) => {
+            if (item && "name" in item && item.name === variadicArg?.name) {
+              acc[item.name] = [];
+            }
 
-      await run({ ...a, ...o, "--": doubleDash }, ctx);
+            return acc;
+          }, (variadicArg ? { [variadicArg.name]: [] } : {}) as Record<string, any>)
+        );
+
+      try {
+        await action?.({ ...a, ...o, "--": doubleDash }, ctx!);
+      } catch (err) {
+        if (err instanceof EnvError) {
+          Deno.stderr.write(new TextEncoder().encode(err.message));
+          Deno.exit(1);
+        }
+
+        throw err;
+      }
     },
   };
 }
-
-export type Cmd<Context> = {
-  name: string;
-  description?: string;
-  jsonSchema: {
-    args?: ReturnType<typeof zodToJsonSchema>;
-    opts?: ReturnType<typeof zodToJsonSchema>;
-  };
-  describe(description: string): Cmd<Context>;
-  parse(args: string[], ctx?: Context): Promise<void>;
-};
 
 function walkOpts<
   Schema extends
@@ -235,35 +232,104 @@ function walkOpts<
   }
 }
 
-function omit(obj: Record<string, unknown>, keys: string[]) {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([key]) => !keys.includes(key))
-  );
-}
+export type Cmd<
+  Context extends Record<string, unknown>,
+  Args extends
+    | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
+      >
+    | unknown = unknown,
+  Opts extends OptsObject | unknown = unknown
+> = {
+  name: string;
+  description?: string;
+  jsonSchema: {
+    args?: ReturnType<typeof zodToJsonSchema>;
+    opts?: ReturnType<typeof zodToJsonSchema>;
+  };
+  describe(description: string): Cmd<Context>;
+  run(action: Action<Context, Args, Opts>): Cmd<Context, Args, Opts>;
+  parse: Parse<Context>;
+};
 
-export type TupleToMap<
+export type CmdConfig<
+  Context extends Record<string, unknown>,
+  Args extends
+    | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
+      >
+    | unknown = unknown,
+  Opts extends OptsObject | unknown = unknown
+> = {
+  example?: string;
+  ctx?: Context;
+  args?: Args;
+  cmds?: Cmd<Context, any, any>[];
+  opts?: Opts;
+};
+
+export type Action<
+  Context extends Record<string, unknown>,
+  Args extends
+    | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
+      >
+    | unknown = unknown,
+  Opts extends OptsObject | unknown = unknown
+> = {
+  (
+    argopts: Prettify<
+      Merge<
+        ArgsMap<Args>,
+        (Opts extends OptsObject ? z.infer<Opts> : {}) & { "--": string[] }
+      >
+    >,
+    ctx: Context
+  ): Promise<void> | void;
+};
+
+export type Parse<Context> = {
+  (args: string[], ctx?: Context): Promise<void>;
+};
+
+export type ArgsMap<
+  Args extends
+    | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
+      >
+    | unknown = unknown
+> = Args extends ArgsTuple<infer ZodType, infer ZodTypes, infer VariadicType>
+  ? Merge<
+      Args extends z.ZodOptional<any>
+        ? Partial<ArgsTupleMap<ZodType, ZodTypes>>
+        : ArgsTupleMap<ZodType, ZodTypes>,
+      VariadicType extends Arg<string, z.ZodTypeAny>
+        ? {
+            [k in VariadicType["name"]]: z.infer<VariadicType>[];
+          }
+        : {}
+    >
+  : {};
+
+export type ArgsTupleMap<
   ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[],
-  VariadicType extends Arg<string, z.ZodTypeAny> | null
-> = Merge<
-  {
-    [k in ZodType["name"]]: z.infer<ZodType>;
-  } & {
-    [Index in Exclude<keyof ZodTypes, keyof any[]> as ZodTypes[Index] extends {
-      name: string;
-    }
-      ? ZodTypes[Index]["name"]
-      : never]: ZodTypes[Index] extends z.ZodTypeAny
-      ? z.infer<ZodTypes[Index]>
-      : never;
-  },
-  VariadicType extends Arg<string, z.ZodTypeAny>
-    ? {
-        [k in VariadicType["name"]]: z.infer<VariadicType>[];
-      }
-    : {}
->;
-
-export type Prettify<T> = {
-  [K in keyof T]: T[K];
-} & {};
+  ZodTypes extends Arg<string, z.ZodTypeAny>[]
+> = {
+  [k in ZodType["name"]]: z.infer<ZodType>;
+} & {
+  [Index in Exclude<keyof ZodTypes, keyof any[]> as ZodTypes[Index] extends {
+    name: string;
+  }
+    ? ZodTypes[Index]["name"]
+    : never]: ZodTypes[Index] extends z.ZodTypeAny
+    ? z.infer<ZodTypes[Index]>
+    : never;
+};

@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { z } from "https://deno.land/x/zod@v3.20.2/mod.ts";
+import { z } from "./z.ts";
 
 export function opt<
   Schema extends z.ZodSchema<any>,
@@ -35,7 +35,16 @@ export type Opt<
   __opt: true;
 };
 
-export type InferOptAliases<T extends { aliases: ReadonlyArray<string> }> =
+export type OptsObject =
+  | z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">
+  | z.ZodUnion<
+      [
+        z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">,
+        ...z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">[]
+      ]
+    >;
+
+export type OptAliases<T extends { aliases: ReadonlyArray<string> }> =
   T["aliases"] extends ReadonlyArray<infer Names>
     ? Names extends string
       ? Names

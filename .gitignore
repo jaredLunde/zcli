@@ -39,6 +39,7 @@ yarn-error.log*
 
 dist/
 deno_dist/
+examples/main
 
 # VSCode suggestions
 !.vscode
