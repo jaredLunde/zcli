@@ -1,17 +1,23 @@
 {
+  "tasks": {
+    "compile": "deno compile --allow-env --output examples/main examples/main.ts",
+    "run": "deno run --allow-env examples/main.ts",
+    "test": "deno test --allow-env",
+    "test:watch": "deno test --allow-env --watch src"
+  },
   "fmt": {
     "files": {
-      "include": ["src"]
+      "include": ["mod.ts", "src"]
     }
   },
   "lint": {
     "files": {
-      "include": ["src"]
+      "include": ["mod.ts", "src"]
     }
   },
-  "tasks": {
-    "run": "deno run --allow-env examples/main.ts",
-    "test": "deno test --allow-env src",
-    "test:watch": "deno test --allow-env --watch src"
+  "test": {
+    "files": {
+      "include": ["mod.ts", "src"]
+    }
   }
 }

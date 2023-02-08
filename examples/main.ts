@@ -1,14 +1,54 @@
-import { opt, arg } from "../src/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.20.2/mod.ts";
-import * as flags from "https://deno.land/std@0.175.0/flags/mod.ts";
+import { z, create, env } from "../mod.ts";
 
-const o = opt({
-  name: "port",
-  schema: z.string().transform((v) => parseInt(v, 10)),
+const zcli = create({
+  ctx: {
+    fish: "fosh",
+    env: env({
+      DEBUG: env.bool().default("false"),
+      JSON: env.json().optional(),
+    }),
+  },
 });
 
-if (import.meta.main) {
-  const f = flags.parse<Record<string, unknown>>(Deno.args);
+const help = zcli
+  .cmd("help", {
+    args: zcli.args([zcli.arg("command", z.enum(["deploy"]))]).optional(),
+    opts: zcli.opts({
+      help: zcli.helpOpt(),
+      all: zcli.opt(z.boolean(), {
+        aliases: ["a"],
+      }),
+    }),
+  })
+  .run((args, { env }) => {
+    console.log(env.toObject());
+    //console.log(args);
+  });
 
-  console.log(f);
+const serve = zcli
+  .cmd("serve", {
+    cmds: [help],
+
+    args: zcli
+      .args([zcli.arg("path", z.string()), zcli.arg("creep", z.string())])
+      .rest(zcli.arg("path", z.string())),
+
+    opts: zcli.opts({
+      port: zcli.opt(z.number().int().min(0).max(65536).default(8080), {
+        aliases: ["p"],
+      }),
+      debug: zcli.opt(z.boolean(), {
+        aliases: ["D"],
+      }),
+      help: zcli.helpOpt(),
+    }),
+  })
+  .describe("Serve a directory.")
+  .run((args, { env }) => {
+    console.log(env.toObject());
+    // console.log(args);
+  });
+
+if (import.meta.main) {
+  await serve.parse(Deno.args);
 }
