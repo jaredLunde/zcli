@@ -3,7 +3,7 @@ import { colors } from "./fmt.ts";
 import { TextTable } from "https://deno.land/x/indent_and_wrap@v0.0.17/mod.ts";
 
 export function env<EnvSchema extends z.ZodRawShape>(
-  env?: EnvSchema
+  env?: EnvSchema,
 ): Env<EnvSchema> {
   const envSchema = env ? z.object(env) : undefined;
 
@@ -68,7 +68,7 @@ env.bool = function boolean(message?: string) {
 };
 
 env.port = function port(
-  message = "Invalid port. Must be an integer between 0 and 65536."
+  message = "Invalid port. Must be an integer between 0 and 65536.",
 ) {
   return z
     .number({ invalid_type_error: message, required_error: message })
@@ -115,11 +115,11 @@ export class EnvError extends Error {
 
 export type Env<EnvSchema extends z.ZodRawShape> = {
   get<Key extends Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>>(
-    key: Key
+    key: Key,
   ): z.infer<z.ZodObject<EnvSchema>>[Key];
   set(
     key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>,
-    value: string
+    value: string,
   ): void;
   delete(key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>): void;
   toObject(): z.infer<z.ZodObject<EnvSchema>>;

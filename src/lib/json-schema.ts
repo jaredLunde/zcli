@@ -13,7 +13,7 @@ export const isEnum = is("array", (jsonSchema) => {
 
 function is(
   schemaType: "array" | "boolean" | "string" | "number" | "integer",
-  and: (jsonSchema: ReturnType<typeof zodToJsonSchema>) => boolean = () => true
+  and: (jsonSchema: ReturnType<typeof zodToJsonSchema>) => boolean = () => true,
 ) {
   return (jsonSchema: ReturnType<typeof zodToJsonSchema>): boolean => {
     return (

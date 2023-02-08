@@ -15,7 +15,7 @@ export function help() {
         params: {
           interrupt: SHOW_HELP,
         },
-      }
+      },
     )
     .default(false);
 }

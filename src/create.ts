@@ -5,7 +5,7 @@ import { opt, opts, OptsObject } from "./opt.ts";
 import { z } from "./z.ts";
 
 export function create<Context extends Record<string, unknown>>(
-  config: CreateConfig<Context>
+  config: CreateConfig<Context>,
 ) {
   return {
     arg,
@@ -13,15 +13,15 @@ export function create<Context extends Record<string, unknown>>(
     cmd<
       Args extends
         | ArgsTuple<
-            Arg<string, z.ZodTypeAny>,
-            Arg<string, z.ZodTypeAny>[],
-            Arg<string, z.ZodTypeAny> | null
-          >
+          Arg<string, z.ZodTypeAny>,
+          Arg<string, z.ZodTypeAny>[],
+          Arg<string, z.ZodTypeAny> | null
+        >
         | unknown = unknown,
-      Opts extends OptsObject | unknown = unknown
+      Opts extends OptsObject | unknown = unknown,
     >(
       name: string,
-      options: CmdConfig<Context, Args, Opts>
+      options: CmdConfig<Context, Args, Opts>,
     ): Cmd<Context, Args, Opts> {
       const command = cmd<Context, Args, Opts>(name, options);
       const parse = command.parse;

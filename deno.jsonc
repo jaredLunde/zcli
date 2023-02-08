@@ -7,17 +7,17 @@
   },
   "fmt": {
     "files": {
-      "include": ["src"]
+      "include": ["mod.ts", "src"]
     }
   },
   "lint": {
     "files": {
-      "include": ["src"]
+      "include": ["mod.ts", "src"]
     }
   },
   "test": {
     "files": {
-      "include": ["src"]
+      "include": ["mod.ts", "src"]
     }
   }
 }
