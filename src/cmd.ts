@@ -249,7 +249,7 @@ export type Cmd<
     args?: ReturnType<typeof zodToJsonSchema>;
     opts?: ReturnType<typeof zodToJsonSchema>;
   };
-  describe(description: string): Cmd<Context>;
+  describe(description: string): Cmd<Context, Args, Opts>;
   run(action: Action<Context, Args, Opts>): Cmd<Context, Args, Opts>;
   parse: Parse<Context>;
 };
@@ -268,7 +268,7 @@ export type CmdConfig<
   example?: string;
   ctx?: Context;
   args?: Args;
-  cmds?: Cmd<Context, any, any>[];
+  cmds?: Cmd<Context>[];
   opts?: Opts;
 };
 

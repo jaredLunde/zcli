@@ -19,8 +19,11 @@ export function create<Context extends Record<string, unknown>>(
           >
         | unknown = unknown,
       Opts extends OptsObject | unknown = unknown
-    >(name: string, options: CmdConfig<Context, Args, Opts>): Cmd<Context> {
-      const command = cmd(name, options);
+    >(
+      name: string,
+      options: CmdConfig<Context, Args, Opts>
+    ): Cmd<Context, Args, Opts> {
+      const command = cmd<Context, Args, Opts>(name, options);
       const parse = command.parse;
 
       return Object.assign(command, {
