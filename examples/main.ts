@@ -1,4 +1,4 @@
-import { z, create, env } from "../src/mod.ts";
+import { z, create, env } from "../mod.ts";
 
 const zcli = create({
   ctx: {
