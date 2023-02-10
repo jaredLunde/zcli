@@ -15,32 +15,27 @@ export type NestedKeys<TObject> = TObject extends Record<string, unknown>
 export type NestedValue<
   O extends Record<string, unknown>,
   K extends readonly string[]
-> = K extends [infer P, ...infer Rest]
-  ? P extends keyof O
-    ? O[P] extends Record<string, unknown>
+> = K extends [string, ...infer Rest]
+  ? K[0] extends keyof O
+    ? O[K[0]] extends Record<string, unknown>
       ? Rest extends [string, ...string[]]
-        ? NestedValue<O[P], Rest>
-        : O[P]
-      : O[P]
+        ? NestedValue<O[K[0]], Rest>
+        : O[K[0]]
+      : O[K[0]]
     : never
   : never;
 
-export type Join<
-  Strings extends Readonly<Array<string>>,
-  Delimiter extends string = ""
-> = Strings extends []
+export type Join<Strings extends Readonly<Array<string>>> = Strings extends []
   ? ""
   : Strings extends readonly [string]
   ? `${Strings[0]}`
-  : Strings extends readonly [string, ...infer Rest extends Array<string>]
+  : Strings extends readonly [
+      string,
+      ...infer Rest extends ReadonlyArray<string>
+    ]
   ? `${Strings[0]}.${Join<Rest>}`
   : string;
 
-export type Split<
-  S extends string,
-  Delimiter extends string = "."
-> = S extends `${infer Head}${Delimiter}${infer Tail}`
-  ? [Head, ...Split<Tail, Delimiter>]
-  : S extends Delimiter
-  ? []
+export type Split<S extends string> = S extends `${infer Head}.${infer Tail}`
+  ? [Head, ...Split<Tail>]
   : [S];

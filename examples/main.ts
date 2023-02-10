@@ -53,8 +53,8 @@ const help = zcli
   })
   .run(async (args, { env, config }) => {
     console.log(await config.get("version.number"));
-    await config.set("version.number", "0.0.2");
-    const version = await config.get("version.number");
+    await config.set("format", "yaml");
+    const version = await config.get("version");
     console.log(version);
 
     console.log(env.toObject());
