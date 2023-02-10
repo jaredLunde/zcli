@@ -2,6 +2,9 @@ export { env } from "./src/env.ts";
 export type { Env } from "./src/env.ts";
 export { showHelp } from "./src/help.ts";
 export { create } from "./src/create.ts";
+export { config, configPaths } from "./src/config.ts";
+export { locale } from "./src/locale.ts";
+
 export type {
   Action,
   ArgsMap,
@@ -12,5 +15,6 @@ export type {
 } from "./src/cmd.ts";
 export type { Arg, ArgName, ArgsTuple } from "./src/arg.ts";
 export type { Opt, OptAliases, OptsObject } from "./src/opt.ts";
+export type { Config, ConfigOptions } from "./src/config.ts";
 
 export { z } from "./src/z.ts";

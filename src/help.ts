@@ -15,7 +15,7 @@ export function help() {
         params: {
           interrupt: SHOW_HELP,
         },
-      },
+      }
     )
     .default(false);
 }
@@ -36,3 +36,35 @@ export function showHelp() {
     },
   ]);
 }
+
+export function isHelp(err: unknown): boolean {
+  if (err instanceof z.ZodError) {
+    const issue = err.issues.find(
+      (issue) =>
+        "params" in issue &&
+        // @ts-expect-error: blah blah
+        "interrupt" in issue.params &&
+        issue.params.interrupt === SHOW_HELP
+    );
+
+    if (issue) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export async function writeHelp(help: string[]): Promise<void> {
+  const writes: Promise<number>[] = [];
+  const text = new TextEncoder();
+
+  for (let i = 0; i < help.length; i++) {
+    writes.push(Deno.stdout.write(text.encode(help[i] + "\n")));
+  }
+
+  await Promise.all(writes);
+  Deno.exit(0);
+}
+
+export function usage() {}

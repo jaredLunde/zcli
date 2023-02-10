@@ -2,8 +2,8 @@ import {
   assertEquals,
   assertExists,
   assertThrows,
-} from "https://deno.land/std@0.176.0/testing/asserts.ts";
-import { describe, it } from "https://deno.land/std@0.176.0/testing/bdd.ts";
+} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import { z } from "./z.ts";
 
 import { env } from "./env.ts";
