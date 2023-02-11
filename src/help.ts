@@ -15,7 +15,7 @@ export function help() {
         params: {
           interrupt: SHOW_HELP,
         },
-      }
+      },
     )
     .optional();
 }
@@ -44,7 +44,7 @@ export function isHelp(err: unknown): boolean {
         "params" in issue &&
         // @ts-expect-error: blah blah
         "interrupt" in issue.params &&
-        issue.params.interrupt === SHOW_HELP
+        issue.params.interrupt === SHOW_HELP,
     );
 
     if (issue) {

@@ -3,14 +3,14 @@ import { z } from "./z.ts";
 
 export function opt<
   Schema extends z.ZodSchema<any>,
-  Aliases extends Readonly<string>
+  Aliases extends Readonly<string>,
 >(
   schema: Schema,
   config: {
     aliases?: Aliases[];
     negatable?: boolean;
     hidden?: boolean;
-  } = {}
+  } = {},
 ) {
   const extras = {
     aliases: config.aliases ?? [],
@@ -31,7 +31,7 @@ export function opt<
           ...this._def,
           description,
         }),
-        extras
+        extras,
       );
     },
   });
@@ -59,7 +59,7 @@ export function isOpt(schema: z.ZodTypeAny): schema is Opt<any, any> {
 }
 
 export function isGlobalOpt(
-  schema: z.ZodTypeAny
+  schema: z.ZodTypeAny,
 ): schema is Opt<any, any> & { __global: true } {
   return "__global" in schema && !!schema.__global;
 }
@@ -100,13 +100,17 @@ export function typeAsString(schema: z.ZodTypeAny): string {
   } else if (schema instanceof z.ZodObject) {
     return "object";
   } else if (schema instanceof z.ZodTuple) {
-    return `[${schema._def.items
-      .map((i: z.ZodTypeAny) => typeAsString(i))
-      .join(", ")}]`;
+    return `[${
+      schema._def.items
+        .map((i: z.ZodTypeAny) => typeAsString(i))
+        .join(", ")
+    }]`;
   } else if (schema instanceof z.ZodRecord) {
-    return `record<${typeAsString(schema._def.keyType)}, ${typeAsString(
-      schema._def.valueType
-    )}>`;
+    return `record<${typeAsString(schema._def.keyType)}, ${
+      typeAsString(
+        schema._def.valueType,
+      )
+    }>`;
   } else if (schema instanceof z.ZodLiteral) {
     return JSON.stringify(schema._def.value);
   } else if (schema instanceof z.ZodEnum) {
@@ -141,19 +145,18 @@ export function walkOpts<Schema extends OptsObject | unknown = unknown>(
   visitor: (
     schema: Opt<z.ZodTypeAny, string>,
     name: Extract<
-      Schema extends OptsObject
-        ? keyof z.infer<Schema>
+      Schema extends OptsObject ? keyof z.infer<Schema>
         : Record<string, unknown>,
       string
-    >
-  ) => void
+    >,
+  ) => void,
 ) {
   // Eliminate the tail call above
   // This looks dumb now but might add more stuff e.g. nested opts later
   // @ts-expect-error: it's fine
   const stack: [
     z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, any>,
-    string
+    string,
   ][] = schema ? [[schema, ""]] : [];
 
   while (stack.length > 0) {
@@ -173,7 +176,7 @@ export function walkOpts<Schema extends OptsObject | unknown = unknown>(
 
 export type Opt<
   Schema extends z.ZodSchema<any>,
-  Aliases extends Readonly<string>
+  Aliases extends Readonly<string>,
 > = Schema & {
   aliases: Readonly<Aliases[]>;
   negatable: boolean;
@@ -193,8 +196,6 @@ export type GlobalOptsObject = z.ZodObject<
 >;
 
 export type OptAliases<T extends { aliases: ReadonlyArray<string> }> =
-  T["aliases"] extends ReadonlyArray<infer Names>
-    ? Names extends string
-      ? Names
-      : never
+  T["aliases"] extends ReadonlyArray<infer Names> ? Names extends string ? Names
+    : never
     : never;

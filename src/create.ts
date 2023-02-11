@@ -2,7 +2,7 @@
 import { Cmd, cmd, CmdConfig } from "./cmd.ts";
 import { Arg, arg, args, ArgsTuple } from "./arg.ts";
 import { helpOpt, writeHelp } from "./help.ts";
-import { opt, opts, OptsObject, GlobalOptsObject } from "./opt.ts";
+import { GlobalOptsObject, opt, opts, OptsObject } from "./opt.ts";
 import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
@@ -11,7 +11,7 @@ import * as intl from "./intl.ts";
 
 export function create<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalOptsObject
+  GlobalOpts extends GlobalOptsObject,
 >(config: CreateConfig<Context, GlobalOpts>) {
   const gOpts = config.globalOpts
     ? config.globalOpts.merge(helpOpts)
@@ -21,15 +21,15 @@ export function create<
     cmd<
       Args extends
         | ArgsTuple<
-            Arg<string, z.ZodTypeAny>,
-            Arg<string, z.ZodTypeAny>[],
-            Arg<string, z.ZodTypeAny> | null
-          >
+          Arg<string, z.ZodTypeAny>,
+          Arg<string, z.ZodTypeAny>[],
+          Arg<string, z.ZodTypeAny> | null
+        >
         | unknown = unknown,
-      Opts extends OptsObject | unknown = unknown
+      Opts extends OptsObject | unknown = unknown,
     >(
       name: string,
-      options: CmdConfig<Context & BaseContext, Args, Opts> = {}
+      options: CmdConfig<Context & BaseContext, Args, Opts> = {},
     ): Cmd<Context & BaseContext, Args, Opts, GlobalOpts> {
       // @ts-expect-error: blah blah
       options.opts = options.opts ? options.opts.merge(gOpts) : gOpts;
@@ -56,7 +56,7 @@ export function create<
                         get(item) {
                           return item.name;
                         },
-                      }
+                      },
                     );
 
                     const rows: string[][] = new Array(sortedCmds.length);
@@ -66,15 +66,17 @@ export function create<
                       rows[i] = [cmd.name, cmd.description ?? ""];
                     }
 
-                    for (const line of table(rows, {
-                      indent: 2,
-                      cellPadding: 2,
-                    })) {
+                    for (
+                      const line of table(rows, {
+                        indent: 2,
+                        cellPadding: 2,
+                      })
+                    ) {
                       yield line;
                     }
 
                     yield `\nUse "${name} help [command]" for more information about a command.`;
-                  })()
+                  })(),
                 );
               })
               .describe(`List ${name} commands`),
@@ -90,15 +92,16 @@ export function create<
 
             const cmd = options.cmds!.find(
               (cmd) =>
-                cmd.name === args.command || cmd.aliases.includes(args.command!)
+                cmd.name === args.command ||
+                cmd.aliases.includes(args.command!),
             );
 
             if (!cmd) {
               await Promise.all([
                 Deno.stderr.write(
                   new TextEncoder().encode(
-                    `Unknown help topic: "${args.command}"\n`
-                  )
+                    `Unknown help topic: "${args.command}"\n`,
+                  ),
                 ),
                 Deno.stderr.write(
                   new TextEncoder().encode(
@@ -106,9 +109,9 @@ export function create<
                       args.command + "",
                       options
                         .cmds!.flatMap((cmd) => [cmd.name, ...cmd.aliases])
-                        .concat("commands")
-                    ) + "\n"
-                  )
+                        .concat("commands"),
+                    ) + "\n",
+                  ),
                 ),
               ]);
 
@@ -125,11 +128,10 @@ export function create<
             // @ts-expect-error: it's cool
             {
               ...(ctx ?? config.ctx),
-              path:
-                args.includes("--help") || args.includes("-h")
-                  ? [...(ctx?.path ?? []), "help"]
-                  : ctx?.path,
-            }
+              path: args.includes("--help") || args.includes("-h")
+                ? [...(ctx?.path ?? []), "help"]
+                : ctx?.path,
+            },
           );
         };
         // @ts-expect-error: it's fine ffs
@@ -146,7 +148,7 @@ export function create<
             {
               ...(ctx ?? config.ctx),
               path: [...(ctx?.path ?? []), name],
-            }
+            },
           );
         },
       };
@@ -163,7 +165,7 @@ const helpOpts = opts({
 
 export type CreateConfig<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalOptsObject
+  GlobalOpts extends GlobalOptsObject,
 > = {
   /**
    * The context that will be passed to each command.

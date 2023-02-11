@@ -3,7 +3,7 @@ export function* table(
   options: {
     indent: number;
     cellPadding: number | number[];
-  }
+  },
 ): Iterable<string> {
   const columnCount = rows[0].length;
   const columnWidths: number[] = new Array(columnCount);
@@ -40,10 +40,9 @@ export function* table(
         ? options.cellPadding[j]
         : options.cellPadding;
 
-      const padding =
-        j === row.length - 1
-          ? ""
-          : " ".repeat(width - column.length + (cellPadding ?? 0));
+      const padding = j === row.length - 1
+        ? ""
+        : " ".repeat(width - column.length + (cellPadding ?? 0));
       outputRow += column + padding;
     }
 

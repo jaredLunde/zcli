@@ -46,7 +46,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     numbers = [],
     collect = [],
     negatable = [],
-  }: ParseOptions<TDoubleDash> = {}
+  }: ParseOptions<TDoubleDash> = {},
 ): Args<TDoubleDash> {
   const aliases: Record<string, string[]> = {};
   const flags: Flags = {
@@ -136,7 +136,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     obj: NestedMapping,
     name: string,
     value: unknown,
-    collect = true
+    collect = true,
   ) {
     let o = obj;
     const keys = name.split(".");
@@ -182,7 +182,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
 
   function aliasIsBoolean(key: string): boolean {
     return getForce(aliases, key).some(
-      (x) => typeof flags.bools[x] === "boolean"
+      (x) => typeof flags.bools[x] === "boolean",
     );
   }
 
@@ -359,15 +359,15 @@ function hasKey(obj: NestedMapping, keys: string[]): boolean {
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
-    Record<string, unknown> & {
+    & Record<string, unknown>
+    & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
       _: Array<string | number>;
-    } & (boolean extends TDoubleDash
-        ? DoubleDash
-        : true extends TDoubleDash
-        ? Required<DoubleDash>
-        : Record<never, never>)
+    }
+    & (boolean extends TDoubleDash ? DoubleDash
+      : true extends TDoubleDash ? Required<DoubleDash>
+      : Record<never, never>)
   >;
 
 type DoubleDash = {
@@ -377,7 +377,7 @@ type DoubleDash = {
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined
+  TDoubleDash extends boolean | undefined = boolean | undefined,
 > {
   /**
    * When `true`, populate the result `_` with everything before the `--` and
