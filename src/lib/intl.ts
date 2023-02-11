@@ -24,3 +24,19 @@ export function formatList(
   const listFormatter = new Intl.ListFormat(locale, formatOptions);
   return listFormatter.format(items);
 }
+
+export function collate<T>(
+  items: T[],
+  options: Intl.CollatorOptions & {
+    locale?: string;
+    get?: (item: T) => string;
+  } = {}
+): T[] {
+  const {
+    locale = defaultLocale,
+    get = (item) => "" + item,
+    ...collatorOptions
+  } = options;
+  const collator = new Intl.Collator(locale, collatorOptions);
+  return [...items].sort((a, b) => collator.compare(get(a), get(b)));
+}

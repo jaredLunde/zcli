@@ -6,6 +6,7 @@ import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
+import { collate } from "./lib/intl.ts";
 
 export function create<Context extends Record<string, unknown>>(
   config: CreateConfig<Context>
@@ -41,9 +42,14 @@ export function create<Context extends Record<string, unknown>>(
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
                     const rows: string[][] = new Array(options.cmds!.length);
+                    const sortedCmds = collate(options.cmds!, {
+                      get(item) {
+                        return item.name;
+                      },
+                    });
 
-                    for (let i = 0; i < options.cmds!.length; i++) {
-                      const cmd = options.cmds![i];
+                    for (let i = 0; i < sortedCmds!.length; i++) {
+                      const cmd = sortedCmds![i];
 
                       if (args.all || !cmd.hidden) {
                         rows[i] = [cmd.name, cmd.description ?? ""];
@@ -144,6 +150,7 @@ export function create<Context extends Record<string, unknown>>(
     globalOpts,
   };
 }
+
 export type CreateConfig<Context extends Record<string, unknown>> = {
   /**
    * The context that will be passed to each command.

@@ -78,8 +78,8 @@ const fly = zcli
 
     args: zcli.args([zcli.arg("path", z.string())]).optional(),
 
-    opts: globalOpts.merge(
-      zcli.opts({
+    opts: zcli
+      .opts({
         port: zcli
           .opt(z.number().int().min(0).max(65536).default(8080), {
             aliases: ["p"],
@@ -91,7 +91,7 @@ const fly = zcli
           })
           .describe("The mode to run in"),
       })
-    ),
+      .merge(globalOpts),
   })
   .describe(description)
   .run((args, { env }) => {

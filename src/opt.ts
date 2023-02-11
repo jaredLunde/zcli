@@ -51,7 +51,7 @@ export function globalOpts<Shape extends z.ZodRawShape>(shape: Shape) {
     }
   }
 
-  return Object.assign(z.object(shape).strict(), { __global: true });
+  return z.object(shape).strict();
 }
 
 export function isOpt(schema: z.ZodTypeAny): schema is Opt<any, any> {

@@ -12,7 +12,7 @@ import { helpOpt, isHelp, writeHelp } from "./help.ts";
 import { dedent } from "./lib/dedent.ts";
 import { table } from "./lib/simple-table.ts";
 import { colors } from "./fmt.ts";
-import { pluralForm, formatList } from "./lib/intl.ts";
+import { pluralForm, formatList, collate } from "./lib/intl.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 
 export function cmd<
@@ -96,10 +96,16 @@ export function cmd<
 
     if (hasAvailableCmds) {
       yield colors.bold("\nAvailable commands");
+
+      const sortedCmds = collate(cmds!, {
+        get(item) {
+          return item.name;
+        },
+      });
       const rows: string[][] = new Array(cmds.length);
 
-      for (let i = 0; i < cmds.length; i++) {
-        const cmd = cmds[i];
+      for (let i = 0; i < sortedCmds.length; i++) {
+        const cmd = sortedCmds[i];
 
         if (!cmd.hidden) {
           rows[i] = [cmd.name, cmd.description ?? ""];
@@ -225,7 +231,6 @@ export function cmd<
           strictUnions: true,
           effectStrategy: "input",
         });
-
         const boolean: string[] = [];
         const string: string[] = [];
         const collect: string[] = [];
@@ -280,7 +285,7 @@ export function cmd<
         try {
           o = await mergedOpts.parseAsync(omit(parsed, aliases));
         } catch (err) {
-          if (err instanceof z.ZodError) {
+          if (!isHelp(err) && err instanceof z.ZodError) {
             const formErrors = err.formErrors;
             const errors = err.errors.map((e) => {
               if (e.code === z.ZodIssueCode.unrecognized_keys) {
