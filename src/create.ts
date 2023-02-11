@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { Cmd, cmd, CmdConfig } from "./cmd.ts";
 import { Arg, arg, args, ArgsTuple } from "./arg.ts";
 import { helpOpt, writeHelp } from "./help.ts";
@@ -82,7 +83,7 @@ export function create<
           args: args([arg("command", z.string())]).optional(),
         })
           .describe(`Show help for a ${name} command`)
-          .run(async (args, ctx) => {
+          .run(async (args: any, ctx) => {
             if (!args.command) {
               await writeHelp(command.help());
             }
@@ -131,7 +132,7 @@ export function create<
             }
           );
         };
-
+        // @ts-expect-error: it's fine ffs
         options.cmds = [...options.cmds, helpCmd];
       }
 
