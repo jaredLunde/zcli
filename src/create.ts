@@ -1,19 +1,22 @@
 import { Cmd, cmd, CmdConfig } from "./cmd.ts";
 import { Arg, arg, args, ArgsTuple } from "./arg.ts";
-import { help, helpOpt, writeHelp } from "./help.ts";
-import { opt, opts, globalOpts, OptsObject } from "./opt.ts";
+import { helpOpt, writeHelp } from "./help.ts";
+import { opt, opts, OptsObject, GlobalOptsObject } from "./opt.ts";
 import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
 import { collate } from "./lib/intl.ts";
 
-export function create<Context extends Record<string, unknown>>(
-  config: CreateConfig<Context>
-) {
+export function create<
+  Context extends Record<string, unknown>,
+  GlobalOpts extends GlobalOptsObject
+>(config: CreateConfig<Context, GlobalOpts>) {
+  const gOpts = config.globalOpts
+    ? config.globalOpts.merge(helpOpts)
+    : helpOpts;
+
   return {
-    arg,
-    args,
     cmd<
       Args extends
         | ArgsTuple<
@@ -26,7 +29,10 @@ export function create<Context extends Record<string, unknown>>(
     >(
       name: string,
       options: CmdConfig<Context & BaseContext, Args, Opts>
-    ): Cmd<Context & BaseContext, Args, Opts> {
+    ): Cmd<Context & BaseContext, Args, Opts, GlobalOpts> {
+      // @ts-expect-error: blah blah
+      options.opts = options.opts ? options.opts.merge(gOpts) : gOpts;
+
       if (options.cmds?.length) {
         const helpCmd = cmd("help", {
           cmds: [
@@ -50,7 +56,7 @@ export function create<Context extends Record<string, unknown>>(
 
                     for (let i = 0; i < sortedCmds!.length; i++) {
                       const cmd = sortedCmds![i];
-
+                      // @ts-expect-error: it's fine ffs
                       if (args.all || !cmd.hidden) {
                         rows[i] = [cmd.name, cmd.description ?? ""];
                       }
@@ -141,21 +147,28 @@ export function create<Context extends Record<string, unknown>>(
         },
       };
 
+      // @ts-expect-error: it's fine ffs
       return Object.assign(command, parseOverride);
     },
-    help,
-    helpOpt,
-    opt,
-    opts,
-    globalOpts,
   };
 }
 
-export type CreateConfig<Context extends Record<string, unknown>> = {
+const helpOpts = opts({
+  help: helpOpt().describe("Show help for this command"),
+});
+
+export type CreateConfig<
+  Context extends Record<string, unknown>,
+  GlobalOpts extends GlobalOptsObject
+> = {
   /**
    * The context that will be passed to each command.
    */
   ctx?: Context;
+  /**
+   * The global options that will be passed to each command.
+   */
+  globalOpts?: GlobalOpts;
 };
 
 export type BaseContext = {

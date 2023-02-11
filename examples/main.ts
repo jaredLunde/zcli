@@ -1,6 +1,16 @@
 import { z, create, env, config } from "../mod.ts";
+import { arg, args } from "../src/arg.ts";
+import { globalOpts, opt, opts } from "../src/opt.ts";
 
 const zcli = create({
+  globalOpts: globalOpts({
+    debug: opt(z.boolean().default(false)).describe("Enable debug mode"),
+    json: opt(z.boolean().default(false), { aliases: ["j"] }).describe(
+      "Display the output as JSON"
+    ),
+    verbose: opt(z.boolean().default(false)).describe("Display verbose output"),
+  }),
+
   ctx: {
     env: env({
       DEBUG: env.bool().default("false"),
@@ -41,18 +51,6 @@ const zcli = create({
   },
 });
 
-const globalOpts = zcli.globalOpts({
-  debug: zcli
-    .opt(z.boolean().default(false), { aliases: ["d"] })
-    .describe("Enable debug mode"),
-  json: zcli
-    .opt(z.boolean().default(false), { aliases: ["j"] })
-    .describe("Display the output as JSON"),
-  verbose: zcli
-    .opt(z.boolean().default(false))
-    .describe("Display verbose output"),
-});
-
 const description = `
 fly is a command line interface to the Fly.io platform.
 
@@ -76,22 +74,18 @@ const fly = zcli
       }),
     ],
 
-    args: zcli.args([zcli.arg("path", z.string())]).optional(),
+    args: args([arg("path", z.string())])
+      .rest(arg("path", z.string()))
+      .optional(),
 
-    opts: zcli
-      .opts({
-        port: zcli
-          .opt(z.number().int().min(0).max(65536).default(8080), {
-            aliases: ["p"],
-          })
-          .describe("The port to listen on"),
-        mode: zcli
-          .opt(z.enum(["development", "production"]).optional(), {
-            aliases: ["m"],
-          })
-          .describe("The mode to run in"),
-      })
-      .merge(globalOpts),
+    opts: opts({
+      port: opt(z.number().int().min(0).max(65536).default(8080), {
+        aliases: ["p"],
+      }).describe("The port to listen on"),
+      mode: opt(z.enum(["development", "production"]).optional(), {
+        aliases: ["m"],
+      }).describe("The mode to run in"),
+    }),
   })
   .describe(description)
   .run((args, { env }) => {

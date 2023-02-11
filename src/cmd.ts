@@ -1,19 +1,23 @@
 // deno-lint-ignore-file no-explicit-any ban-types
-import * as flags from "https://deno.land/std@0.177.0/flags/mod.ts";
 import { zodToJsonSchema } from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { Arg, ArgsTuple } from "./arg.ts";
-import { isArray, isBoolean, isString } from "./lib/json-schema.ts";
-import { OptsObject, walkOpts, opts as opts_ } from "./opt.ts";
-import { omit } from "./lib/omit.ts";
+import { isArray, isBoolean, isNumber, isInteger } from "./lib/json-schema.ts";
+import {
+  OptsObject,
+  walkOpts,
+  GlobalOptsObject,
+  opts as opts_,
+} from "./opt.ts";
 import { Prettify, Merge } from "./lib/types.ts";
 import { z } from "./z.ts";
 import { EnvError } from "./env.ts";
-import { helpOpt, isHelp, writeHelp } from "./help.ts";
+import { isHelp, writeHelp } from "./help.ts";
 import { dedent } from "./lib/dedent.ts";
 import { table } from "./lib/simple-table.ts";
 import { colors } from "./fmt.ts";
 import { pluralForm, formatList, collate } from "./lib/intl.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
+import * as flagsParser from "./flags-parser.ts";
 
 export function cmd<
   Context extends Record<string, unknown>,
@@ -31,9 +35,10 @@ export function cmd<
     args,
     cmds,
     opts,
+    meta,
     aliases = [],
     hidden = false,
-  }: CmdConfig<Context, Args, Opts> = {}
+  }: CmdConfig<Context, Args, Opts> = { opts: opts_({}) as any }
 ): Cmd<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
   let description = "";
@@ -51,9 +56,6 @@ export function cmd<
       : args instanceof z.ZodTuple
       ? args.items
       : [];
-  const mergedOpts = opts
-    ? (opts as unknown as z.ZodObject<any>).merge(helpOpts).strict()
-    : helpOpts;
   const hasCmds = !!cmds?.length;
 
   function* help(path: string[] = []): Iterable<string> {
@@ -71,28 +73,34 @@ export function cmd<
 
     const hasAvailableCmds = hasCmds && !cmds.every((cmd) => cmd.hidden);
 
-    if (hasAvailableCmds) {
+    if (hasAvailableCmds && !meta?.usage) {
       yield `  ${displayName} [command]`;
     }
 
-    let argsUsage = hasArgs
-      ? argsItems.reduce(
-          (acc: string, arg: Arg<any, any>) =>
-            acc +
-            `${hasOptionalArgs ? "[" : "<"}${arg.name}${
-              hasOptionalArgs ? "] " : "> "
-            }`,
-          ""
-        )
-      : "";
+    let argsUsage = meta?.usage ? "  " + meta.usage.join("\n  ") : "";
 
-    if (variadicArg) {
-      argsUsage += `[${variadicArg.name}...]`;
+    if (!argsUsage) {
+      argsUsage = hasArgs
+        ? argsItems.reduce(
+            (acc: string, arg: Arg<any, any>) =>
+              acc +
+              `${hasOptionalArgs ? "[" : "<"}${arg.name}${
+                hasOptionalArgs ? "]" : ">"
+              }`,
+            ""
+          )
+        : "";
+
+      if (variadicArg) {
+        argsUsage += ` [${variadicArg.name}...]`;
+      }
+
+      argsUsage = `  ${displayName} ${[argsUsage, "[flags]"]
+        .filter(Boolean)
+        .join(" ")}`;
     }
 
-    yield `  ${displayName} ${[argsUsage, "[flags]"]
-      .filter(Boolean)
-      .join(" ")}`;
+    yield argsUsage;
 
     if (hasAvailableCmds) {
       yield colors.bold("\nAvailable commands");
@@ -127,7 +135,7 @@ export function cmd<
 
     const rows: string[][] = [];
     const globalRows: string[][] = [];
-    const jsonSchema: any = zodToJsonSchema(mergedOpts as any, {
+    const jsonSchema: any = zodToJsonSchema(opts as any, {
       target: "jsonSchema7",
       strictUnions: true,
       effectStrategy: "input",
@@ -146,7 +154,7 @@ export function cmd<
           )
         ));
 
-    walkOpts(mergedOpts, (opt, path) => {
+    walkOpts(opts, (opt, path) => {
       const property = properties[path];
       const type = property.type;
       const rows_ = opt.__global ? globalRows : rows;
@@ -226,13 +234,13 @@ export function cmd<
       }
 
       try {
-        const optsSchema = zodToJsonSchema(mergedOpts as any, {
+        const optsSchema = zodToJsonSchema(opts as any, {
           target: "jsonSchema7",
           strictUnions: true,
           effectStrategy: "input",
         });
         const boolean: string[] = [];
-        const string: string[] = [];
+        const numbers: string[] = [];
         const collect: string[] = [];
         const negatable: string[] = [];
         const alias: Record<string, readonly string[]> = {};
@@ -256,26 +264,25 @@ export function cmd<
           const k = optsSchemaKeys[i];
           const value = (optsSchemaProperties as any)[k];
           if (isBoolean(value)) boolean.push(k);
-          if (isString(value)) string.push(k);
+          if (isNumber(value) || isInteger(value)) numbers.push(k);
           if (isArray(value)) collect.push(k);
         }
 
-        walkOpts(mergedOpts, (schema, name) => {
+        walkOpts(opts, (schema, name) => {
           if (schema.negatable) negatable.push(name);
           if (schema.aliases.length > 0) alias[name] = schema.aliases;
         });
 
-        const flagOpt: flags.ParseOptions = {
+        const flagOpt: flagsParser.ParseOptions = {
           boolean,
-          string,
+          numbers,
           collect,
           negatable,
           alias,
           "--": true,
         };
 
-        const aliases = Object.values(alias).flat();
-        const { _, ...parsed } = flags.parse(argv, flagOpt);
+        const { _, ...parsed } = flagsParser.parse(argv, flagOpt);
         const doubleDash = parsed["--"]!;
         delete parsed["--"];
 
@@ -283,7 +290,8 @@ export function cmd<
         let o: Record<string, unknown> = {};
 
         try {
-          o = await mergedOpts.parseAsync(omit(parsed, aliases));
+          // @ts-expect-error: balh blah
+          o = await opts!.parseAsync(parsed);
         } catch (err) {
           if (!isHelp(err) && err instanceof z.ZodError) {
             const formErrors = err.formErrors;
@@ -414,7 +422,7 @@ export function cmd<
         await action?.({ ...a, ...o, "--": doubleDash }, ctx!);
       } catch (err) {
         if (err instanceof EnvError) {
-          await Deno.stderr.write(new TextEncoder().encode(err.message));
+          await Deno.stderr.write(encoder.encode(err.message));
           Deno.exit(1);
         }
 
@@ -429,9 +437,6 @@ export function cmd<
 }
 
 const encoder = new TextEncoder();
-const helpOpts = opts_({
-  help: helpOpt().describe("Show help for this command"),
-});
 
 export type Cmd<
   Context extends Record<string, unknown>,
@@ -442,7 +447,8 @@ export type Cmd<
         Arg<string, z.ZodTypeAny> | null
       >
     | unknown = unknown,
-  Opts extends OptsObject | unknown = unknown
+  Opts extends OptsObject | unknown = unknown,
+  GlobalOpts extends GlobalOptsObject | unknown = unknown
 > = {
   /**
    * The name of the command
@@ -468,12 +474,14 @@ export type Cmd<
    * Add a subcommand to the command
    * @param description The description of the command
    */
-  describe(description: string): Cmd<Context, Args, Opts>;
+  describe(description: string): Cmd<Context, Args, Opts, GlobalOpts>;
   /**
    * Run this action when the command is invoked
    * @param action The action to run when the command is invoked
    */
-  run(action: Action<Context, Args, Opts>): Cmd<Context, Args, Opts>;
+  run(
+    action: Action<Context, Args, Opts, GlobalOpts>
+  ): Cmd<Context, Args, Opts>;
   /**
    * Parse `Deno.args` and run the command
    * @param argv The arguments to parse
@@ -527,7 +535,8 @@ export type Action<
         Arg<string, z.ZodTypeAny> | null
       >
     | unknown = unknown,
-  Opts extends OptsObject | unknown = unknown
+  Opts extends OptsObject | unknown = unknown,
+  GlobalOpts extends GlobalOptsObject | unknown = unknown
 > = {
   /**
    * The action to run when the command is invoked
@@ -538,7 +547,10 @@ export type Action<
     argopts: Prettify<
       Merge<
         ArgsMap<Args>,
-        (Opts extends OptsObject ? z.infer<Opts> : {}) & { "--": string[] }
+        Merge<
+          (Opts extends OptsObject ? z.infer<Opts> : {}) & { "--": string[] },
+          GlobalOpts extends GlobalOptsObject ? z.infer<GlobalOpts> : {}
+        >
       >
     >,
     ctx: Prettify<Context>
@@ -586,6 +598,6 @@ export type ArgsTupleMap<
 };
 
 export type Meta = {
-  usage?: string;
+  usage?: string[];
   examples?: string[];
 };

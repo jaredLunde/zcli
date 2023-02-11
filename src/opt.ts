@@ -64,11 +64,16 @@ export function isGlobalOpt(
   return "__global" in schema && !!schema.__global;
 }
 
-export function walkOpts<Schema extends OptsObject>(
+export function walkOpts<Schema extends OptsObject | unknown = unknown>(
   schema: Schema,
   visitor: (
     schema: Opt<z.ZodTypeAny, string>,
-    name: Extract<keyof z.infer<Schema>, string>
+    name: Extract<
+      Schema extends OptsObject
+        ? keyof z.infer<Schema>
+        : Record<string, unknown>,
+      string
+    >
   ) => void
 ) {
   // Eliminate the tail call above
@@ -76,7 +81,7 @@ export function walkOpts<Schema extends OptsObject>(
   const stack: z.ZodObject<
     Record<string, Opt<z.ZodTypeAny, string>>,
     "strict"
-  >[] = [schema];
+  >[] = [schema as any];
 
   while (stack.length > 0) {
     const s = stack.pop()!;
@@ -108,9 +113,7 @@ export type OptsObject = z.ZodObject<
 export type GlobalOptsObject = z.ZodObject<
   Record<string, Opt<z.ZodTypeAny, string>>,
   "strict"
-> & {
-  __global: true;
-};
+>;
 
 export type OptAliases<T extends { aliases: ReadonlyArray<string> }> =
   T["aliases"] extends ReadonlyArray<infer Names>
