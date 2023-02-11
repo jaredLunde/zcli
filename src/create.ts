@@ -6,7 +6,7 @@ import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
-import { collate } from "./lib/intl.ts";
+import * as intl from "./intl.ts";
 
 export function create<
   Context extends Record<string, unknown>,
@@ -28,13 +28,14 @@ export function create<
       Opts extends OptsObject | unknown = unknown
     >(
       name: string,
-      options: CmdConfig<Context & BaseContext, Args, Opts>
+      options: CmdConfig<Context & BaseContext, Args, Opts> = {}
     ): Cmd<Context & BaseContext, Args, Opts, GlobalOpts> {
       // @ts-expect-error: blah blah
       options.opts = options.opts ? options.opts.merge(gOpts) : gOpts;
 
       if (options.cmds?.length) {
         const helpCmd = cmd("help", {
+          opts: options.opts,
           cmds: [
             this.cmd("commands", {
               opts: opts({
@@ -47,19 +48,21 @@ export function create<
                 await writeHelp(
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
-                    const rows: string[][] = new Array(options.cmds!.length);
-                    const sortedCmds = collate(options.cmds!, {
-                      get(item) {
-                        return item.name;
-                      },
-                    });
+                    const sortedCmds = intl.collate(
+                      // @ts-expect-error: it's fine ffs
+                      options.cmds!.filter((cmd) => args.all || !cmd.hidden),
+                      {
+                        get(item) {
+                          return item.name;
+                        },
+                      }
+                    );
+
+                    const rows: string[][] = new Array(sortedCmds.length);
 
                     for (let i = 0; i < sortedCmds!.length; i++) {
                       const cmd = sortedCmds![i];
-                      // @ts-expect-error: it's fine ffs
-                      if (args.all || !cmd.hidden) {
-                        rows[i] = [cmd.name, cmd.description ?? ""];
-                      }
+                      rows[i] = [cmd.name, cmd.description ?? ""];
                     }
 
                     for (const line of table(rows, {

@@ -5,10 +5,10 @@ export const SHOW_HELP = Symbol("SHOW_HELP");
 
 export function help() {
   return z
-    .boolean()
+    .string()
     .refine(
       (value) => {
-        return !value;
+        return typeof value === "undefined";
       },
       {
         message: "Show help",
@@ -17,7 +17,7 @@ export function help() {
         },
       }
     )
-    .default(false);
+    .optional();
 }
 
 export function helpOpt() {

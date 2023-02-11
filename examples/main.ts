@@ -72,6 +72,14 @@ const fly = zcli
       zcli.cmd("launch", {}).run(() => {
         console.log("launching");
       }),
+      zcli
+        .cmd("version")
+        .run((args, { meta }) => {
+          console.log(meta.version);
+        })
+        .describe(
+          "Shows version information for the fly command itself, including version number and build date."
+        ),
     ],
 
     args: args([arg("path", z.string())])
@@ -79,12 +87,20 @@ const fly = zcli
       .optional(),
 
     opts: opts({
-      port: opt(z.number().int().min(0).max(65536).default(8080), {
+      port: opt(z.array(z.number().int().min(0).max(65536)).default([8080]), {
         aliases: ["p"],
       }).describe("The port to listen on"),
       mode: opt(z.enum(["development", "production"]).optional(), {
         aliases: ["m"],
       }).describe("The mode to run in"),
+      bitrate: opts({
+        audio: opt(z.number()).describe("The audio bitrate to use"),
+        video: opt(z.number().default(256)).describe(
+          "The video bitrate to use"
+        ),
+      }).default({
+        audio: 128,
+      }),
     }),
   })
   .describe(description)

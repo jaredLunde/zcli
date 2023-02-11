@@ -1,12 +1,13 @@
 // deno-lint-ignore-file no-explicit-any ban-types
-import { zodToJsonSchema } from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { Arg, ArgsTuple } from "./arg.ts";
-import { isArray, isBoolean, isNumber, isInteger } from "./lib/json-schema.ts";
 import {
   OptsObject,
   walkOpts,
   GlobalOptsObject,
   opts as opts_,
+  innerType,
+  getDefault,
+  typeAsString,
 } from "./opt.ts";
 import { Prettify, Merge } from "./lib/types.ts";
 import { z } from "./z.ts";
@@ -15,7 +16,7 @@ import { isHelp, writeHelp } from "./help.ts";
 import { dedent } from "./lib/dedent.ts";
 import { table } from "./lib/simple-table.ts";
 import { colors } from "./fmt.ts";
-import { pluralForm, formatList, collate } from "./lib/intl.ts";
+import * as intl from "./intl.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import * as flagsParser from "./flags-parser.ts";
 
@@ -105,12 +106,16 @@ export function cmd<
     if (hasAvailableCmds) {
       yield colors.bold("\nAvailable commands");
 
-      const sortedCmds = collate(cmds!, {
-        get(item) {
-          return item.name;
-        },
-      });
-      const rows: string[][] = new Array(cmds.length);
+      const sortedCmds = intl.collate(
+        cmds!.filter((cmd) => !cmd.hidden),
+        {
+          get(item) {
+            return item.name;
+          },
+        }
+      );
+
+      const rows: string[][] = new Array(sortedCmds.length);
 
       for (let i = 0; i < sortedCmds.length; i++) {
         const cmd = sortedCmds[i];
@@ -135,41 +140,21 @@ export function cmd<
 
     const rows: string[][] = [];
     const globalRows: string[][] = [];
-    const jsonSchema: any = zodToJsonSchema(opts as any, {
-      target: "jsonSchema7",
-      strictUnions: true,
-      effectStrategy: "input",
-    });
-
-    const properties =
-      ("type" in jsonSchema &&
-        jsonSchema.type === "object" &&
-        "properties" in jsonSchema &&
-        jsonSchema?.properties) ||
-      ("anyOf" in jsonSchema &&
-        Object.assign(
-          // @ts-expect-error: balh blah
-          ...(jsonSchema as { anyOf: Record<string, unknown>[] }).anyOf.map(
-            (o) => (o as any).properties
-          )
-        ));
 
     walkOpts(opts, (opt, path) => {
-      const property = properties[path];
-      const type = property.type;
+      const type = innerType(opt);
       const rows_ = opt.__global ? globalRows : rows;
+      const defaultValue = getDefault(opt);
 
       rows_.push([
         opt.aliases.map((a) => `-${a},`).join(" "),
         `--${path}`,
-        type === "boolean"
+        type instanceof z.ZodBoolean || type instanceof z.ZodEnum
           ? ""
-          : type === "array"
-          ? `${property.items.type}[]`
-          : type,
+          : typeAsString(opt),
         (opt.description ?? "") +
-          (property.default !== undefined && type !== "boolean"
-            ? ` (default: ${property.default})`
+          (!(type instanceof z.ZodBoolean) && defaultValue
+            ? ` (default: ${defaultValue})`
             : ""),
       ]);
     });
@@ -234,43 +219,35 @@ export function cmd<
       }
 
       try {
-        const optsSchema = zodToJsonSchema(opts as any, {
-          target: "jsonSchema7",
-          strictUnions: true,
-          effectStrategy: "input",
-        });
         const boolean: string[] = [];
         const numbers: string[] = [];
         const collect: string[] = [];
         const negatable: string[] = [];
         const alias: Record<string, readonly string[]> = {};
-        const optsSchemaProperties = !optsSchema
-          ? {}
-          : ("type" in optsSchema &&
-              optsSchema.type === "object" &&
-              "properties" in optsSchema &&
-              optsSchema?.properties) ||
-            ("anyOf" in optsSchema &&
-              Object.assign(
-                // @ts-expect-error: balh blah
-                ...(
-                  optsSchema as { anyOf: Record<string, unknown>[] }
-                ).anyOf.map((o) => o.properties)
-              ));
-
-        const optsSchemaKeys = Object.keys(optsSchemaProperties);
-
-        for (let i = 0; i < optsSchemaKeys.length; i++) {
-          const k = optsSchemaKeys[i];
-          const value = (optsSchemaProperties as any)[k];
-          if (isBoolean(value)) boolean.push(k);
-          if (isNumber(value) || isInteger(value)) numbers.push(k);
-          if (isArray(value)) collect.push(k);
-        }
+        const optionNames: string[] = [];
 
         walkOpts(opts, (schema, name) => {
-          if (schema.negatable) negatable.push(name);
-          if (schema.aliases.length > 0) alias[name] = schema.aliases;
+          optionNames.push(name);
+
+          if (schema instanceof z.ZodArray) {
+            collect.push(name);
+          }
+
+          if (innerType(schema) instanceof z.ZodBoolean) {
+            boolean.push(name);
+          }
+
+          if (innerType(schema) instanceof z.ZodNumber) {
+            numbers.push(name);
+          }
+
+          if (schema.negatable) {
+            negatable.push(name);
+          }
+
+          if (schema.aliases.length > 0) {
+            alias[name] = schema.aliases;
+          }
         });
 
         const flagOpt: flagsParser.ParseOptions = {
@@ -279,12 +256,14 @@ export function cmd<
           collect,
           negatable,
           alias,
-          "--": true,
+          doubleDash: true,
         };
 
-        const { _, ...parsed } = flagsParser.parse(argv, flagOpt);
-        const doubleDash = parsed["--"]!;
-        delete parsed["--"];
+        const {
+          _,
+          _doubleDash: doubleDash,
+          ...parsed
+        } = flagsParser.parse(argv, flagOpt);
 
         // Parse the options
         let o: Record<string, unknown> = {};
@@ -298,11 +277,11 @@ export function cmd<
             const errors = err.errors.map((e) => {
               if (e.code === z.ZodIssueCode.unrecognized_keys) {
                 return (
-                  `Unrecognized ${pluralForm(
+                  `Unrecognized ${intl.plural(
                     e.keys.length,
                     "flag"
                   )}: ${e.keys.join(", ")}\n` +
-                  didYouMean(e.keys[0], optsSchemaKeys)
+                  didYouMean(e.keys[0], optionNames)
                 );
               } else if (e.code === z.ZodIssueCode.invalid_type) {
                 return `Invalid type for flag "${e.path.join(".")}". Expected ${
@@ -311,7 +290,7 @@ export function cmd<
               } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
                 return `Invalid value for flag "${e.path.join(
                   "."
-                )}". Expected ${formatList(
+                )}". Expected ${intl.list(
                   e.options.map((o) => "" + o),
                   {
                     type: "disjunction",
@@ -356,19 +335,19 @@ export function cmd<
             if (err instanceof z.ZodError) {
               const errors = err.errors.map((e) => {
                 if (e.code === z.ZodIssueCode.too_small) {
-                  return `expected at least ${pluralForm(
+                  return `expected at least ${intl.plural(
                     e.minimum,
                     "argument"
                   )} arguments`;
                 } else if (e.code === z.ZodIssueCode.too_big) {
-                  return `expected at most ${pluralForm(
+                  return `expected at most ${intl.plural(
                     e.maximum,
                     "argument"
                   )}`;
                 } else if (e.code === z.ZodIssueCode.invalid_type) {
                   return `expected ${e.expected}, but received ${e.received}`;
                 } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
-                  return `expected ${formatList(
+                  return `expected ${intl.list(
                     e.options.map((o) => "" + o),
                     {
                       type: "disjunction",
@@ -599,5 +578,4 @@ export type ArgsTupleMap<
 
 export type Meta = {
   usage?: string[];
-  examples?: string[];
 };

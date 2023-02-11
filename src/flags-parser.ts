@@ -37,38 +37,21 @@ import { Prettify } from "./lib/types.ts";
  * // parsedArgs: { foo: true, bar: "baz", _: ["./quux.txt"] }
  * ```
  */
-export function parse<
-  TDoubleDash extends boolean | undefined = undefined,
-  TBooleans extends BooleanType = undefined,
-  TNumbers extends StringType = undefined,
-  TCollectable extends Collectable = undefined,
-  TNegatable extends Negatable = undefined,
-  TAliases extends Aliases<TAliasArgNames, TAliasNames> | undefined = undefined,
-  TAliasArgNames extends string = string,
-  TAliasNames extends string = string
->(
+export function parse<TDoubleDash extends boolean | undefined = undefined>(
   args: string[],
   {
-    "--": doubleDash = false,
-    alias = {} as NonNullable<TAliases>,
-    boolean = false,
+    doubleDash = false,
+    alias = {} as Record<string, string[]>,
+    boolean = [],
     numbers = [],
     collect = [],
     negatable = [],
-  }: ParseOptions<
-    TBooleans,
-    TNumbers,
-    TCollectable,
-    TNegatable,
-    TAliases,
-    TDoubleDash
-  > = {}
+  }: ParseOptions<TDoubleDash> = {}
 ): Args<TDoubleDash> {
   const aliases: Record<string, string[]> = {};
   const flags: Flags = {
     bools: {},
     numbers: {},
-    allBools: false,
     collect: {},
     negatable: {},
   };
@@ -92,32 +75,23 @@ export function parse<
   }
 
   if (boolean !== undefined) {
-    if (typeof boolean === "boolean") {
-      flags.allBools = !!boolean;
-    } else {
-      const booleanArgs: ReadonlyArray<string> =
-        typeof boolean === "string" ? [boolean] : boolean;
+    const bargs = boolean.filter(Boolean);
 
-      const bargs = booleanArgs.filter(Boolean);
+    for (let i = 0; i < bargs.length; i++) {
+      flags.bools[bargs[i]] = true;
+      const alias = aliases[bargs[i]];
 
-      for (let i = 0; i < bargs.length; i++) {
-        flags.bools[bargs[i]] = true;
-        const alias = aliases[bargs[i]];
-
-        if (alias) {
-          for (let i = 0; i < alias.length; i++) {
-            flags.bools[alias[i]] = true;
-          }
+      if (alias) {
+        for (let i = 0; i < alias.length; i++) {
+          flags.bools[alias[i]] = true;
         }
       }
     }
   }
 
   if (numbers !== undefined) {
-    const numberArgs: ReadonlyArray<string> =
-      typeof numbers === "string" ? [numbers] : numbers;
+    const stargs = numbers.filter(Boolean);
 
-    const stargs = numberArgs.filter(Boolean);
     for (let i = 0; i < stargs.length; i++) {
       const key = stargs[i];
       flags.numbers[key] = true;
@@ -132,29 +106,16 @@ export function parse<
   }
 
   if (collect !== undefined) {
-    const collectArgs: ReadonlyArray<string> =
-      typeof collect === "string" ? [collect] : collect;
-
-    const cargs = collectArgs.filter(Boolean);
+    const cargs = collect.filter(Boolean);
 
     for (let i = 0; i < cargs.length; i++) {
       const key = cargs[i];
       flags.collect[key] = true;
-      const alias = aliases[key];
-
-      if (alias) {
-        for (let i = 0; i < alias.length; i++) {
-          flags.collect[alias[i]] = true;
-        }
-      }
     }
   }
 
   if (negatable !== undefined) {
-    const negatableArgs: ReadonlyArray<string> =
-      typeof negatable === "string" ? [negatable] : negatable;
-
-    const nargs = negatableArgs.filter(Boolean);
+    const nargs = negatable.filter(Boolean);
 
     for (let i = 0; i < nargs.length; i++) {
       const key = nargs[i];
@@ -203,19 +164,19 @@ export function parse<
     }
   }
 
-  function setArg(key: string, value: unknown, collect?: boolean) {
+  function setArg(key: string, value: unknown) {
     const a = aliases[key];
 
     if ((alias as any)[key] && a) {
-      setKey(argv, key, value, collect);
+      setKey(argv, key, value, !!flags.collect[key]);
     } else if (a) {
       for (let i = 0; i < a.length; i++) {
         if ((alias as any)[a[i]]) {
-          setKey(argv, a[i], value, collect);
+          setKey(argv, a[i], value, !!flags.collect[a[i]]);
         }
       }
     } else {
-      setKey(argv, key, value, collect);
+      setKey(argv, key, value, !!flags.collect[key]);
     }
   }
 
@@ -238,7 +199,7 @@ export function parse<
 
     if (/^--.+=/.test(arg)) {
       const m = arg.match(/^--([^=]+)=(.*)$/s);
-      assert(m != null);
+      assert(m !== null);
       const [, key, value] = m;
 
       if (flags.bools[key]) {
@@ -254,11 +215,11 @@ export function parse<
       flags.negatable[arg.replace(/^--no-/, "")]
     ) {
       const m = arg.match(/^--no-(.+)/);
-      assert(m != null);
+      assert(m !== null);
       setArg(m[1], false);
     } else if (/^--.+/.test(arg)) {
       const m = arg.match(/^--(.+)/);
-      assert(m != null);
+      assert(m !== null);
       const [, key] = m;
       const next = args[i + 1];
 
@@ -266,7 +227,6 @@ export function parse<
         next !== undefined &&
         !/^-/.test(next) &&
         !flags.bools[key] &&
-        !flags.allBools &&
         (aliases[key] ? !aliasIsBoolean(key) : true)
       ) {
         if (flags.numbers[key]) {
@@ -274,8 +234,9 @@ export function parse<
         } else {
           setArg(key, next);
         }
+
         i++;
-      } else if (/^(true|false)$/.test(next)) {
+      } else if (next === "true" || next === "false") {
         setArg(key, next === "true");
         i++;
       } else {
@@ -283,8 +244,8 @@ export function parse<
       }
     } else if (/^-[^-]+/.test(arg)) {
       const letters = arg.slice(1, -1).split("");
-
       let broken = false;
+
       for (let j = 0; j < letters.length; j++) {
         const next = arg.slice(j + 2);
 
@@ -333,7 +294,10 @@ export function parse<
           }
 
           i++;
-        } else if (args[i + 1] && /^(true|false)$/.test(args[i + 1])) {
+        } else if (
+          args[i + 1] &&
+          (args[i + 1] === "true" || args[i + 1] === "false")
+        ) {
           setArg(key, args[i + 1] === "true");
           i++;
         } else {
@@ -352,9 +316,11 @@ export function parse<
   }
 
   if (doubleDash) {
-    argv["--"] = [];
+    argv["_doubleDash"] = [];
+
     for (let i = 0; i < notFlags.length; i++) {
-      (argv as any)["--"].push(notFlags[i]);
+      // @ts-expect-error: it's fine
+      argv["_doubleDash"].push(notFlags[i]);
     }
   } else {
     for (let i = 0; i < notFlags.length; i++) {
@@ -362,7 +328,8 @@ export function parse<
     }
   }
 
-  return argv as Args<TDoubleDash>;
+  // @ts-expect-error: it's fine
+  return argv;
 }
 
 function assert(expr: unknown, msg = ""): asserts expr {
@@ -389,27 +356,6 @@ function hasKey(obj: NestedMapping, keys: string[]): boolean {
   return key in o;
 }
 
-/** Converts a union type `A | B | C` into an intersection type `A & B & C`. */
-type UnionToIntersection<TValue> = (
-  TValue extends unknown ? (args: TValue) => unknown : never
-) extends (args: infer R) => unknown
-  ? R extends Record<string, unknown>
-    ? R
-    : never
-  : never;
-
-type BooleanType = boolean | string | undefined;
-type StringType = string | undefined;
-type NumberType = number | undefined;
-type ArgType = StringType | BooleanType | NumberType;
-
-type Collectable = string | undefined;
-type Negatable = string | undefined;
-
-type Aliases<TArgNames = string, TAliasNames extends string = string> = Partial<
-  Record<Extract<TArgNames, string>, TAliasNames | ReadonlyArray<TAliasNames>>
->;
-
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
@@ -426,16 +372,11 @@ export type Args<TDoubleDash extends boolean | undefined = undefined> =
 
 type DoubleDash = {
   /** Contains all the arguments that appear after the double dash: "--". */
-  "--"?: Array<string>;
+  _doubleDash?: Array<string>;
 };
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TBooleans extends BooleanType = BooleanType,
-  TNumbers extends StringType = StringType,
-  TCollectable extends Collectable = Collectable,
-  TNegatable extends Negatable = Negatable,
-  TAliases extends Aliases | undefined = Aliases | undefined,
   TDoubleDash extends boolean | undefined = boolean | undefined
 > {
   /**
@@ -454,13 +395,13 @@ export interface ParseOptions<
    * // output: { _: [], --: [ "a", "arg1" ] }
    * ```
    */
-  "--"?: TDoubleDash;
+  doubleDash?: TDoubleDash;
 
   /**
    * An object mapping string names to strings or arrays of string argument
    * names to use as aliases.
    */
-  alias?: TAliases;
+  alias?: Record<string, readonly string[]>;
 
   /**
    * A boolean, string or array of strings to always treat as booleans. If
@@ -468,10 +409,10 @@ export interface ParseOptions<
    * `boolean` (e.g. affects `--foo`, not `-f` or `--foo=bar`).
    *  All `boolean` arguments will be set to `false` by default.
    */
-  boolean?: TBooleans | ReadonlyArray<Extract<TBooleans, string>>;
+  boolean?: string[];
 
   /** A string or array of strings argument names to always treat as strings. */
-  numbers?: TNumbers | ReadonlyArray<Extract<TNumbers, string>>;
+  numbers?: string[];
 
   /**
    * A string or array of strings argument names to always treat as arrays.
@@ -480,13 +421,13 @@ export interface ParseOptions<
    * times, the last value is used.
    * All Collectable arguments will be set to `[]` by default.
    */
-  collect?: TCollectable | ReadonlyArray<Extract<TCollectable, string>>;
+  collect?: string[];
 
   /**
    * A string or array of strings argument names which can be negated
    * by prefixing them with `--no-`, like `--no-config`.
    */
-  negatable?: TNegatable | ReadonlyArray<Extract<TNegatable, string>>;
+  negatable?: string[];
 }
 
 interface Flags {
@@ -494,7 +435,6 @@ interface Flags {
   numbers: Record<string, boolean>;
   collect: Record<string, boolean>;
   negatable: Record<string, boolean>;
-  allBools: boolean;
 }
 
 interface NestedMapping {
