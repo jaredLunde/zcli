@@ -9,12 +9,15 @@ export function opt<
   config: {
     aliases?: Aliases[];
     negatable?: boolean;
+    hidden?: boolean;
   } = {}
 ) {
   const extras = {
     aliases: config.aliases ?? [],
     negatable: !!config.negatable,
+    hidden: config.hidden ?? false,
     __opt: true as const,
+    __global: false,
   };
 
   return Object.assign(schema, {
@@ -38,8 +41,27 @@ export function opts<Shape extends z.ZodRawShape>(shape: Shape) {
   return z.object(shape).strict();
 }
 
+export function globalOpts<Shape extends z.ZodRawShape>(shape: Shape) {
+  for (const key in shape) {
+    const o = shape[key];
+
+    if (isOpt(o)) {
+      // @ts-expect-error: oy
+      o.__global = true;
+    }
+  }
+
+  return Object.assign(z.object(shape).strict(), { __global: true });
+}
+
 export function isOpt(schema: z.ZodTypeAny): schema is Opt<any, any> {
   return "__opt" in schema;
+}
+
+export function isGlobalOpt(
+  schema: z.ZodTypeAny
+): schema is Opt<any, any> & { __global: true } {
+  return "__global" in schema && !!schema.__global;
 }
 
 export function walkOpts<Schema extends OptsObject>(
@@ -50,10 +72,11 @@ export function walkOpts<Schema extends OptsObject>(
   ) => void
 ) {
   // Eliminate the tail call above
+  // This looks dumb now but might add more stuff e.g. nested opts later
   const stack: z.ZodObject<
     Record<string, Opt<z.ZodTypeAny, string>>,
     "strict"
-  >[] = schema instanceof z.ZodUnion ? schema.options : [schema];
+  >[] = [schema];
 
   while (stack.length > 0) {
     const s = stack.pop()!;
@@ -72,17 +95,22 @@ export type Opt<
 > = Schema & {
   aliases: Readonly<Aliases[]>;
   negatable: boolean;
+  hidden: boolean;
   __opt: true;
+  __global: boolean;
 };
 
-export type OptsObject =
-  | z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">
-  | z.ZodUnion<
-      [
-        z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">,
-        ...z.ZodObject<Record<string, Opt<z.ZodTypeAny, string>>, "strict">[]
-      ]
-    >;
+export type OptsObject = z.ZodObject<
+  Record<string, Opt<z.ZodTypeAny, string>>,
+  "strict"
+>;
+
+export type GlobalOptsObject = z.ZodObject<
+  Record<string, Opt<z.ZodTypeAny, string>>,
+  "strict"
+> & {
+  __global: true;
+};
 
 export type OptAliases<T extends { aliases: ReadonlyArray<string> }> =
   T["aliases"] extends ReadonlyArray<infer Names>

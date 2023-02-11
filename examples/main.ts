@@ -4,7 +4,7 @@ const zcli = create({
   ctx: {
     env: env({
       DEBUG: env.bool().default("false"),
-      JSON: env.json().optional(),
+      JSON: env.json(z.object({ cool: z.string() })).optional(),
     }),
 
     config: config(
@@ -41,25 +41,17 @@ const zcli = create({
   },
 });
 
-const help = zcli
-  .cmd("help", {
-    args: zcli.args([zcli.arg("command", z.enum(["deploy"]))]).optional(),
-    opts: zcli.opts({
-      help: zcli.helpOpt(),
-      all: zcli.opt(z.boolean(), {
-        aliases: ["a"],
-      }),
-    }),
-  })
-  .run(async (args, { env, config }) => {
-    console.log(await config.get("version.number"));
-    await config.set("format", "yaml");
-    const version = await config.get("version");
-    console.log(version);
-
-    console.log(env.toObject());
-    console.log(args);
-  });
+const globalOpts = zcli.globalOpts({
+  debug: zcli
+    .opt(z.boolean().default(false), { aliases: ["d"] })
+    .describe("Enable debug mode"),
+  json: zcli
+    .opt(z.boolean().default(false), { aliases: ["j"] })
+    .describe("Display the output as JSON"),
+  verbose: zcli
+    .opt(z.boolean().default(false))
+    .describe("Display verbose output"),
+});
 
 const description = `
 fly is a command line interface to the Fly.io platform.
@@ -76,33 +68,30 @@ one command.
 To read more, use the docs command to view Fly's help on the web.
 `;
 
-const serve = zcli
+const fly = zcli
   .cmd("fly", {
-    cmds: [help],
+    cmds: [
+      zcli.cmd("launch", {}).run(() => {
+        console.log("launching");
+      }),
+    ],
 
-    args: zcli
-      .args([zcli.arg("path", z.string())])
-      .rest(zcli.arg("path", z.string()))
-      .optional(),
+    args: zcli.args([zcli.arg("path", z.string())]).optional(),
 
-    opts: zcli.opts({
-      port: zcli
-        .opt(z.number().int().min(0).max(65536).default(8080), {
-          aliases: ["p"],
-        })
-        .describe("The port to listen on"),
-      mode: zcli
-        .opt(z.enum(["development", "production"]), {
-          aliases: ["m"],
-        })
-        .describe("The mode to run in"),
-      debug: zcli
-        .opt(z.boolean().default(false), {
-          aliases: ["D"],
-        })
-        .describe("Enable debug mode"),
-      help: zcli.helpOpt().describe("Show help"),
-    }),
+    opts: globalOpts.merge(
+      zcli.opts({
+        port: zcli
+          .opt(z.number().int().min(0).max(65536).default(8080), {
+            aliases: ["p"],
+          })
+          .describe("The port to listen on"),
+        mode: zcli
+          .opt(z.enum(["development", "production"]).optional(), {
+            aliases: ["m"],
+          })
+          .describe("The mode to run in"),
+      })
+    ),
   })
   .describe(description)
   .run((args, { env }) => {
@@ -111,5 +100,5 @@ const serve = zcli
   });
 
 if (import.meta.main) {
-  await serve.parse(Deno.args);
+  await fly.parse(Deno.args);
 }

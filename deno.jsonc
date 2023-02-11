@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "bench": "deno task compile && hyperfine --runs 20 --warmup 3 'examples/bin/main --help'",
-    "compile": "deno compile --allow-env --allow-read --allow-write --output examples/bin/main examples/main.ts",
+    "bench": "deno task compile && hyperfine --runs 50 --warmup 5 'examples/bin/main --help' -i",
+    "compile": "deno compile --allow-env --allow-read --allow-write --v8-flags=--use-strict,--predictable --output examples/bin/main examples/main.ts",
     "run": "deno run --allow-env --allow-read --allow-write examples/main.ts",
     "test": "deno test --allow-env --allow-read",
     "test:watch": "deno test --allow-env --allow-read --watch src"

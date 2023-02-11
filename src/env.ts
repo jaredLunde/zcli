@@ -1,10 +1,11 @@
 import { z } from "./z.ts";
 import { colors } from "./fmt.ts";
-import { TextTable } from "https://deno.land/x/indent_and_wrap@v0.0.17/mod.ts";
+import { table } from "./lib/simple-table.ts";
+import { Prettify } from "./lib/types.ts";
 
 export function env<EnvSchema extends z.ZodRawShape>(
-  env?: EnvSchema,
-): Env<EnvSchema> {
+  env?: EnvSchema
+): Prettify<Env<EnvSchema>> {
   const envSchema = env ? z.object(env) : undefined;
 
   return {
@@ -68,7 +69,7 @@ env.bool = function boolean(message?: string) {
 };
 
 env.port = function port(
-  message = "Invalid port. Must be an integer between 0 and 65536.",
+  message = "Invalid port. Must be an integer between 0 and 65536."
 ) {
   return z
     .number({ invalid_type_error: message, required_error: message })
@@ -82,10 +83,13 @@ env.url = function number(message?: string) {
   return z.string().url(message);
 };
 
-env.json = function json(message?: string) {
-  return z.string().transform((s, ctx) => {
+env.json = function json<Schema extends z.ZodTypeAny>(
+  schema: Schema,
+  message?: string
+) {
+  return z.string().transform((s, ctx): z.infer<Schema> => {
     try {
-      return JSON.parse(s);
+      return schema.parse(JSON.parse(s));
     } catch (_err) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -97,29 +101,27 @@ env.json = function json(message?: string) {
 
 export class EnvError extends Error {
   constructor(zodError: z.ZodError) {
-    const issues = zodError.issues.map((issue) => {
-      return [
-        { content: "•", options: { paddingLeft: 1 } },
-        {
-          content: `${colors.bold(issue.path.join("."))}\n${issue.message}`,
-          options: { paddingLeft: 1 },
-        },
-      ];
+    const issues: string[][] = zodError.issues.flatMap((issue) => {
+      return [["•", colors.bold(issue.path.join(".")), issue.message]];
     });
-    const table = new TextTable(issues, { borderWidth: 0 });
+    let issuesTable = "";
 
-    super(`Invalid environment variables:\n${table}`);
+    for (const line of table(issues, { indent: 0, cellPadding: 1 })) {
+      issuesTable += line + "\n";
+    }
+
+    super(`Invalid environment variables:\n${issuesTable}`);
     this.name = "EnvError";
   }
 }
 
 export type Env<EnvSchema extends z.ZodRawShape> = {
   get<Key extends Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>>(
-    key: Key,
+    key: Key
   ): z.infer<z.ZodObject<EnvSchema>>[Key];
   set(
     key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>,
-    value: string,
+    value: string
   ): void;
   delete(key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>): void;
   toObject(): z.infer<z.ZodObject<EnvSchema>>;

@@ -55,16 +55,14 @@ export function isHelp(err: unknown): boolean {
   return false;
 }
 
-export async function writeHelp(help: string[]): Promise<void> {
+export async function writeHelp(help: Iterable<string>): Promise<void> {
   const writes: Promise<number>[] = [];
   const text = new TextEncoder();
 
-  for (let i = 0; i < help.length; i++) {
-    writes.push(Deno.stdout.write(text.encode(help[i] + "\n")));
+  for (const line of help) {
+    writes.push(Deno.stdout.write(text.encode(line + "\n")));
   }
 
   await Promise.all(writes);
   Deno.exit(0);
 }
-
-export function usage() {}
