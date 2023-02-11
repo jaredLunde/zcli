@@ -1,8 +1,10 @@
 import { z, create, env, config } from "../mod.ts";
 import { arg, args } from "../src/arg.ts";
 import { globalOpts, opt, opts } from "../src/opt.ts";
+import * as intl from "../src/intl.ts";
+import { table } from "../src/lib/simple-table.ts";
 
-const zcli = create({
+const { cmd } = create({
   globalOpts: globalOpts({
     debug: opt(z.boolean().default(false)).describe("Enable debug mode"),
     json: opt(z.boolean().default(false), { aliases: ["j"] }).describe(
@@ -47,6 +49,10 @@ const zcli = create({
 
     meta: {
       version: "0.0.0",
+      // Deno architecture
+      build: Deno.build,
+      commit: "development",
+      date: new Date().toISOString(),
     },
   },
 });
@@ -66,43 +72,61 @@ one command.
 To read more, use the docs command to view Fly's help on the web.
 `;
 
-const fly = zcli
-  .cmd("fly", {
-    cmds: [
-      zcli.cmd("launch", {}).run(() => {
-        console.log("launching");
-      }),
-      zcli
-        .cmd("version")
-        .run((args, { meta }) => {
-          console.log(meta.version);
-        })
-        .describe(
-          "Shows version information for the fly command itself, including version number and build date."
-        ),
-    ],
-
-    args: args([arg("path", z.string())])
-      .rest(arg("path", z.string()))
-      .optional(),
-
-    opts: opts({
-      port: opt(z.array(z.number().int().min(0).max(65536)).default([8080]), {
-        aliases: ["p"],
-      }).describe("The port to listen on"),
-      mode: opt(z.enum(["development", "production"]).optional(), {
-        aliases: ["m"],
-      }).describe("The mode to run in"),
-      bitrate: opts({
-        audio: opt(z.number()).describe("The audio bitrate to use"),
-        video: opt(z.number().default(256)).describe(
-          "The video bitrate to use"
-        ),
-      }).default({
-        audio: 128,
-      }),
+const fly = cmd("fly", {
+  cmds: [
+    cmd("launch", {}).run(() => {
+      console.log("launching");
     }),
-  })
+
+    cmd("version")
+      .run((args, { meta, path }) => {
+        console.log(`${path[0]} v${meta.version}`);
+        console.log(
+          [
+            ...table(
+              [
+                ["Commit", meta.commit],
+                ["Build", `${meta.build.os}/${meta.build.arch}`],
+                [
+                  "Date",
+                  intl.date(new Date(meta.date), {
+                    dateStyle: "long",
+                    timeStyle: "long",
+                  }),
+                ],
+              ],
+              {
+                indent: 0,
+                cellPadding: 2,
+              }
+            ),
+          ].join("\n")
+        );
+      })
+      .describe(
+        "Shows version information for the fly command itself, including version number and build date."
+      ),
+  ],
+
+  args: args([arg("path", z.string())])
+    .rest(arg("path", z.string()))
+    .optional(),
+
+  opts: opts({
+    port: opt(z.array(z.number().int().min(0).max(65536)).default([8080]), {
+      aliases: ["p"],
+    }).describe("The port to listen on"),
+    mode: opt(z.enum(["development", "production"]).optional(), {
+      aliases: ["m"],
+    }).describe("The mode to run in"),
+    bitrate: opts({
+      audio: opt(z.number()).describe("The audio bitrate to use"),
+      video: opt(z.number().default(256)).describe("The video bitrate to use"),
+    }).default({
+      audio: 128,
+    }),
+  }),
+})
   .describe(description)
   .run((args, { env }) => {
     console.log(env.toObject());
