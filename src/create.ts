@@ -39,7 +39,7 @@ export function create<
           opts: options.opts,
           cmds: [
             cmd("commands", {
-              opts: options.opts.merge(
+              opts: (options.opts as any).merge(
                 opts({
                   all: opt(z.boolean().default(false), {
                     aliases: ["a"],
@@ -52,7 +52,6 @@ export function create<
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
                     const sortedCmds = intl.collate(
-                      // @ts-expect-error: it's fine ffs
                       options.cmds!.filter((cmd) => args.all || !cmd.hidden),
                       {
                         get(item) {
@@ -117,22 +116,21 @@ export function create<
               Deno.exit(1);
             }
 
-            await writeHelp(cmd.help((ctx.path ?? []).concat(cmd.name)));
+            await writeHelp(
+              cmd.help(((ctx.path as any) ?? []).concat(cmd.name))
+            );
           });
 
         const parse = helpCmd.parse;
+        // @ts-expect-error: ugh
         helpCmd.parse = (args: string[], ctx?: Context & BaseContext) => {
-          return parse(
-            args,
-            // @ts-expect-error: it's cool
-            {
-              ...(ctx ?? config.ctx),
-              path:
-                args.includes("--help") || args.includes("-h")
-                  ? [...(ctx?.path ?? []), "help"]
-                  : ctx?.path,
-            }
-          );
+          return parse(args, {
+            ...(ctx ?? config.ctx),
+            path:
+              args.includes("--help") || args.includes("-h")
+                ? [...(ctx?.path ?? []), "help"]
+                : ctx?.path,
+          });
         };
         // @ts-expect-error: it's fine ffs
         options.cmds = [...options.cmds, helpCmd];
