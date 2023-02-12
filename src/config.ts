@@ -17,13 +17,14 @@ const parsers = {
   ini: INI,
 } as const;
 
-export function config<Schema extends z.ZodObject<any>>(
+export function config<Schema extends z.ZodRawShape>(
   /**
    * The schema for the config.
    */
   schema: Schema,
-  options: ConfigOptions<Schema>,
+  options: ConfigOptions<Schema>
 ): Config<Schema> {
+  const schemaObject = z.object(schema);
   const execPath = Deno.execPath();
   const basename = path.basename(execPath, path.extname(execPath));
   const name = basename === "deno" ? "zcli-dev" : basename;
@@ -37,21 +38,21 @@ export function config<Schema extends z.ZodObject<any>>(
   const defaultConfigPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `config.${format}`,
+    `config.${format}`
   );
   const configPath = userConfigPath ?? defaultConfigPath;
   const configDir = path.dirname(configPath);
   const parser = parsers[format];
-  let cached: z.infer<Schema> | undefined;
+  let cached: z.infer<typeof schemaObject> | undefined;
 
-  async function write(config: z.infer<Schema>) {
+  async function write(config: z.infer<typeof schemaObject>) {
     try {
       Deno.statSync(configDir);
     } catch (_err) {
       await Deno.mkdir(configDir, { recursive: true });
     }
 
-    config = await schema.parseAsync(config);
+    config = await schemaObject.parseAsync(config);
     await Deno.writeTextFile(configPath, parser.stringify(config), {
       mode,
     });
@@ -62,14 +63,14 @@ export function config<Schema extends z.ZodObject<any>>(
     try {
       Deno.statSync(configPath);
     } catch (_err) {
-      return await schema.parseAsync(defaultConfig);
+      return await schemaObject.parseAsync(defaultConfig);
     }
 
     try {
       const config = parser.parse(await Deno.readTextFile(configPath));
-      return (cached = await schema.parseAsync(config));
+      return (cached = await schemaObject.parseAsync(config));
     } catch (_err) {
-      const nextConfig = await schema.parseAsync(defaultConfig);
+      const nextConfig = await schemaObject.parseAsync(defaultConfig);
       await write(nextConfig);
       return (cached = nextConfig);
     }
@@ -100,7 +101,7 @@ export function config<Schema extends z.ZodObject<any>>(
       await write(config);
     },
     async clear() {
-      await write(defaultConfig);
+      await write(defaultConfig as any);
     },
     write,
     read,
@@ -176,11 +177,11 @@ export const configUtil = {
   },
 };
 
-export type ConfigOptions<Schema extends z.ZodObject<any>> = {
+export type ConfigOptions<Schema extends z.ZodRawShape> = {
   /**
    * A default config to use if the config file doesn't exist.
    */
-  defaultConfig: z.infer<Schema>;
+  defaultConfig: z.infer<z.ZodObject<Schema>>;
   /**
    * The path to the config file.
    * @default "$HOME/.<name>/config.<format>"
@@ -198,21 +199,26 @@ export type ConfigOptions<Schema extends z.ZodObject<any>> = {
 };
 
 export type Config<
-  Schema extends z.ZodObject<any>,
-  Inferred extends z.infer<Schema> = z.infer<Schema>,
+  Schema extends z.ZodRawShape,
+  Inferred extends z.infer<z.ZodObject<any>> = z.infer<z.ZodObject<Schema>>
 > = {
   /**
    * Set a value in the config.
+   *
+   * @param key - The path to the value.
+   * @param value - The value to set.
    */
   set<Key extends Join<NestedKeys<Inferred>>>(
     key: Key,
-    value: NestedValue<Inferred, Split<Key>>,
+    value: NestedValue<Inferred, Split<Key>>
   ): Promise<void>;
   /**
    * Get a value from the config.
+   *
+   * @param key - The path to the value.
    */
   get<Keys extends Join<NestedKeys<Inferred>>>(
-    key: Keys,
+    key: Keys
   ): Promise<NestedValue<Inferred, Split<Keys>>>;
   /**
    * Get the entire config.
@@ -220,6 +226,8 @@ export type Config<
   get(): Promise<Inferred>;
   /**
    * Delete a value from the config.
+   *
+   * @param key - The path to the value.
    */
   delete<Key extends Join<NestedKeys<Inferred>>>(key: Key): Promise<void>;
   /**

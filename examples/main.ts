@@ -1,4 +1,4 @@
-import { z, create, env, config } from "../mod.ts";
+import { z, create, env, config, kv } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
 import * as intl from "../src/intl.ts";
@@ -22,8 +22,12 @@ const { command } = create({
       JSON: env.json(z.object({ cool: z.string() })).optional(),
     }),
 
+    cache: kv({
+      lastCheckedForUpdate: z.date().optional(),
+    }),
+
     config: config(
-      z.object({
+      {
         path: z.string(),
         format: z.enum(["json", "yaml", "toml"]).default("toml"),
         version: z.object({
@@ -36,7 +40,7 @@ const { command } = create({
             description: z.string(),
           })
         ),
-      }),
+      },
       {
         format: "ini",
         defaultConfig: {
@@ -63,10 +67,15 @@ const { command } = create({
 
 const fly = command("fly", {
   commands: [
-    command("launch").run(async (args, { config }) => {
+    command("launch").run(async (args, { config, cache }) => {
       console.log("launching");
       await config.set("version.date", new Date().toISOString());
       console.log(await config.get("version.date"));
+      console.log(
+        "last checked for update:",
+        await cache.get("lastCheckedForUpdate")
+      );
+      await cache.set("lastCheckedForUpdate", new Date());
     }),
 
     command("version")
