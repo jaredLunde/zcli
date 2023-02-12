@@ -2,7 +2,7 @@ export { env } from "./src/env.ts";
 export type { Env } from "./src/env.ts";
 export { showHelp } from "./src/help.ts";
 export { create } from "./src/create.ts";
-export { config, configPaths } from "./src/config.ts";
+export { config, configUtil } from "./src/config.ts";
 export { locale } from "./src/locale.ts";
 export { isArg } from "./src/args.ts";
 export { isFlag, isGlobalFlag } from "./src/flags.ts";

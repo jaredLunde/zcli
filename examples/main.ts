@@ -1,6 +1,6 @@
 import { z, create, env, config } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
-import { globalFlags, flag, flags, getDefault } from "../src/flags.ts";
+import { globalFlags, flag, flags } from "../src/flags.ts";
 import * as intl from "../src/intl.ts";
 import { table } from "../src/lib/simple-table.ts";
 //import * as bash from "../src/completions/bash.ts";
@@ -114,7 +114,9 @@ const fly = command("fly", {
       ),
   ],
 
-  args: args([arg("path", z.string())]).optional(),
+  args: args([arg("path", z.string())])
+    .rest(arg("path", z.string()))
+    .optional(),
 
   flags: flags({
     port: flag(z.array(z.number().int().min(0).max(65536)).default([8080]), {
@@ -146,7 +148,7 @@ const fly = command("fly", {
 //console.log(bash.complete(fly));
 
 if (import.meta.main) {
-  await fly.execute(Deno.args);
+  await fly.execute();
 }
 
 z.util.assertIs;

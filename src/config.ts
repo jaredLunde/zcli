@@ -22,7 +22,7 @@ export function config<Schema extends z.ZodObject<any>>(
    * The schema for the config.
    */
   schema: Schema,
-  options: ConfigOptions<Schema>,
+  options: ConfigOptions<Schema>
 ): Config<Schema> {
   const execPath = Deno.execPath();
   const basename = path.basename(execPath, path.extname(execPath));
@@ -37,7 +37,7 @@ export function config<Schema extends z.ZodObject<any>>(
   const defaultConfigPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `config.${format}`,
+    `config.${format}`
   );
   const configPath = userConfigPath ?? defaultConfigPath;
   const configDir = path.dirname(configPath);
@@ -76,25 +76,25 @@ export function config<Schema extends z.ZodObject<any>>(
   }
 
   async function get(key?: any): Promise<any> {
-    if (cached) return key ? configPaths.get(cached, key.split(".")) : cached;
+    if (cached) return key ? configUtil.get(cached, key.split(".")) : cached;
     const config = await read();
-    return key ? configPaths.get(config, key.split(".")) : config;
+    return key ? configUtil.get(config, key.split(".")) : config;
   }
 
   return {
     async set(key, value) {
       const config = await get();
-      configPaths.set(config, key.split("."), value);
+      configUtil.set(config, key.split("."), value);
       await write(config);
     },
     get,
     async delete(key) {
       const config = await get();
       const path = key.split(".");
-      configPaths.delete(config, path);
+      configUtil.delete(config, path);
       // Prevent knowingly failing validation
-      if (configPaths.get(defaultConfig, path) !== undefined) {
-        configPaths.set(config, path, configPaths.get(defaultConfig, path));
+      if (configUtil.get(defaultConfig, path) !== undefined) {
+        configUtil.set(config, path, configUtil.get(defaultConfig, path));
       }
 
       await write(config);
@@ -107,7 +107,7 @@ export function config<Schema extends z.ZodObject<any>>(
   };
 }
 
-export const configPaths = {
+export const configUtil = {
   /**
    * Recursively set a value on an object using a path.
    *
@@ -199,20 +199,20 @@ export type ConfigOptions<Schema extends z.ZodObject<any>> = {
 
 export type Config<
   Schema extends z.ZodObject<any>,
-  Inferred extends z.infer<Schema> = z.infer<Schema>,
+  Inferred extends z.infer<Schema> = z.infer<Schema>
 > = {
   /**
    * Set a value in the config.
    */
   set<Key extends Join<NestedKeys<Inferred>>>(
     key: Key,
-    value: NestedValue<Inferred, Split<Key>>,
+    value: NestedValue<Inferred, Split<Key>>
   ): Promise<void>;
   /**
    * Get a value from the config.
    */
   get<Keys extends Join<NestedKeys<Inferred>>>(
-    key: Keys,
+    key: Keys
   ): Promise<NestedValue<Inferred, Split<Keys>>>;
   /**
    * Get the entire config.
