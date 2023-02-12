@@ -56,8 +56,7 @@ const { command } = create({
     ),
 
     meta: {
-      version: "0.0.0",
-      // Deno architecture
+      version: "1.3.2",
       build: Deno.build,
       commit: "development",
       date: new Date().toISOString(),
@@ -75,30 +74,12 @@ const fly = command("fly", {
 
     command("version")
       .run((args, { meta, path }) => {
-        console.log(`${path[0]} v${meta.version}`);
         console.log(
-          [
-            ...table(
-              [
-                ["Commit", meta.commit],
-                ["Build", `${meta.build.os}/${meta.build.arch}`],
-                [
-                  "Date",
-                  intl.date(new Date(meta.date), {
-                    dateStyle: "long",
-                    timeStyle: "long",
-                  }),
-                ],
-              ],
-              {
-                indent: 0,
-                cellPadding: 2,
-              }
-            ),
-          ].join("\n")
+          `${path[0]} v${meta.version} (build date: ${meta.date} commit: ${meta.commit})`
         );
       })
-      .describe(
+      .describe("Show version information")
+      .long(
         "Shows version information for the fly command itself, including version number and build date."
       ),
   ],

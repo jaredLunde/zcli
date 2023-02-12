@@ -21,7 +21,7 @@ export function kv<Schema extends z.ZodRawShape>(
    * The schema for the key-value store.
    */
   schema: Schema,
-  options: KvOptions = {}
+  options: KvOptions = {},
 ): Kv<Schema> {
   const execPath = Deno.execPath();
   const basename = path.basename(execPath, path.extname(execPath));
@@ -30,19 +30,19 @@ export function kv<Schema extends z.ZodRawShape>(
   const defaultKvPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `kv.${format}`
+    `kv.${format}`,
   );
   const kvPath = userKvPath ?? defaultKvPath;
   const kvDir = path.dirname(kvPath);
   const parser = parsers[format];
   let cached:
     | Record<
-        string,
-        {
-          value: unknown;
-          expires: number;
-        }
-      >
+      string,
+      {
+        value: unknown;
+        expires: number;
+      }
+    >
     | undefined;
 
   async function write(kv: typeof cached = {}) {
@@ -79,7 +79,7 @@ export function kv<Schema extends z.ZodRawShape>(
         return Object.fromEntries(
           Object.entries(cachedValue as Exclude<typeof cached, undefined>)
             .filter(([, val]) => !isExpired(val))
-            .map(([key, val]) => [key, val.value])
+            .map(([key, val]) => [key, val.value]),
         );
       }
     }
@@ -138,7 +138,7 @@ export type KvOptions = {
 
 export type Kv<
   Schema extends z.ZodRawShape,
-  Inferred extends z.infer<z.ZodObject<Schema>> = z.infer<z.ZodObject<Schema>>
+  Inferred extends z.infer<z.ZodObject<Schema>> = z.infer<z.ZodObject<Schema>>,
 > = {
   /**
    * Set a value in the key-value store.
@@ -150,7 +150,7 @@ export type Kv<
   set<Key extends keyof Inferred>(
     key: Key,
     value: Inferred[Key],
-    ttl?: number
+    ttl?: number,
   ): Promise<void>;
   /**
    * Get a value from the key-value-store.

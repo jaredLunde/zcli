@@ -281,7 +281,10 @@ export function command<
         walkFlags(flags, (schema, name) => {
           optionNames.push(name, ...schema.aliases);
 
-          if (schema instanceof z.ZodArray) {
+          if (
+            schema instanceof z.ZodArray ||
+            schema._def.innerType instanceof z.ZodArray
+          ) {
             collect.push(name);
           }
 
