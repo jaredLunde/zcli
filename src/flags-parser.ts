@@ -46,7 +46,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     numbers = [],
     collect = [],
     negatable = [],
-  }: ParseOptions<TDoubleDash> = {},
+  }: ParseOptions<TDoubleDash> = {}
 ): Args<TDoubleDash> {
   const aliases: Record<string, string[]> = {};
   const flags: Flags = {
@@ -136,7 +136,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     obj: NestedMapping,
     name: string,
     value: unknown,
-    collect = true,
+    collect = true
   ) {
     let o = obj;
     const keys = name.split(".");
@@ -164,7 +164,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     }
   }
 
-  function setArg(key: string, value: unknown) {
+  function setFlag(key: string, value: unknown) {
     const a = aliases[key];
 
     if ((alias as any)[key] && a) {
@@ -182,7 +182,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
 
   function aliasIsBoolean(key: string): boolean {
     return getForce(aliases, key).some(
-      (x) => typeof flags.bools[x] === "boolean",
+      (x) => typeof flags.bools[x] === "boolean"
     );
   }
 
@@ -204,11 +204,11 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
 
       if (flags.bools[key]) {
         const booleanValue = value !== "false";
-        setArg(key, booleanValue);
+        setFlag(key, booleanValue);
       } else if (flags.numbers[key]) {
-        setArg(key, Number(value));
+        setFlag(key, Number(value));
       } else {
-        setArg(key, value);
+        setFlag(key, value);
       }
     } else if (
       /^--no-.+/.test(arg) &&
@@ -216,7 +216,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     ) {
       const m = arg.match(/^--no-(.+)/);
       assert(m !== null);
-      setArg(m[1], false);
+      setFlag(m[1], false);
     } else if (/^--.+/.test(arg)) {
       const m = arg.match(/^--(.+)/);
       assert(m !== null);
@@ -230,17 +230,17 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
         (aliases[key] ? !aliasIsBoolean(key) : true)
       ) {
         if (flags.numbers[key]) {
-          setArg(key, Number(next));
+          setFlag(key, Number(next));
         } else {
-          setArg(key, next);
+          setFlag(key, next);
         }
 
         i++;
       } else if (next === "true" || next === "false") {
-        setArg(key, next === "true");
+        setFlag(key, next === "true");
         i++;
       } else {
-        setArg(key, flags.bools[key] ? true : "");
+        setFlag(key, flags.bools[key] ? true : "");
       }
     } else if (/^-[^-]+/.test(arg)) {
       const letters = arg.slice(1, -1).split("");
@@ -250,12 +250,12 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
         const next = arg.slice(j + 2);
 
         if (next === "-") {
-          setArg(letters[j], next);
+          setFlag(letters[j], next);
           continue;
         }
 
         if (/[A-Za-z]/.test(letters[j]) && /=/.test(next)) {
-          setArg(letters[j], next.split(/=(.+)/)[1]);
+          setFlag(letters[j], next.split(/=(.+)/)[1]);
           broken = true;
           break;
         }
@@ -264,17 +264,17 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
           /[A-Za-z]/.test(letters[j]) &&
           /-?\d+(\.\d*)?(e-?\d+)?$/.test(next)
         ) {
-          setArg(letters[j], next);
+          setFlag(letters[j], next);
           broken = true;
           break;
         }
 
         if (letters[j + 1] && letters[j + 1].match(/\W/)) {
-          setArg(letters[j], arg.slice(j + 2));
+          setFlag(letters[j], arg.slice(j + 2));
           broken = true;
           break;
         } else {
-          setArg(letters[j], flags.bools[letters[j]] ? true : "");
+          setFlag(letters[j], flags.bools[letters[j]] ? true : "");
         }
       }
 
@@ -288,9 +288,9 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
           (aliases[key] ? !aliasIsBoolean(key) : true)
         ) {
           if (flags.numbers[key]) {
-            setArg(key, Number(args[i + 1]));
+            setFlag(key, Number(args[i + 1]));
           } else {
-            setArg(key, args[i + 1]);
+            setFlag(key, args[i + 1]);
           }
 
           i++;
@@ -298,10 +298,10 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
           args[i + 1] &&
           (args[i + 1] === "true" || args[i + 1] === "false")
         ) {
-          setArg(key, args[i + 1] === "true");
+          setFlag(key, args[i + 1] === "true");
           i++;
         } else {
-          setArg(key, flags.bools[key] ? true : "");
+          setFlag(key, flags.bools[key] ? true : "");
         }
       }
     } else {
@@ -359,15 +359,15 @@ function hasKey(obj: NestedMapping, keys: string[]): boolean {
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
-    & Record<string, unknown>
-    & {
+    Record<string, unknown> & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
       _: Array<string | number>;
-    }
-    & (boolean extends TDoubleDash ? DoubleDash
-      : true extends TDoubleDash ? Required<DoubleDash>
-      : Record<never, never>)
+    } & (boolean extends TDoubleDash
+        ? DoubleDash
+        : true extends TDoubleDash
+        ? Required<DoubleDash>
+        : Record<never, never>)
   >;
 
 type DoubleDash = {
@@ -377,7 +377,7 @@ type DoubleDash = {
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined,
+  TDoubleDash extends boolean | undefined = boolean | undefined
 > {
   /**
    * When `true`, populate the result `_` with everything before the `--` and

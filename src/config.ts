@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import * as YAML from "https://deno.land/std@0.177.0/encoding/yaml.ts";
 import * as TOML from "https://deno.land/std@0.177.0/encoding/toml.ts";
-import * as jsonc from "https://deno.land/std@0.177.0/encoding/jsonc.ts";
+import * as JSONc from "https://deno.land/std@0.177.0/encoding/jsonc.ts";
 import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
@@ -9,7 +9,7 @@ import { z } from "./z.ts";
 const parsers = {
   jsonc: {
     stringify: (value: unknown) => JSON.stringify(value, null, 2),
-    parse: jsonc.parse,
+    parse: JSONc.parse,
   },
   yaml: YAML,
   toml: TOML,
@@ -20,7 +20,7 @@ export function config<Schema extends z.ZodObject<any>>(
    * The schema for the config.
    */
   schema: Schema,
-  options: ConfigOptions<Schema>,
+  options: ConfigOptions<Schema>
 ): Config<Schema> {
   const execPath = Deno.execPath();
   const basename = path.basename(execPath, path.extname(execPath));
@@ -35,7 +35,7 @@ export function config<Schema extends z.ZodObject<any>>(
   const defaultConfigPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `config.${format}`,
+    `config.${format}`
   );
   const configPath = userConfigPath ?? defaultConfigPath;
   const configDir = path.dirname(configPath);
@@ -197,20 +197,20 @@ export type ConfigOptions<Schema extends z.ZodObject<any>> = {
 
 export type Config<
   Schema extends z.ZodObject<any>,
-  Inferred extends z.infer<Schema> = z.infer<Schema>,
+  Inferred extends z.infer<Schema> = z.infer<Schema>
 > = {
   /**
    * Set a value in the config.
    */
   set<Key extends Join<NestedKeys<Inferred>>>(
     key: Key,
-    value: NestedValue<Inferred, Split<Key>>,
+    value: NestedValue<Inferred, Split<Key>>
   ): Promise<void>;
   /**
    * Get a value from the config.
    */
   get<Keys extends Join<NestedKeys<Inferred>>>(
-    key: Keys,
+    key: Keys
   ): Promise<NestedValue<Inferred, Split<Keys>>>;
   /**
    * Get the entire config.

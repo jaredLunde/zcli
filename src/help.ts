@@ -1,5 +1,5 @@
 import { z } from "./z.ts";
-import { opt } from "./opt.ts";
+import { flag } from "./flags.ts";
 
 export const SHOW_HELP = Symbol("SHOW_HELP");
 
@@ -15,13 +15,13 @@ export function help() {
         params: {
           interrupt: SHOW_HELP,
         },
-      },
+      }
     )
     .optional();
 }
 
 export function helpOpt() {
-  return opt(help(), { aliases: ["h"] });
+  return flag(help(), { aliases: ["h"] });
 }
 
 export function showHelp() {
@@ -44,7 +44,7 @@ export function isHelp(err: unknown): boolean {
         "params" in issue &&
         // @ts-expect-error: blah blah
         "interrupt" in issue.params &&
-        issue.params.interrupt === SHOW_HELP,
+        issue.params.interrupt === SHOW_HELP
     );
 
     if (issue) {

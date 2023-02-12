@@ -1,16 +1,19 @@
 import { z, create, env, config } from "../mod.ts";
-import { arg, args } from "../src/arg.ts";
-import { globalOpts, opt, opts } from "../src/opt.ts";
+import { arg, args } from "../src/args.ts";
+import { globalFlags, flag, flags, getDefault } from "../src/flags.ts";
 import * as intl from "../src/intl.ts";
 import { table } from "../src/lib/simple-table.ts";
+//import * as bash from "../src/completions/bash.ts";
 
-const { cmd } = create({
-  globalOpts: globalOpts({
-    debug: opt(z.boolean().default(false)).describe("Enable debug mode"),
-    json: opt(z.boolean().default(false), { aliases: ["j"] }).describe(
+const { command } = create({
+  globalFlags: globalFlags({
+    debug: flag(z.boolean().default(false)).describe("Enable debug mode"),
+    json: flag(z.boolean().default(false), { aliases: ["j"] }).describe(
       "Display the output as JSON"
     ),
-    verbose: opt(z.boolean().default(false)).describe("Display verbose output"),
+    verbose: flag(z.boolean().default(false)).describe(
+      "Display verbose output"
+    ),
   }),
 
   ctx: {
@@ -72,13 +75,13 @@ one command.
 To read more, use the docs command to view Fly's help on the web.
 `;
 
-const fly = cmd("fly", {
-  cmds: [
-    cmd("launch", {}).run(() => {
+const fly = command("fly", {
+  commands: [
+    command("launch", {}).run(() => {
       console.log("launching");
     }),
 
-    cmd("version")
+    command("version")
       .run((args, { meta, path }) => {
         console.log(`${path[0]} v${meta.version}`);
         console.log(
@@ -108,31 +111,39 @@ const fly = cmd("fly", {
       ),
   ],
 
-  args: args([arg("path", z.string())])
-    .rest(arg("path", z.string()))
-    .optional(),
+  args: args([arg("path", z.string())]).optional(),
 
-  opts: opts({
-    port: opt(z.array(z.number().int().min(0).max(65536)).default([8080]), {
+  flags: flags({
+    port: flag(z.array(z.number().int().min(0).max(65536)).default([8080]), {
       aliases: ["p"],
     }).describe("The port to listen on"),
-    mode: opt(z.enum(["development", "production"]).optional(), {
+    mode: flag(z.enum(["development", "production"]).optional(), {
       aliases: ["m"],
     }).describe("The mode to run in"),
-    bitrate: opts({
-      audio: opt(z.number()).describe("The audio bitrate to use"),
-      video: opt(z.number().default(256)).describe("The video bitrate to use"),
-    }).default({
-      audio: 128,
-    }),
+    bitrate: flags({
+      audio: flag(z.number().default(128)).describe("The audio bitrate to use"),
+      video: flag(z.number().default(256)).describe("The video bitrate to use"),
+    }).optional(),
   }),
 })
-  .describe(description)
+  .describe("fly is a command line interface to the Fly.io platform.")
+  .long(description)
+  .preRun(async (args, { env, config }) => {
+    console.log("Checking if logged in...");
+  })
   .run((args, { env }) => {
+    console.log(args.bitrate);
     console.log(env.toObject());
     console.log(args);
+  })
+  .postRun(async (args, { env }) => {
+    console.log('A new version is available! Run "fly update" to update.');
   });
 
+//console.log(bash.complete(fly));
+
 if (import.meta.main) {
-  await fly.parse(Deno.args);
+  await fly.execute(Deno.args);
 }
+
+z.util.assertIs;

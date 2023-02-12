@@ -4,24 +4,19 @@ export { showHelp } from "./src/help.ts";
 export { create } from "./src/create.ts";
 export { config, configPaths } from "./src/config.ts";
 export { locale } from "./src/locale.ts";
-export { isArg } from "./src/arg.ts";
-export { isGlobalOpt, isOpt } from "./src/opt.ts";
+export { isArg } from "./src/args.ts";
+export { isGlobalFlag, isFlag } from "./src/flags.ts";
 
 export type {
   Action,
   ArgsMap,
   ArgsTupleMap,
-  Cmd,
-  CmdConfig,
-  Parse,
-} from "./src/cmd.ts";
-export type { Arg, ArgName, ArgsTuple } from "./src/arg.ts";
-export type {
-  GlobalOptsObject,
-  Opt,
-  OptAliases,
-  OptsObject,
-} from "./src/opt.ts";
+  Command,
+  CommandConfig,
+  Execute,
+} from "./src/command.ts";
+export type { Arg, ArgName, Args } from "./src/args.ts";
+export type { GlobalFlags, Flag, FlagAliases, Flags } from "./src/flags.ts";
 export type { Config, ConfigOptions } from "./src/config.ts";
 
 export { z } from "./src/z.ts";

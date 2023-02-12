@@ -1,50 +1,51 @@
 // deno-lint-ignore-file no-explicit-any
-import { Cmd, cmd, CmdConfig } from "./cmd.ts";
-import { Arg, arg, args, ArgsTuple } from "./arg.ts";
+import { Command, command, CommandConfig } from "./command.ts";
+import { Arg, arg, args, Args as ArgsTuple } from "./args.ts";
 import { helpOpt, writeHelp } from "./help.ts";
-import { GlobalOptsObject, opt, opts, OptsObject } from "./opt.ts";
+import { GlobalFlags, flag, flags, Flags } from "./flags.ts";
 import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
 import * as intl from "./intl.ts";
+import { locale } from "./locale.ts";
 
 export function create<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalOptsObject,
+  GlobalOpts extends GlobalFlags
 >(config: CreateConfig<Context, GlobalOpts>) {
-  const gOpts = config.globalOpts
-    ? config.globalOpts.merge(helpOpts)
+  const gOpts = config.globalFlags
+    ? config.globalFlags.merge(helpOpts)
     : helpOpts;
 
   return {
-    cmd<
+    command<
       Args extends
         | ArgsTuple<
-          Arg<string, z.ZodTypeAny>,
-          Arg<string, z.ZodTypeAny>[],
-          Arg<string, z.ZodTypeAny> | null
-        >
+            Arg<string, z.ZodTypeAny>,
+            Arg<string, z.ZodTypeAny>[],
+            Arg<string, z.ZodTypeAny> | null
+          >
         | unknown = unknown,
-      Opts extends OptsObject | unknown = unknown,
+      Opts extends Flags | unknown = unknown
     >(
       name: string,
-      options: CmdConfig<Context & BaseContext, Args, Opts> = {},
-    ): Cmd<Context & BaseContext, Args, Opts, GlobalOpts> {
+      options: CommandConfig<Context & BaseContext, Args, Opts> = {}
+    ): Command<Context & BaseContext, Args, Opts, GlobalOpts> {
       // @ts-expect-error: blah blah
-      options.opts = options.opts ? options.opts.merge(gOpts) : gOpts;
+      options.flags = options.flags ? options.flags.merge(gOpts) : gOpts;
 
-      if (options.cmds?.length) {
-        const helpCmd = cmd("help", {
-          opts: options.opts,
-          cmds: [
-            cmd("commands", {
-              opts: (options.opts as any).merge(
-                opts({
-                  all: opt(z.boolean().default(false), {
+      if (options.commands?.length) {
+        const helpCmd = command("help", {
+          flags: gOpts,
+          commands: [
+            command("commands", {
+              flags: gOpts.merge(
+                flags({
+                  all: flag(z.boolean().default(false), {
                     aliases: ["a"],
                   }).describe("Show all commands, including hidden ones"),
-                }),
+                })
               ),
             })
               .run(async (args) => {
@@ -52,12 +53,14 @@ export function create<
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
                     const sortedCmds = intl.collate(
-                      options.cmds!.filter((cmd) => args.all || !cmd.hidden),
+                      options.commands!.filter(
+                        (cmd) => args.all || !cmd.hidden
+                      ),
                       {
                         get(item) {
                           return item.name;
                         },
-                      },
+                      }
                     );
 
                     const rows: string[][] = new Array(sortedCmds.length);
@@ -67,17 +70,15 @@ export function create<
                       rows[i] = [cmd.name, cmd.description ?? ""];
                     }
 
-                    for (
-                      const line of table(rows, {
-                        indent: 2,
-                        cellPadding: 2,
-                      })
-                    ) {
+                    for (const line of table(rows, {
+                      indent: 2,
+                      cellPadding: 2,
+                    })) {
                       yield line;
                     }
 
                     yield `\nUse "${name} help [command]" for more information about a command.`;
-                  })(),
+                  })()
                 );
               })
               .describe(`List ${name} commands`),
@@ -88,31 +89,30 @@ export function create<
           .describe(`Show help for a ${name} command`)
           .run(async (args: any, ctx) => {
             if (!args.command) {
-              await writeHelp(command.help());
+              await writeHelp(command_.help());
             }
 
-            const cmd = options.cmds!.find(
+            const cmd = options.commands!.find(
               (cmd) =>
-                cmd.name === args.command ||
-                cmd.aliases.includes(args.command!),
+                cmd.name === args.command || cmd.aliases.includes(args.command!)
             );
 
             if (!cmd) {
               await Promise.all([
                 Deno.stderr.write(
                   new TextEncoder().encode(
-                    `Unknown help topic: "${args.command}"\n`,
-                  ),
+                    `Unknown help topic: "${args.command}"\n`
+                  )
                 ),
                 Deno.stderr.write(
                   new TextEncoder().encode(
                     didYouMean(
                       args.command + "",
                       options
-                        .cmds!.flatMap((cmd) => [cmd.name, ...cmd.aliases])
-                        .concat("commands"),
-                    ) + "\n",
-                  ),
+                        .commands!.flatMap((cmd) => [cmd.name, ...cmd.aliases])
+                        .concat("commands")
+                    ) + "\n"
+                  )
                 ),
               ]);
 
@@ -120,52 +120,58 @@ export function create<
             }
 
             await writeHelp(
-              cmd.help(((ctx.path as any) ?? []).concat(cmd.name)),
+              cmd.help(((ctx.path as any) ?? []).concat(cmd.name))
             );
           });
 
-        const parse = helpCmd.parse;
+        const parse = helpCmd.execute;
         // @ts-expect-error: ugh
-        helpCmd.parse = (args: string[], ctx?: Context & BaseContext) => {
+        helpCmd.execute = (args: string[], ctx?: Context & BaseContext) => {
           return parse(args, {
             ...(ctx ?? config.ctx),
-            path: args.includes("--help") || args.includes("-h")
-              ? [...(ctx?.path ?? []), "help"]
-              : ctx?.path,
+            path:
+              args.includes("--help") || args.includes("-h")
+                ? [...(ctx?.path ?? []), "help"]
+                : ctx?.path,
+            locale,
           });
         };
         // @ts-expect-error: it's fine ffs
-        options.cmds = [...options.cmds, helpCmd];
+        options.commands = [...options.commands, helpCmd];
       }
 
-      const command = cmd<Context & BaseContext, Args, Opts>(name, options);
-      const parse = command.parse;
-      const parseOverride = {
-        parse: (args: string[], ctx?: Context & BaseContext) => {
-          return parse(
+      const command_ = command<Context & BaseContext, Args, Opts>(
+        name,
+        options
+      );
+      const execute = command_.execute;
+      const execOverride = {
+        execute: (args: string[], ctx?: Context & BaseContext) => {
+          return execute(
             args,
             // @ts-expect-error: it's cool
             {
               ...(ctx ?? config.ctx),
               path: [...(ctx?.path ?? []), name],
-            },
+              locale,
+            }
           );
         },
       };
 
       // @ts-expect-error: it's fine ffs
-      return Object.assign(command, parseOverride);
+      return Object.assign(command_, execOverride);
     },
   };
 }
 
-const helpOpts = opts({
+const helpOpts = flags({
   help: helpOpt().describe("Show help for this command"),
 });
 
 export type CreateConfig<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalOptsObject,
+  GlobalOpts extends GlobalFlags
 > = {
   /**
    * The context that will be passed to each command.
@@ -174,7 +180,7 @@ export type CreateConfig<
   /**
    * The global options that will be passed to each command.
    */
-  globalOpts?: GlobalOpts;
+  globalFlags?: GlobalOpts;
 };
 
 export type BaseContext = {
@@ -182,6 +188,11 @@ export type BaseContext = {
    * The path of the command that is currently being parsed.
    */
   path: string[];
+  /**
+   * The locale that will be used for error messages.
+   * @default `LANGUAGE`, `LANG`, or `LC_ALL` environment variables.
+   */
+  locale: string;
 };
 
 export type DefaultContext = BaseContext & Record<string, unknown>;
