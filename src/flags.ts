@@ -3,14 +3,14 @@ import { z } from "./z.ts";
 
 export function flag<
   Schema extends z.ZodSchema<any>,
-  Aliases extends Readonly<string>
+  Aliases extends Readonly<string>,
 >(
   schema: Schema,
   config: {
     aliases?: Aliases[];
     negatable?: boolean;
     hidden?: boolean;
-  } = {}
+  } = {},
 ): Flag<Schema, Aliases> {
   let longDescription: string | undefined;
 
@@ -36,7 +36,7 @@ export function flag<
           ...this._def,
           description,
         }),
-        extras
+        extras,
       );
     },
     long(description: string): any {
@@ -69,7 +69,7 @@ export function flags<Shape extends FlagsShape>(shape: Shape): Flags<Shape> {
 }
 
 export function globalFlags<Shape extends FlagsShape>(
-  shape: Shape
+  shape: Shape,
 ): GlobalFlags<Shape> {
   walkFlags(flags(shape as any), (schema) => {
     schema.__global = true;
@@ -155,7 +155,7 @@ export function innerType<T>(schema: T): z.ZodTypeAny | T {
  * @param schema - The schema to find the default value of
  */
 export function getDefault<T extends Flag<z.ZodTypeAny, string>>(
-  schema: T
+  schema: T,
 ): inferFlag<T> | undefined {
   if (schema instanceof z.ZodDefault) {
     return schema._def.defaultValue();
@@ -185,13 +185,17 @@ export function typeAsString(schema: Flag<z.ZodTypeAny, string>): string {
   } else if (schema instanceof z.ZodObject) {
     return "object";
   } else if (schema instanceof z.ZodTuple) {
-    return `[${schema._def.items
-      .map((i: z.ZodTypeAny) => typeAsString(i as any))
-      .join(", ")}]`;
+    return `[${
+      schema._def.items
+        .map((i: z.ZodTypeAny) => typeAsString(i as any))
+        .join(", ")
+    }]`;
   } else if (schema instanceof z.ZodRecord) {
-    return `record<${typeAsString(schema._def.keyType)}, ${typeAsString(
-      schema._def.valueType
-    )}>`;
+    return `record<${typeAsString(schema._def.keyType)}, ${
+      typeAsString(
+        schema._def.valueType,
+      )
+    }>`;
   } else if (schema instanceof z.ZodLiteral) {
     return JSON.stringify(schema._def.value);
   } else if (schema instanceof z.ZodEnum) {
@@ -232,12 +236,11 @@ export function walkFlags<Schema extends Flags | unknown = unknown>(
   visitor: (
     schema: Flag<z.ZodTypeAny, string>,
     name: Extract<
-      Schema extends Flags | OptionalFlags
-        ? keyof inferFlags<Schema>
+      Schema extends Flags | OptionalFlags ? keyof inferFlags<Schema>
         : Record<string, unknown>,
       string
-    >
-  ) => void
+    >,
+  ) => void,
 ) {
   // Eliminate the tail call above
   // This looks dumb now but might add more stuff e.g. nested opts later
@@ -261,7 +264,7 @@ export function walkFlags<Schema extends Flags | unknown = unknown>(
 
 export type Flag<
   Schema extends z.ZodTypeAny,
-  Aliases extends Readonly<string>
+  Aliases extends Readonly<string>,
 > = {
   aliases: Readonly<Aliases[]>;
   negatable: boolean;
@@ -276,42 +279,46 @@ export type Flag<
   __global: boolean;
 };
 
-export type Flags<Shape extends FlagsShape = FlagsShape> = Pick<
-  z.ZodObject<
-    // @ts-expect-error: it's fine
-    Shape,
-    "strict"
-  >,
-  "_output" | "_def" | "shape"
-> & {
-  merge<Incoming extends Flags<any>>(
-    merging: Incoming
-  ): Flags<
+export type Flags<Shape extends FlagsShape = FlagsShape> =
+  & Pick<
     z.ZodObject<
-      z.extendShape<Shape, ReturnType<Incoming["_def"]["shape"]>>,
-      Incoming["_def"]["unknownKeys"],
-      Incoming["_def"]["catchall"]
-    >["shape"]
-  >;
-  default(
-    shape: z.ZodObject<
       // @ts-expect-error: it's fine
       Shape,
       "strict"
-    >["_input"]
-  ): Flags<Shape>;
-  optional(): OptionalFlags<Shape>;
-  __flags: true;
-  __global: boolean;
-};
+    >,
+    "_output" | "_def" | "shape"
+  >
+  & {
+    merge<Incoming extends Flags<any>>(
+      merging: Incoming,
+    ): Flags<
+      z.ZodObject<
+        z.extendShape<Shape, ReturnType<Incoming["_def"]["shape"]>>,
+        Incoming["_def"]["unknownKeys"],
+        Incoming["_def"]["catchall"]
+      >["shape"]
+    >;
+    default(
+      shape: z.ZodObject<
+        // @ts-expect-error: it's fine
+        Shape,
+        "strict"
+      >["_input"],
+    ): Flags<Shape>;
+    optional(): OptionalFlags<Shape>;
+    __flags: true;
+    __global: boolean;
+  };
 
-export type OptionalFlags<Shape extends FlagsShape = FlagsShape> = Pick<
-  // @ts-expect-error: it's fine
-  z.ZodOptional<z.ZodObject<Shape, "strict">>,
-  "_output" | "_def"
-> & {
-  __optional: true;
-};
+export type OptionalFlags<Shape extends FlagsShape = FlagsShape> =
+  & Pick<
+    // @ts-expect-error: it's fine
+    z.ZodOptional<z.ZodObject<Shape, "strict">>,
+    "_output" | "_def"
+  >
+  & {
+    __optional: true;
+  };
 
 export type GlobalFlags<Shape extends FlagsShape = FlagsShape> = Flags<Shape>;
 
@@ -321,10 +328,8 @@ export type FlagsShape = Record<
 >;
 
 export type FlagAliases<T extends { aliases: ReadonlyArray<string> }> =
-  T["aliases"] extends ReadonlyArray<infer Names>
-    ? Names extends string
-      ? Names
-      : never
+  T["aliases"] extends ReadonlyArray<infer Names> ? Names extends string ? Names
+    : never
     : never;
 
 export type inferFlags<T extends Flags | OptionalFlags> = T["_output"];

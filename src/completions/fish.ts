@@ -17,8 +17,8 @@ export function complete(command: GenericCmd): string {
 
     // arguments
     const args = command.args;
-    const hasOptionalArgs =
-      args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+    const hasOptionalArgs = args instanceof z.ZodOptional ||
+      args instanceof z.ZodDefault;
     const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
 
     if (hasArgs) {
@@ -29,13 +29,12 @@ export function complete(command: GenericCmd): string {
           ? args.items
           : [];
 
-      result +=
-        "\n" +
+      result += "\n" +
         generate(commandName, {
           arguments: getCompletionCommand(
             command.name,
             commandName,
-            argsItems[0]
+            argsItems[0],
           ),
         });
     }
@@ -56,7 +55,7 @@ export function complete(command: GenericCmd): string {
   function completeOption(
     commandName: string,
     name: string,
-    option: GenericOpt
+    option: GenericOpt,
   ) {
     const shortOption: string | undefined = option.aliases[0];
     const longOption: string | undefined = name;
@@ -76,9 +75,11 @@ export function complete(command: GenericCmd): string {
     cmd.push("-c", command.name);
     cmd.push(
       "-n",
-      `'__fish_${replaceSpecialChars(
-        commandName
-      )}_using_command __${replaceSpecialChars(commandName)}'`
+      `'__fish_${
+        replaceSpecialChars(
+          commandName,
+        )
+      }_using_command __${replaceSpecialChars(commandName)}'`,
     );
     options.shortOption && cmd.push("-s", options.shortOption);
     options.longOption && cmd.push("-l", options.longOption);
@@ -94,7 +95,7 @@ export function complete(command: GenericCmd): string {
     if (options.description) {
       const description: string = shorten(options.description).replace(
         /'/g,
-        "\\'"
+        "\\'",
       );
 
       cmd.push("-d", `'${description}'`);
@@ -106,7 +107,7 @@ export function complete(command: GenericCmd): string {
   function getCompletionCommand(
     commandName: string,
     commandPath: string,
-    arg: Arg<any, any>
+    arg: Arg<any, any>,
   ): string {
     return `'(${commandName} completions complete ${
       arg.name + " " + commandPath
@@ -143,7 +144,7 @@ ${generateCompletions(command).trim()}
 function getCommandFnNames(cmd: GenericCmd): string[] {
   const cmds: string[] = [`__${replaceSpecialChars(cmd.name)}`];
   const stack: [Command<any, any, any, any>, string][] = cmd.commands.map(
-    (c) => [c, cmd.name]
+    (c) => [c, cmd.name],
   );
 
   while (stack.length) {
@@ -153,8 +154,8 @@ function getCommandFnNames(cmd: GenericCmd): string[] {
     stack.push(
       ...cmd.commands.map(
         (c: Command<any, any, any, any>) =>
-          [c, path] as [Command<any, any, any, any>, string]
-      )
+          [c, path] as [Command<any, any, any, any>, string],
+      ),
     );
   }
 

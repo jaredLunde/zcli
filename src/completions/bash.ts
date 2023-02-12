@@ -9,7 +9,7 @@ export function complete<Cmd extends GenericCmd>(cmd: Cmd) {
   function generateCompletions(
     command: GenericCmd,
     path = "",
-    index = 1
+    index = 1,
   ): string {
     path = (path ? path + " " : "") + command.name;
 
@@ -27,11 +27,11 @@ ${childCommandCompletions}`;
   function generateCommandCompletions(
     command: GenericCmd,
     path: string,
-    index: number
+    index: number,
   ): string {
     const flags: string[] = getFlags(command);
     const childCommandNames: string[] = command.commands.map(
-      (childCommand) => childCommand.name
+      (childCommand) => childCommand.name,
     );
     const completionsPath: string = ~path.indexOf(" ")
       ? " " + path.split(" ").slice(1).join(" ")
@@ -41,7 +41,7 @@ ${childCommandCompletions}`;
 
     const completionsCmd = generateCommandCompletionsCommand(
       command,
-      completionsPath
+      completionsPath,
     );
 
     return `  __${replaceSpecialChars(path)}() {
@@ -56,7 +56,7 @@ ${childCommandCompletions}`;
 
   function generateOptionArguments(
     command: GenericCmd,
-    completionsPath: string
+    completionsPath: string,
   ): string {
     let opts = "";
     const options = command.flags;
@@ -69,7 +69,7 @@ ${childCommandCompletions}`;
       const completionsCmd = generateOptionCompletionsCommand(
         command,
         [],
-        completionsPath
+        completionsPath,
       );
 
       opts += `\n      ${flags}) ${completionsCmd} ;;`;
@@ -92,11 +92,11 @@ ${childCommandCompletions}`;
 
   function generateCommandCompletionsCommand(
     command: GenericCmd,
-    path: string
+    path: string,
   ) {
     const args = command.args;
-    const hasOptionalArgs =
-      args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+    const hasOptionalArgs = args instanceof z.ZodOptional ||
+      args instanceof z.ZodDefault;
     const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
 
     if (hasArgs) {
@@ -119,7 +119,7 @@ ${childCommandCompletions}`;
   function generateOptionCompletionsCommand(
     command: GenericCmd,
     args: GenericArg[],
-    path: string
+    path: string,
   ) {
     if (args.length) {
       // @TODO: add support for multiple arguments
@@ -143,9 +143,7 @@ _${replaceSpecialChars(path)}() {
   listFiles=0
   _${replaceSpecialChars(cmd.name)}_complete() {
     local action="$1"; shift
-    mapfile -t values < <( ${
-      cmd.name
-    } completions complete "\${action}" "\${@}" )
+    mapfile -t values < <( ${cmd.name} completions complete "\${action}" "\${@}" )
     for i in "\${values[@]}"; do
       opts+=("$i")
     done

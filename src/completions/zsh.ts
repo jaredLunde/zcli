@@ -41,16 +41,18 @@ function _${replaceSpecialChars(path)}() {` +
 
   function generateCommandCompletions(
     command: GenericCmd,
-    path: string
+    path: string,
   ): string {
     const commands = command.cmds;
 
     let completions: string = commands
       .map(
         (subCommand) =>
-          `'${subCommand.name}:${shorten(subCommand.description ?? "")
-            // escape single quotes
-            .replace(/'/g, "'\"'\"'")}'`
+          `'${subCommand.name}:${
+            shorten(subCommand.description ?? "")
+              // escape single quotes
+              .replace(/'/g, "'\"'\"'")
+          }'`,
       )
       .join("\n      ");
 
@@ -66,8 +68,8 @@ function _${replaceSpecialChars(path)}() {` +
 
     // only complete first argument, rest arguments are completed with _arguments.
     const args = command.args;
-    const hasOptionalArgs =
-      args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+    const hasOptionalArgs = args instanceof z.ZodOptional ||
+      args instanceof z.ZodDefault;
     const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
 
     if (hasArgs) {
@@ -81,9 +83,9 @@ function _${replaceSpecialChars(path)}() {` +
       const arg = argsItems[0];
       const action = addAction(arg, completionsPath);
       if (action) {
-        completions += `\n    __${replaceSpecialChars(cmd.name)}_complete ${
-          action.arg.name
-        } ${action.arg.action} ${action.cmd}`;
+        completions += `\n    __${
+          replaceSpecialChars(cmd.name)
+        }_complete ${action.arg.name} ${action.arg.action} ${action.cmd}`;
       }
     }
 
@@ -96,7 +98,7 @@ function _${replaceSpecialChars(path)}() {` +
 
   function generateArgumentCompletions(
     command: GenericCmd,
-    path: string
+    path: string,
   ): string {
     /* clear actions from previously parsed command. */
     actions.clear();
@@ -121,9 +123,9 @@ function _${replaceSpecialChars(path)}() {` +
         const completionsPath: string = path.split(" ").slice(1).join(" ");
         const action = this.addAction(arg, completionsPath);
         args.push(
-          `${++argIndex}${arg.optional ? "::" : ":"}${arg.name}:->${
-            action.name
-          }`
+          `${++argIndex}${
+            arg.optional ? "::" : ":"
+          }${arg.name}:->${action.name}`,
         );
       }
 
@@ -139,16 +141,18 @@ function _${replaceSpecialChars(path)}() {` +
 
   function generateSubCommandCompletions(
     command: Command,
-    path: string
+    path: string,
   ): string {
     if (command.hasCommands(false)) {
       const actions: string = command
         .getCommands(false)
         .map(
           (command: Command) =>
-            `${command.getName()}) _${replaceSpecialChars(
-              path + " " + command.getName()
-            )} ;;`
+            `${command.getName()}) _${
+              replaceSpecialChars(
+                path + " " + command.getName(),
+              )
+            } ;;`,
         )
         .join("\n      ");
 
@@ -175,7 +179,7 @@ function _${replaceSpecialChars(path)}() {` +
 
     for (const option of command.getOptions(false)) {
       options.push(
-        this.generateOption(command, option, completionsPath, excludedFlags)
+        this.generateOption(command, option, completionsPath, excludedFlags),
       );
     }
 
@@ -186,7 +190,7 @@ function _${replaceSpecialChars(path)}() {` +
     command: Command,
     option: Option,
     completionsPath: string,
-    excludedOptions: string[]
+    excludedOptions: string[],
   ): string {
     let args = "";
     for (const arg of option.args) {
@@ -219,7 +223,7 @@ function _${replaceSpecialChars(path)}() {` +
 
       if (option.conflicts?.length) {
         excludedFlags.push(
-          ...option.conflicts.map((opt) => "--" + opt.replace(/^--/, ""))
+          ...option.conflicts.map((opt) => "--" + opt.replace(/^--/, "")),
         );
       }
       if (!option.collect) {
@@ -260,9 +264,9 @@ function _${replaceSpecialChars(path)}() {` +
     if (actions.size) {
       actions_ = Array.from(actions).map(
         ([name, action]) =>
-          `${name}) __${replaceSpecialChars(cmd.name)}_complete ${
-            action.arg.name
-          } ${action.arg.action} ${action.cmd} ;;`
+          `${name}) __${
+            replaceSpecialChars(cmd.name)
+          }_complete ${action.arg.name} ${action.arg.action} ${action.cmd} ;;`,
       );
     }
 

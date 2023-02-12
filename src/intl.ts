@@ -7,7 +7,7 @@ export function plural(
     locale?: string;
     plural?: string;
     hideCount?: boolean;
-  } = {}
+  } = {},
 ) {
   const {
     locale = defaultLocale,
@@ -25,7 +25,7 @@ export function list(
   items: string[],
   options: Intl.ListFormatOptions & {
     locale?: string;
-  } = {}
+  } = {},
 ) {
   const { locale = defaultLocale, ...formatOptions } = options;
   const listFormatter = new Intl.ListFormat(locale, formatOptions);
@@ -37,7 +37,7 @@ export function collate<T>(
   options: Intl.CollatorOptions & {
     locale?: string;
     get?: (item: T) => string;
-  } = {}
+  } = {},
 ): T[] {
   const {
     locale = defaultLocale,
@@ -53,7 +53,7 @@ export function relativeTime(
   options: {
     style?: Intl.RelativeTimeFormatOptions["style"];
     locale?: string;
-  } = {}
+  } = {},
 ): string {
   const { style: length = "long", locale = defaultLocale } = options;
   const rtf = new Intl.RelativeTimeFormat(locale, {
@@ -83,7 +83,7 @@ export function relativeTimeFormat(
   unit: Intl.RelativeTimeFormatUnit,
   options: Intl.RelativeTimeFormatOptions & {
     locale?: string;
-  } = {}
+  } = {},
 ): string {
   const { locale = defaultLocale, ...formatOptions } = options;
   return new Intl.RelativeTimeFormat(locale, formatOptions).format(value, unit);
@@ -94,7 +94,7 @@ export function currency(
   options: Omit<Intl.NumberFormatOptions, "currency"> & {
     currency?: string;
     locale?: string;
-  } = {}
+  } = {},
 ): string {
   const { locale, ...formatOptions } = options;
   return new Intl.NumberFormat(locale, {
@@ -107,7 +107,7 @@ export function date(
   date: Date,
   options: Intl.DateTimeFormatOptions & {
     locale?: string;
-  } = {}
+  } = {},
 ): string {
   const { locale, ...formatOptions } = options;
   return new Intl.DateTimeFormat(locale, formatOptions).format(date);
@@ -118,7 +118,7 @@ export function range(
   end: number,
   options: Intl.NumberFormatOptions & {
     locale?: string;
-  } = {}
+  } = {},
 ): string {
   const { locale, ...formatOptions } = options;
   return new Intl.NumberFormat(locale, formatOptions).formatRange(start, end);
