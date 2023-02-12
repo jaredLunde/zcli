@@ -38,6 +38,7 @@ const { command } = create({
         ),
       }),
       {
+        format: "ini",
         defaultConfig: {
           path: "$HOME/.fly/config.toml",
           format: "toml",
@@ -77,8 +78,10 @@ To read more, use the docs command to view Fly's help on the web.
 
 const fly = command("fly", {
   commands: [
-    command("launch", {}).run(() => {
+    command("launch").run(async (args, { config }) => {
       console.log("launching");
+      await config.set("version.date", new Date().toISOString());
+      console.log(await config.get("version.date"));
     }),
 
     command("version")

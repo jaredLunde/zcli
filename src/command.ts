@@ -6,6 +6,7 @@ import {
   OptionalArgsWithVariadic,
 } from "./args.ts";
 import {
+  Flag,
   Flags,
   flags as opts_,
   getDefault,
@@ -152,8 +153,19 @@ export function command<
 
     const rows: string[][] = [];
     const globalRows: string[][] = [];
+    const docFlags: { path: string; flag: Flag<any, any> }[] = [];
 
     walkFlags(flags, (opt, path) => {
+      docFlags.push({ path, flag: opt });
+    });
+
+    for (
+      const { path, flag: opt } of intl.collate(docFlags, {
+        get(item) {
+          return item.path;
+        },
+      })
+    ) {
       const type = innerType(opt);
       const rows_ = opt.__global ? globalRows : rows;
       const defaultValue = getDefault(opt);
@@ -169,7 +181,7 @@ export function command<
           ? ` (default: ${defaultValue})`
           : ""),
       ]);
-    });
+    }
 
     if (rows.length) {
       yield colors.bold("\nFlags");

@@ -2,6 +2,7 @@
 import * as YAML from "https://deno.land/std@0.177.0/encoding/yaml.ts";
 import * as TOML from "https://deno.land/std@0.177.0/encoding/toml.ts";
 import * as JSONc from "https://deno.land/std@0.177.0/encoding/jsonc.ts";
+import * as INI from "https://deno.land/x/ini@v2.1.0/mod.ts";
 import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
@@ -13,6 +14,7 @@ const parsers = {
   },
   yaml: YAML,
   toml: TOML,
+  ini: INI,
 } as const;
 
 export function config<Schema extends z.ZodObject<any>>(
@@ -187,7 +189,7 @@ export type ConfigOptions<Schema extends z.ZodObject<any>> = {
   /**
    * @default "toml"
    */
-  format?: "jsonc" | "yaml" | "toml";
+  format?: "jsonc" | "yaml" | "toml" | "ini";
   /**
    * The write mode for the config file.
    * @default 0o600
