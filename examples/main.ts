@@ -119,19 +119,19 @@ const fly = command("fly", {
   .describe("fly is a command line interface to the Fly.io platform.")
   .long(
     `
-  fly is a command line interface to the Fly.io platform.
-  
-  It allows users to manage authentication, application launch,
-  deployment, network configuration, logging and more with just the
-  one command.
-  
-    * Launch an app with the launch command
-    * Deploy an app with the deploy command
-    * View a deployed web application with the open command
-    * Check the status of an application with the status command
+    fly is a command line interface to the Fly.io platform.
     
-  To read more, use the docs command to view Fly's help on the web.
-  `
+    It allows users to manage authentication, application launch,
+    deployment, network configuration, logging and more with just the
+    one command.
+    
+      * Launch an app with the launch command
+      * Deploy an app with the deploy command
+      * View a deployed web application with the open command
+      * Check the status of an application with the status command
+      
+    To read more, use the docs command to view Fly's help on the web.
+    `
   )
   .preRun(async (args, { env, config }) => {
     console.log("Checking if logged in...");
