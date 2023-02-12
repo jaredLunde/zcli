@@ -1,8 +1,6 @@
 import { z, create, env, config, kv } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
-import * as intl from "../src/intl.ts";
-import { table } from "../src/lib/simple-table.ts";
 //import * as bash from "../src/completions/bash.ts";
 
 const { command } = create({
@@ -66,7 +64,20 @@ const { command } = create({
 
 const fly = command("fly", {
   commands: [
-    command("launch").run(async (args, { config, cache }) => {
+    command("launch", {
+      commands: [
+        command("app", {
+          args: args([arg("name", z.string())]),
+          flags: flags({
+            type: flag(z.string().default("web")).describe(
+              "The type of app to launch"
+            ),
+          }),
+        }).run((args) => {
+          console.log(`launching ${args.type} app`, args.name);
+        }),
+      ],
+    }).run(async (args, { config, cache }) => {
       console.log("launching");
       await config.set("version.date", new Date().toISOString());
       console.log(await config.get("version.date"));
@@ -135,5 +146,3 @@ const fly = command("fly", {
 if (import.meta.main) {
   await fly.execute();
 }
-
-z.util.assertIs;
