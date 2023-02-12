@@ -12,25 +12,23 @@ export function* dedent(str: string): Iterable<string> {
     return;
   }
 
-  let indent = 0;
+  let indent = -1;
 
   for (let i = 0; i < numLines; i++) {
-    let text = "";
     const line = lines[i];
-
-    if (i === 0) {
-      text = line.trimStart();
-      indent = line.length - text.length;
-    } else if (indent) {
-      text += line.slice(indent);
-    } else {
-      text += line;
-    }
 
     if (i === 0 && !line) {
       continue;
-    } else {
+    }
+
+    if (indent === -1) {
+      const text = line.trimStart();
+      indent = line.length - text.length;
       yield text;
+    } else if (indent) {
+      yield line.slice(indent);
+    } else {
+      yield line;
     }
   }
 }
