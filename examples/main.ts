@@ -23,7 +23,7 @@ const { command } = create({
     }),
 
     cache: kv({
-      lastCheckedForUpdate: z.date().optional(),
+      latestVersion: z.string().optional(),
     }),
 
     config: config(
@@ -71,11 +71,6 @@ const fly = command("fly", {
       console.log("launching");
       await config.set("version.date", new Date().toISOString());
       console.log(await config.get("version.date"));
-      console.log(
-        "last checked for update:",
-        await cache.get("lastCheckedForUpdate")
-      );
-      await cache.set("lastCheckedForUpdate", new Date());
     }),
 
     command("version")

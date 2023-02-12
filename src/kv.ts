@@ -27,7 +27,6 @@ export function kv<Schema extends z.ZodRawShape>(
   const basename = path.basename(execPath, path.extname(execPath));
   const name = basename === "deno" ? "zcli-dev" : basename;
   const { path: userKvPath, format = "toml", mode = 0o600 } = options;
-
   const defaultKvPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
@@ -117,7 +116,7 @@ export function kv<Schema extends z.ZodRawShape>(
 }
 
 function isExpired({ expires }: { expires: number; value: unknown }): boolean {
-  return expires > -1 && Date.now() > expires;
+  return expires !== -1 && Date.now() > expires;
 }
 
 export type KvOptions = {
