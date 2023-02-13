@@ -1,7 +1,7 @@
 import { z, create, env, config, kv } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
-//import * as bash from "../src/completions/bash.ts";
+import * as zsh from "../src/completions/zsh.ts";
 
 const { command } = create({
   globalFlags: globalFlags({
@@ -42,7 +42,7 @@ const { command } = create({
       {
         format: "ini",
         defaultConfig: {
-          path: "$HOME/.fly/config.toml",
+          path: "$HOME/.zcli/config.toml",
           format: "toml",
           version: {
             number: "0.0.0",
@@ -62,7 +62,7 @@ const { command } = create({
   },
 });
 
-const fly = command("fly", {
+const zcli = command("zcli", {
   commands: [
     command("launch", {
       commands: [
@@ -91,13 +91,13 @@ const fly = command("fly", {
       })
       .describe("Show version information")
       .long(
-        "Shows version information for the fly command itself, including version number and build date."
+        "Shows version information for the zcli command itself, including version number and build date."
       ),
   ],
 
-  args: args([arg("path", z.string())])
-    .rest(arg("path", z.string()))
-    .optional(),
+  // args: args([arg("path", z.string())])
+  //   .rest(arg("path", z.string()))
+  //   .optional(),
 
   flags: flags({
     port: flag(z.array(z.number().int().min(0).max(65536)).default([8080]), {
@@ -112,10 +112,10 @@ const fly = command("fly", {
     }).optional(),
   }),
 })
-  .describe("fly is a command line interface to the Fly.io platform.")
+  .describe("zcli is a command line interface to the Fly.io platform.")
   .long(
     `
-    fly is a command line interface to the Fly.io platform.
+    zcli is a command line interface to the Fly.io platform.
     
     It allows users to manage authentication, application launch,
     deployment, network configuration, logging and more with just the
@@ -138,11 +138,11 @@ const fly = command("fly", {
     console.log(args);
   })
   .postRun(async (args, { env }) => {
-    console.log('A new version is available! Run "fly update" to update.');
+    console.log('A new version is available! Run "zcli update" to update.');
   });
 
-//console.log(bash.complete(fly));
+//console.log(zsh.complete(zcli));
 
 if (import.meta.main) {
-  await fly.execute();
+  await zcli.execute();
 }

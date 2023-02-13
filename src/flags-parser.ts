@@ -11,31 +11,7 @@ import { Prettify } from "./lib/types.ts";
  * considered a key-value pair. Any arguments which could not be parsed are
  * available in the `_` property of the returned object.
  *
- * By default, the flags module tries to determine the type of all arguments
- * automatically and the return type of the `parse` method will have an index
- * signature with `any` as value (`{ [x: string]: any }`).
- *
- * If the `string`, `boolean` or `collect` option is set, the return value of
- * the `parse` method will be fully typed and the index signature of the return
- * type will change to `{ [x: string]: unknown }`.
- *
  * Any arguments after `'--'` will not be parsed and will end up in `parsedArgs._`.
- *
- * Numeric-looking arguments will be returned as numbers unless `options.string`
- * or `options.boolean` is set for that argument name.
- *
- * @example
- * ```ts
- * import { parse } from "https://deno.land/std@$STD_VERSION/flags/mod.ts";
- * const parsedArgs = parse(Deno.args);
- * ```
- *
- * @example
- * ```ts
- * import { parse } from "https://deno.land/std@$STD_VERSION/flags/mod.ts";
- * const parsedArgs = parse(["--foo", "--bar=baz", "./quux.txt"]);
- * // parsedArgs: { foo: true, bar: "baz", _: ["./quux.txt"] }
- * ```
  */
 export function parse<TDoubleDash extends boolean | undefined = undefined>(
   args: string[],
@@ -46,7 +22,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     numbers = [],
     collect = [],
     negatable = [],
-  }: ParseOptions<TDoubleDash> = {},
+  }: ParseOptions<TDoubleDash> = {}
 ): Args<TDoubleDash> {
   const aliases: Record<string, string[]> = {};
   const flags: Flags = {
@@ -136,7 +112,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
     obj: NestedMapping,
     name: string,
     value: unknown,
-    collect = true,
+    collect = true
   ) {
     let o = obj;
     const keys = name.split(".");
@@ -182,7 +158,7 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
 
   function aliasIsBoolean(key: string): boolean {
     return getForce(aliases, key).some(
-      (x) => typeof flags.bools[x] === "boolean",
+      (x) => typeof flags.bools[x] === "boolean"
     );
   }
 
@@ -359,15 +335,15 @@ function hasKey(obj: NestedMapping, keys: string[]): boolean {
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
-    & Record<string, unknown>
-    & {
+    Record<string, unknown> & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
       _: Array<string | number>;
-    }
-    & (boolean extends TDoubleDash ? DoubleDash
-      : true extends TDoubleDash ? Required<DoubleDash>
-      : Record<never, never>)
+    } & (boolean extends TDoubleDash
+        ? DoubleDash
+        : true extends TDoubleDash
+        ? Required<DoubleDash>
+        : Record<never, never>)
   >;
 
 type DoubleDash = {
@@ -377,7 +353,7 @@ type DoubleDash = {
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined,
+  TDoubleDash extends boolean | undefined = boolean | undefined
 > {
   /**
    * When `true`, populate the result `_` with everything before the `--` and
