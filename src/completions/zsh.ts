@@ -1,11 +1,9 @@
-// deno-lint-ignore-file no-explicit-any
 import { walkArgs } from "../args.ts";
 import { innerType, typeAsString, walkFlags } from "../flags.ts";
-import { escapeString } from "./shared.ts";
+import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
-import { Command } from "../command.ts";
 
-export function complete<T extends Command<any, any, any, any>>(command: T) {
+export function complete<T extends GenericCommand>(command: T) {
   return `
 #compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}
 
@@ -13,9 +11,9 @@ ${completeCommand(command)}
 `.trim();
 }
 
-function completeCommand<T extends Command<any, any, any, any>>(
+function completeCommand<T extends GenericCommand>(
   command: T,
-  path = ""
+  path = "",
 ): string {
   const name = `${path}_${escapeString(command.name)}`;
 
@@ -39,10 +37,7 @@ ${subcommands}
 `.trim();
 }
 
-function completeCommands<T extends Command<any, any, any, any>>(
-  command: T,
-  path = ""
-) {
+function completeCommands<T extends GenericCommand>(command: T, path = "") {
   return `
   local line state
   local -a commands
@@ -55,50 +50,53 @@ function completeCommands<T extends Command<any, any, any, any>>(
   case $state in
     command)
       commands=(
-        ${command.commands
-          .map((command) => {
-            const NAME = escapeString(command.name);
-            const DESCRIPTION = (command.description ?? "").replace(":", " ");
-            return `"${NAME}:${DESCRIPTION}"`;
-          })
-          .join(`\n${" ".repeat(8)}`)}
+        ${
+    command.commands
+      .map((command) => {
+        const NAME = escapeString(command.name);
+        const DESCRIPTION = (command.description ?? "").replace(":", " ");
+        return `"${NAME}:${DESCRIPTION}"`;
+      })
+      .join(`\n${" ".repeat(8)}`)
+  }
       )
       _describe "command" commands
       ;;
 
     args)
       case $line[1] in
-${command.commands
-  .map((subCommand) => {
-    return `${" ".repeat(8)}${subCommand.name})
+${
+    command.commands
+      .map((subCommand) => {
+        return `${" ".repeat(8)}${subCommand.name})
 ${" ".repeat(10)}${path}_${escapeString(subCommand.name)}\n${" ".repeat(10)};;`;
-  })
-  .join(`\n`)}
+      })
+      .join(`\n`)
+  }
       esac
       ;;
   esac
 `.trim();
 }
 
-function completeArgsAndFlags(command: Command<any, any, any, any>) {
+function completeArgsAndFlags(command: GenericCommand) {
   const args = completeArgs(command);
   const flags = completeFlags(command);
 
   if (args.length > 0 || flags.length > 0) {
-    return `_arguments -s \\\n${" ".repeat(4)}${[...args, ...flags].join(
-      ` \\\n${" ".repeat(4)}`
-    )}`;
+    return `_arguments -s \\\n${" ".repeat(4)}${
+      [...args, ...flags].join(
+        ` \\\n${" ".repeat(4)}`,
+      )
+    }`;
   }
 
   return "";
 }
 
-function completeArgs<T extends Command<any, any, any, any>>(
-  command: T
-): string[] {
+function completeArgs<T extends GenericCommand>(command: T): string[] {
   const args: string[] = [];
-  const hasOptionalArgs =
-    command.args instanceof z.ZodOptional ||
+  const hasOptionalArgs = command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
@@ -119,20 +117,18 @@ function completeArgs<T extends Command<any, any, any, any>>(
     args.push(
       `"${variadic ? "*" : ""}${
         hasOptionalArgs ||
-        arg instanceof z.ZodOptional ||
-        arg instanceof z.ZodDefault
+          arg instanceof z.ZodOptional ||
+          arg instanceof z.ZodDefault
           ? ":"
           : position + 1
-      }:${MESSAGE}:${ACTION}"`
+      }:${MESSAGE}:${ACTION}"`,
     );
   });
 
   return args;
 }
 
-function completeFlags<T extends Command<any, any, any, any>>(
-  command: T
-): string[] {
+function completeFlags<T extends GenericCommand>(command: T): string[] {
   const args: string[] = [];
 
   walkFlags(command.flags, (flag, name) => {
@@ -214,7 +210,7 @@ function completeFlags<T extends Command<any, any, any, any>>(
       args.push(`"${GROUP}"${OPTSPEC}"${EXPLANATION}${OPTARG}"`);
     } else {
       args.push(
-        ...OPTSPEC.map((optspec) => `"${optspec}${EXPLANATION}${OPTARG}"`)
+        ...OPTSPEC.map((optspec) => `"${optspec}${EXPLANATION}${OPTARG}"`),
       );
     }
   });
