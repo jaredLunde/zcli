@@ -69,7 +69,7 @@ const zcli = command("zcli", {
         command("app", {
           args: args([arg("name", z.string())]),
           flags: flags({
-            type: flag(z.string().default("web")).describe(
+            type: flag(z.enum(["web", "native"]).default("web")).describe(
               "The type of app to launch"
             ),
           }),
@@ -140,8 +140,6 @@ const zcli = command("zcli", {
   .postRun(async (args, { env }) => {
     console.log('A new version is available! Run "zcli update" to update.');
   });
-
-//console.log(zsh.complete(zcli));
 
 if (import.meta.main) {
   await zcli.execute();

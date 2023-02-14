@@ -3,41 +3,59 @@ import { innerType, typeAsString, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
 
-export function complete<T extends GenericCommand>(command: T) {
-  return `
-#compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}
-
-${completeCommand(command)}
-`.trim();
+export function complete(command: GenericCommand) {
+  return [
+    `#compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}`,
+    completeCommand(command),
+  ].join("\n".repeat(2));
 }
 
-function completeCommand<T extends GenericCommand>(
-  command: T,
-  path = "",
-): string {
-  const name = `${path}_${escapeString(command.name)}`;
-
+function completeCommand(command: GenericCommand, path: string[] = []): string {
+  const name = `_${[...path, escapeString(command.name)].join("_")}`;
   let functionBody = "";
 
   if (command.commands.length && !command.args) {
-    functionBody = completeCommands(command, name);
+    functionBody = completeCommands(command, [
+      ...path,
+      escapeString(command.name),
+    ]);
   } else {
     functionBody = completeArgsAndFlags(command);
   }
 
-  const subcommands = command.commands
-    .map((subCommand) => completeCommand(subCommand, name))
+  const subCommands = command.commands
+    .map((subCommand) =>
+      completeCommand(subCommand, [...path, escapeString(command.name)])
+    )
     .join("\n\n");
+
   return `
 function ${name} {
   ${functionBody}
 }
 
-${subcommands}
+${subCommands}
 `.trim();
 }
 
-function completeCommands<T extends GenericCommand>(command: T, path = "") {
+function completeCommands<T extends GenericCommand>(
+  command: T,
+  path: string[] = []
+) {
+  const indent = " ".repeat(10);
+  const subCommands = command.commands
+    .filter((subCommand) => !subCommand.hidden)
+    .map((subCommand) => {
+      return [
+        " ".repeat(8),
+        `${subCommand.name})`,
+        `\n${indent}`,
+        `_${[...path, escapeString(subCommand.name)].join("_")}`,
+        `\n${indent};;`,
+      ].join("");
+    })
+    .join(`\n`);
+
   return `
   local line state
   local -a commands
@@ -45,34 +63,25 @@ function completeCommands<T extends GenericCommand>(command: T, path = "") {
   _arguments -s -C \\
     "1: :->command" \\
     "*::arg:->args" \\
-    ${completeFlags(command).join(` \\\n${" ".repeat(4)}`)}
+    ${completeFlags(command).join(" \\\n" + " ".repeat(4))}
 
   case $state in
     command)
       commands=(
-        ${
-    command.commands
-      .map((command) => {
-        const NAME = escapeString(command.name);
-        const DESCRIPTION = (command.description ?? "").replace(":", " ");
-        return `"${NAME}:${DESCRIPTION}"`;
-      })
-      .join(`\n${" ".repeat(8)}`)
-  }
+        ${command.commands
+          .map((command) => {
+            const name = escapeString(command.name);
+            const description = (command.description ?? "").replace(":", " ");
+            return `"${name}:${description}"`;
+          })
+          .join(`\n${" ".repeat(8)}`)}
       )
       _describe "command" commands
       ;;
 
     args)
       case $line[1] in
-${
-    command.commands
-      .map((subCommand) => {
-        return `${" ".repeat(8)}${subCommand.name})
-${" ".repeat(10)}${path}_${escapeString(subCommand.name)}\n${" ".repeat(10)};;`;
-      })
-      .join(`\n`)
-  }
+${subCommands}
       esac
       ;;
   esac
@@ -84,56 +93,63 @@ function completeArgsAndFlags(command: GenericCommand) {
   const flags = completeFlags(command);
 
   if (args.length > 0 || flags.length > 0) {
-    return `_arguments -s \\\n${" ".repeat(4)}${
-      [...args, ...flags].join(
-        ` \\\n${" ".repeat(4)}`,
-      )
-    }`;
+    const indent = " ".repeat(4);
+
+    return [
+      `_arguments -s \\\n${indent}`,
+      [...args, ...flags].join(` \\\n${indent}`),
+    ].join("");
   }
 
   return "";
 }
 
-function completeArgs<T extends GenericCommand>(command: T): string[] {
+function completeArgs(command: GenericCommand): string[] {
   const args: string[] = [];
-  const hasOptionalArgs = command.args instanceof z.ZodOptional ||
+  const hasOptionalArgs =
+    command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
-    const MESSAGE = (arg.description ?? arg.name).replace(":", " ");
-    let ACTION = ``;
+    const message = (arg.description ?? arg.name).replace(":", " ");
+    let action = ``;
     // A zsh variadic argument
-    const VARIADIC = variadic ? "*" : " ";
+    const variadicPrefix = variadic ? "*" : " ";
     const type = innerType(arg);
 
     if (type instanceof z.ZodEnum || type instanceof z.ZodNativeEnum) {
-      ACTION = `(${type._def.values.join(" ")})`;
+      action = `(${type._def.values.map((v: unknown) => `"${v}"`).join(" ")})`;
     } else if (type instanceof z.ZodLiteral) {
-      ACTION = `(${type._def.value}${VARIADIC})`;
+      action = `(${JSON.stringify(type._def.value)})`;
     } else if (!hasOptionalArgs) {
-      ACTION = `( )`;
+      action = `( )`;
     }
 
     args.push(
-      `"${variadic ? "*" : ""}${
+      `"${variadicPrefix ? "*" : ""}${
+        !variadicPrefix ||
         hasOptionalArgs ||
-          arg instanceof z.ZodOptional ||
-          arg instanceof z.ZodDefault
+        arg instanceof z.ZodOptional ||
+        arg instanceof z.ZodDefault
           ? ":"
           : position + 1
-      }:${MESSAGE}:${ACTION}"`,
+      }:${message}:${action}"`
     );
   });
 
   return args;
 }
 
-function completeFlags<T extends GenericCommand>(command: T): string[] {
+function completeFlags(command: GenericCommand): string[] {
   const args: string[] = [];
 
   walkFlags(command.flags, (flag, name) => {
-    let GROUP: string | null = null;
-    const OPTNAME: {
+    if (flag.hidden) {
+      return;
+    }
+
+    let group: string | null = null;
+    const optname: {
       long: string;
       neg?: string;
       short?: string;
@@ -142,75 +158,73 @@ function completeFlags<T extends GenericCommand>(command: T): string[] {
     };
 
     if (flag.aliases.length) {
-      OPTNAME.short = `-${flag.aliases.join(" -")}`;
+      optname.short = `-${flag.aliases.join(" -")}`;
     }
 
     if (flag.negatable) {
-      OPTNAME.neg = `--no-${name}`;
+      optname.neg = `--no-${name}`;
     }
 
     const typeName = typeAsString(flag);
 
     if (typeName !== "boolean" && name !== "help") {
-      OPTNAME.long = `${OPTNAME.long}=`;
+      optname.long = `${optname.long}=`;
 
-      if (OPTNAME.short) {
-        OPTNAME.short = `${OPTNAME.short}+`;
+      if (optname.short) {
+        optname.short = `${optname.short}+`;
       }
 
       if (typeName === "array") {
         // Until the Upstream PR is merged, everything is multiple 🤷‍♂️
-        OPTNAME.long = `*${OPTNAME.long}`;
+        optname.long = `*${optname.long}`;
 
-        if (OPTNAME.short) {
-          OPTNAME.short = `*${OPTNAME.short}`;
+        if (optname.short) {
+          optname.short = `*${optname.short}`;
         }
-      } else if (OPTNAME.short) {
-        GROUP = `(${Object.values(OPTNAME).filter(Boolean).join(" ")})`;
+      } else if (optname.short) {
+        group = `(${Object.values(optname).filter(Boolean).join(" ")})`;
       }
     }
 
-    const OPTSPEC: string[] = [];
+    const optspec: string[] = [];
 
-    if (GROUP) {
-      OPTSPEC.push(`{${Object.values(OPTNAME).filter(Boolean).join(",")}}`);
+    if (group) {
+      optspec.push(`{${Object.values(optname).filter(Boolean).join(",")}}`);
     } else {
-      OPTSPEC.push(`${OPTNAME.long}`);
+      optspec.push(`${optname.long}`);
 
-      if (OPTNAME.short) {
-        OPTSPEC.push(`${OPTNAME.short}`);
+      if (optname.short) {
+        optspec.push(`${optname.short}`);
       }
     }
 
-    const EXPLANATION = `[${(flag.description ?? "").replace(":", " ")}]`;
-
-    const MESSAGE = `${name}`;
-
-    let ACTION = ``;
+    const explanation = `[${(flag.description ?? "").replace(":", " ")}]`;
+    const message = `${name}`;
+    let action = ``;
 
     if (
       innerType instanceof z.ZodEnum ||
       innerType instanceof z.ZodNativeEnum
     ) {
-      ACTION = `(${flag._def.values.join(" ")})`;
+      action = `(${flag._def.values.join(" ")})`;
     } else if (
       !(flag instanceof z.ZodOptional) &&
       !(flag instanceof z.ZodDefault)
     ) {
-      ACTION = `( )`;
+      action = `( )`;
     }
 
-    let OPTARG = ``;
+    let optarg = ``;
 
     if (typeName !== "boolean" && name !== "help") {
-      OPTARG = `:${MESSAGE}:${ACTION}`;
+      optarg = `:${message}:${action}`;
     }
 
-    if (GROUP) {
-      args.push(`"${GROUP}"${OPTSPEC}"${EXPLANATION}${OPTARG}"`);
+    if (group) {
+      args.push(`"${group}"${optspec}"${explanation}${optarg}"`);
     } else {
       args.push(
-        ...OPTSPEC.map((optspec) => `"${optspec}${EXPLANATION}${OPTARG}"`),
+        ...optspec.map((optspec) => `"${optspec}${explanation}${optarg}"`)
       );
     }
   });
