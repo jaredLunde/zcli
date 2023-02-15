@@ -9,7 +9,7 @@ const { command } = create({
     json: flag(z.boolean().default(false), { aliases: ["j"] }).describe(
       "Display the output as JSON"
     ),
-    verbose: flag(z.boolean().default(false)).describe(
+    verbose: flag(z.boolean().default(false), { aliases: ["v"] }).describe(
       "Display verbose output"
     ),
   }),

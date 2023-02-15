@@ -1,10 +1,12 @@
-import * as flags from "https://deno.land/std@0.177.0/flags/mod.ts";
+import { parse } from "../src/flags-parser.ts";
 
 if (import.meta.main) {
-  const args = flags.parse(Deno.args, {
-    boolean: ["debug"],
-    string: ["path"],
-    "--": true,
+  const args = parse(Deno.args, {
+    bools: { debug: true },
+    numbers: { port: true },
+    aliases: { d: "debug" },
+    collect: {},
+    negatable: {},
   });
 
   console.log(args);
