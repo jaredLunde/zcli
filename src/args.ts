@@ -3,7 +3,7 @@ import { z } from "./z.ts";
 
 export function arg<
   Name extends Readonly<string>,
-  Schema extends z.ZodSchema<any>
+  Schema extends z.ZodSchema<any>,
 >(name: Name, schema: Schema): Arg<Name, Schema> {
   let longDescription: string | undefined;
 
@@ -25,7 +25,7 @@ export function arg<
           ...this._def,
           description,
         }),
-        extras
+        extras,
       );
     },
     long(description: string): any {
@@ -37,7 +37,7 @@ export function arg<
 
 export function args<
   ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[]
+  ZodTypes extends Arg<string, z.ZodTypeAny>[],
 >(zodType: [ZodType, ...ZodTypes]): ArgsWithoutVariadic<ZodType, ZodTypes> {
   // @ts-expect-error: it's fine
   return Object.assign(z.tuple(zodType));
@@ -59,8 +59,8 @@ export function walkArgs(
   args: unknown,
   callback: (
     arg: Arg<any, any>,
-    meta: { position: number; variadic: boolean }
-  ) => void
+    meta: { position: number; variadic: boolean },
+  ) => void,
 ) {
   const hasArgs = isArgs(args);
 
@@ -68,20 +68,19 @@ export function walkArgs(
     return;
   }
 
-  const hasOptionalArgs =
-    args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+  const hasOptionalArgs = args instanceof z.ZodOptional ||
+    args instanceof z.ZodDefault;
   const variadicArg = !hasArgs
     ? null
     : hasOptionalArgs
     ? args._def.innerType._def.rest
-    : // @ts-expect-error: it's fine
-      args._def.rest;
-  const argsItems =
-    hasOptionalArgs && args._def.innerType instanceof z.ZodTuple
-      ? args._def.innerType.items
-      : args instanceof z.ZodTuple
-      ? args.items
-      : [];
+    // @ts-expect-error: it's fine
+    : args._def.rest;
+  const argsItems = hasOptionalArgs && args._def.innerType instanceof z.ZodTuple
+    ? args._def.innerType.items
+    : args instanceof z.ZodTuple
+    ? args.items
+    : [];
 
   if (argsItems.length) {
     for (let i = 0; i < argsItems.length; i++) {
@@ -97,7 +96,7 @@ export function walkArgs(
 
 export type Arg<
   Name extends Readonly<string>,
-  Schema extends z.ZodTypeAny
+  Schema extends z.ZodTypeAny,
 > = Pick<Schema, "_def" | "_output" | "description"> & {
   name: Name;
   describe(description: string): Arg<Name, Schema>;
@@ -109,24 +108,26 @@ export type Arg<
 
 export type ArgsWithoutVariadic<
   ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[]
-> = Pick<
-  // @ts-expect-error: blah blah
-  | z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>
-  // @ts-expect-error: blah blah
-  | z.ZodOptional<z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>>,
-  "_def" | "_output"
-> & {
-  optional(): OptionalArgsWithoutVariadic<ZodType, ZodTypes>;
-  rest<Rest extends Arg<string, z.ZodTypeAny>>(
-    rest: Rest
-  ): ArgsWithVariadic<ZodType, ZodTypes, Rest>;
-  __args: true;
-};
+  ZodTypes extends Arg<string, z.ZodTypeAny>[],
+> =
+  & Pick<
+    // @ts-expect-error: blah blah
+    | z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>
+    // @ts-expect-error: blah blah
+    | z.ZodOptional<z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>>,
+    "_def" | "_output"
+  >
+  & {
+    optional(): OptionalArgsWithoutVariadic<ZodType, ZodTypes>;
+    rest<Rest extends Arg<string, z.ZodTypeAny>>(
+      rest: Rest,
+    ): ArgsWithVariadic<ZodType, ZodTypes, Rest>;
+    __args: true;
+  };
 
 export type OptionalArgsWithoutVariadic<
   ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[]
+  ZodTypes extends Arg<string, z.ZodTypeAny>[],
 > = ArgsWithoutVariadic<ZodType, ZodTypes> & {
   __optional: true;
 };
@@ -134,21 +135,23 @@ export type OptionalArgsWithoutVariadic<
 export type ArgsWithVariadic<
   ZodType extends Arg<string, z.ZodTypeAny>,
   ZodTypes extends Arg<string, z.ZodTypeAny>[],
-  VariadicType extends Arg<string, z.ZodTypeAny>
-> = Pick<
-  // @ts-expect-error: blah blah
-  | z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>
-  // @ts-expect-error: blah blah
-  | z.ZodOptional<z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>>,
-  "_def" | "_output"
-> & {
-  optional(): OptionalArgsWithVariadic<ZodType, ZodTypes, VariadicType>;
-};
+  VariadicType extends Arg<string, z.ZodTypeAny>,
+> =
+  & Pick<
+    // @ts-expect-error: blah blah
+    | z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>
+    // @ts-expect-error: blah blah
+    | z.ZodOptional<z.ZodTuple<[ZodType, ...ZodTypes], VariadicType>>,
+    "_def" | "_output"
+  >
+  & {
+    optional(): OptionalArgsWithVariadic<ZodType, ZodTypes, VariadicType>;
+  };
 
 export type OptionalArgsWithVariadic<
   ZodType extends Arg<string, z.ZodTypeAny>,
   ZodTypes extends Arg<string, z.ZodTypeAny>[],
-  VariadicType extends Arg<string, z.ZodTypeAny>
+  VariadicType extends Arg<string, z.ZodTypeAny>,
 > = ArgsWithVariadic<ZodType, ZodTypes, VariadicType> & {
   __optional: true;
 };
@@ -156,7 +159,7 @@ export type OptionalArgsWithVariadic<
 export type Args<
   ZodType extends Arg<string, z.ZodTypeAny>,
   ZodTypes extends Arg<string, z.ZodTypeAny>[],
-  VariadicType extends Arg<string, z.ZodTypeAny> | null = null
+  VariadicType extends Arg<string, z.ZodTypeAny> | null = null,
 > = VariadicType extends Arg<string, z.ZodTypeAny>
   ? ArgsWithVariadic<ZodType, ZodTypes, VariadicType>
   : ArgsWithoutVariadic<ZodType, ZodTypes>;

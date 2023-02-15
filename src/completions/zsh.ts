@@ -40,7 +40,7 @@ ${subCommands}
 
 function completeCommands<T extends GenericCommand>(
   command: T,
-  path: string[] = []
+  path: string[] = [],
 ) {
   const indent = " ".repeat(10);
   const subCommands = command.commands
@@ -68,13 +68,15 @@ function completeCommands<T extends GenericCommand>(
   case $state in
     command)
       commands=(
-        ${command.commands
-          .map((command) => {
-            const name = escapeString(command.name);
-            const description = (command.description ?? "").replace(":", " ");
-            return `"${name}:${description}"`;
-          })
-          .join(`\n${" ".repeat(8)}`)}
+        ${
+    command.commands
+      .map((command) => {
+        const name = escapeString(command.name);
+        const description = (command.description ?? "").replace(":", " ");
+        return `"${name}:${description}"`;
+      })
+      .join(`\n${" ".repeat(8)}`)
+  }
       )
       _describe "command" commands
       ;;
@@ -106,8 +108,7 @@ function completeArgsAndFlags(command: GenericCommand) {
 
 function completeArgs(command: GenericCommand): string[] {
   const args: string[] = [];
-  const hasOptionalArgs =
-    command.args instanceof z.ZodOptional ||
+  const hasOptionalArgs = command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
@@ -128,12 +129,12 @@ function completeArgs(command: GenericCommand): string[] {
     args.push(
       `"${variadicPrefix ? "*" : ""}${
         !variadicPrefix ||
-        hasOptionalArgs ||
-        arg instanceof z.ZodOptional ||
-        arg instanceof z.ZodDefault
+          hasOptionalArgs ||
+          arg instanceof z.ZodOptional ||
+          arg instanceof z.ZodDefault
           ? ":"
           : position + 1
-      }:${message}:${action}"`
+      }:${message}:${action}"`,
     );
   });
 
@@ -224,7 +225,7 @@ function completeFlags(command: GenericCommand): string[] {
       args.push(`"${group}"${optspec}"${explanation}${optarg}"`);
     } else {
       args.push(
-        ...optspec.map((optspec) => `"${optspec}${explanation}${optarg}"`)
+        ...optspec.map((optspec) => `"${optspec}${explanation}${optarg}"`),
       );
     }
   });

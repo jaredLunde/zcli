@@ -14,7 +14,7 @@ import { Prettify } from "./lib/types.ts";
  */
 export function parse<TDoubleDash extends boolean | undefined = undefined>(
   args: string[],
-  { bools, numbers, negatable, collect, aliases }: Flags
+  { bools, numbers, negatable, collect, aliases }: Flags,
 ): Args<TDoubleDash> {
   const argv: Args = { _: [], _doubleDash: [] };
 
@@ -191,15 +191,15 @@ const nonAlnumRegex = /\W/;
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
-    Record<string, unknown> & {
+    & Record<string, unknown>
+    & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
       _: Array<string | number>;
-    } & (boolean extends TDoubleDash
-        ? DoubleDash
-        : true extends TDoubleDash
-        ? Required<DoubleDash>
-        : Record<never, never>)
+    }
+    & (boolean extends TDoubleDash ? DoubleDash
+      : true extends TDoubleDash ? Required<DoubleDash>
+      : Record<never, never>)
   >;
 
 type DoubleDash = {
@@ -209,7 +209,7 @@ type DoubleDash = {
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined
+  TDoubleDash extends boolean | undefined = boolean | undefined,
 > {
   /**
    * An object mapping string names to strings or arrays of string argument

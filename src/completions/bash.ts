@@ -117,17 +117,19 @@ function completeCommand(command: GenericCommand, path: string[] = []): string {
     let optDef = "opts=()";
 
     if (type instanceof z.ZodEnum || type instanceof z.ZodNativeEnum) {
-      optDef = `opts=(${type._def.values
-        .map((v: string) => `"${v}"`)
-        .join(" ")})`;
+      optDef = `opts=(${
+        type._def.values
+          .map((v: string) => `"${v}"`)
+          .join(" ")
+      })`;
     } else if (type instanceof z.ZodLiteral) {
       optDef = `opts=(${JSON.stringify(type._def.value)})`;
     }
 
     cases.push(
       [`${[...aliases, `--${name}`].join("|")})`, optDef, ";;"].join(
-        `\n${" ".repeat(8)}`
-      )
+        `\n${" ".repeat(8)}`,
+      ),
     );
   });
 
@@ -137,7 +139,7 @@ function completeCommand(command: GenericCommand, path: string[] = []): string {
     if (!subCommand.hidden) {
       opts.push(subCommand.name);
       subCommands.push(
-        completeCommand(subCommand, [...path, escapeString(command.name)])
+        completeCommand(subCommand, [...path, escapeString(command.name)]),
       );
     }
   }

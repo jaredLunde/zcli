@@ -52,17 +52,18 @@ function completeCommand(command: GenericCommand, path: string[]) {
   path = [...path, name];
   const fnName = `__${path.join("_")}`;
   const completions: string[] = [];
-  const hasOptionalArgs =
-    command.args instanceof z.ZodOptional ||
+  const hasOptionalArgs = command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   if (path.length > 1) {
     completions.push(
       `complete -c ${path[0]} -n '__fish_${
         path[0]
-      }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${(
-        command.description ?? shorten(command.longDescription ?? "")
-      ).replace(/'/g, "\\'")}'`
+      }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${
+        (
+          command.description ?? shorten(command.longDescription ?? "")
+        ).replace(/'/g, "\\'")
+      }'`,
     );
   }
 
@@ -84,10 +85,12 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     if (arg.description || arg.longDescription) {
       completion.push(
-        `-d '${(arg.description ?? shorten(arg.longDescription ?? "")).replace(
-          /'/g,
-          "\\'"
-        )}'`
+        `-d '${
+          (arg.description ?? shorten(arg.longDescription ?? "")).replace(
+            /'/g,
+            "\\'",
+          )
+        }'`,
       );
     }
 
@@ -122,9 +125,11 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     if (flag.description || flag.longDescription) {
       completion.push(
-        `-d '${(
-          flag.description ?? shorten(flag.longDescription ?? "")
-        ).replace(/'/g, "\\'")}'`
+        `-d '${
+          (
+            flag.description ?? shorten(flag.longDescription ?? "")
+          ).replace(/'/g, "\\'")
+        }'`,
       );
     }
 
