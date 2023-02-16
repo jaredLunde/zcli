@@ -4,7 +4,13 @@
     "compile": "deno compile --allow-env --allow-read --allow-write --v8-flags=--use-strict,--predictable --output examples/bin/main examples/main.ts",
     "run": "deno run --allow-env --allow-read --allow-write examples/main.ts",
     "test": "deno test --allow-env --allow-read",
-    "test:watch": "deno test --allow-env --allow-read --watch src"
+    "test:watch": "deno test --allow-env --allow-read --watch src",
+    "test:coverage": "deno test --allow-env --allow-read --coverage=coverage && deno coverage coverage"
+  },
+  "bench": {
+    "files": {
+      "include": ["src"]
+    }
   },
   "fmt": {
     "files": {
@@ -18,7 +24,7 @@
   },
   "test": {
     "files": {
-      "include": ["mod.ts", "src"]
+      "include": ["src"]
     }
   }
 }

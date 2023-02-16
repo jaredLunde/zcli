@@ -12,15 +12,21 @@ import { Prettify } from "./lib/types.ts";
  *
  * Any arguments after `'--'` will not be parsed and will end up in `parsedArgs._`.
  */
-export function parse<TDoubleDash extends boolean | undefined = undefined>(
+export function parse(
   args: string[],
-  { bools, numbers, negatable, collect, aliases }: Flags,
-): Args<TDoubleDash> {
+  { bools, numbers, negatable, collect, aliases }: Flags
+): Args {
   const argv: Args = { _: [], _doubleDash: [] };
 
   function set(name: string, value: unknown) {
     let o = argv;
-    let key = name;
+    let key = aliases[name] ?? name;
+
+    if (bools[name]) {
+      value = value !== falseStr;
+    } else if (numbers[name]) {
+      value = Number(value);
+    }
 
     if (name.indexOf(".") !== -1) {
       const keys = name.split(".");
@@ -38,15 +44,15 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
       key = keys[keys.length - 1];
     }
 
-    if (collect[name] === undefined) {
+    if (collect[key] === undefined) {
       o[key] = value;
     } else {
-      (o[key] as unknown[]).push(value);
+      if (o[key] === undefined) {
+        o[key] = [value];
+      } else {
+        (o[key] as unknown[]).push(value);
+      }
     }
-  }
-
-  for (const key in collect) {
-    argv[key] = [];
   }
 
   // all args after "--" are not parsed
@@ -57,159 +63,123 @@ export function parse<TDoubleDash extends boolean | undefined = undefined>(
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    const short = arg[0] === "-";
-    const long = arg[0] === "-" && arg[1] === "-";
+    const firstChar = arg[0];
+    const secondChar = arg[1];
+    const short = firstChar === "-";
+    const long = firstChar === "-" && secondChar === "-";
 
     if (long) {
-      const equalityArg = arg.match(equalityArgRegex);
+      const value = arg.indexOf("=") > -1 && arg.match(equalityArgRegex)?.[1];
+      const key = arg.slice(2, value ? -value!.length - 1 : undefined);
 
-      if (equalityArg) {
-        let [, key, value] = equalityArg;
-        key = aliases[key] ?? key;
-
-        if (bools[key]) {
-          const booleanValue = value !== "false";
-          set(key, booleanValue);
-        } else if (numbers[key]) {
-          set(key, Number(value));
-        } else {
-          set(key, value);
-        }
-
+      if (value) {
+        set(key, value);
         continue;
       }
 
-      if (
-        negatableRegex.test(arg) &&
-        negatable[arg.replace(negatableRegex, "")]
-      ) {
-        const key = arg.replace(negatableRegex, "");
-        set(aliases[key] ?? key, false);
-        continue;
-      }
+      if (key.slice(0, 3) === "no-") {
+        const k = key.slice(3);
 
-      const optionArg = arg.slice(2);
-
-      if (optionArg) {
-        let key = optionArg;
-        key = aliases[key] ?? key;
-
-        if (bools[key]) {
-          set(key, true);
+        if (negatable[k]) {
+          set(k, falseStr);
           continue;
         }
+      }
 
-        const next = args[i + 1];
+      const next = args[i + 1];
 
-        if (next !== undefined && next[0] !== "-") {
-          set(key, numbers[key] ? Number(next) : next);
-          i++;
-        } else if (next === "true" || next === "false") {
-          set(key, next === "true");
-          i++;
-        } else {
-          set(key, "");
-        }
-
+      if (next && !flagRegex.test(next)) {
+        set(key, next);
+        i++;
         continue;
       }
+
+      set(key, "");
+      continue;
     }
 
-    if (short && arg[1]) {
+    if (short && secondChar) {
       const letters = arg.slice(1, -1);
       let broken = false;
 
       for (let j = 0; j < letters.length; j++) {
         const next = arg.slice(j + 2);
-        let key = letters[j];
-        key = aliases[key] ?? key;
+        const key = letters[j];
 
         if (next === "-") {
           set(key, next);
           continue;
         }
 
-        if (letterRegex.test(letters[j]) && equalsRegex.test(next)) {
-          set(key, next.split(/=(.+)/)[1]);
-          broken = true;
-          break;
-        }
-
-        if (letterRegex.test(letters[j]) && shortFlagRegex.test(next)) {
-          set(key, next);
-          broken = true;
-          break;
-        }
-
-        if (letters[j + 1] && letters[j + 1].match(nonAlnumRegex)) {
-          set(key, arg.slice(j + 2));
-          broken = true;
-          break;
-        }
-
-        set(key, bools[key] ? true : "");
-      }
-
-      let [key] = arg.slice(-1);
-      key = aliases[key] ?? key;
-
-      if (!broken && key !== "-") {
-        if (args[i + 1] && !bools[key] && !flagRegex.test(args[i + 1])) {
-          if (numbers[key]) {
-            set(key, Number(args[i + 1]));
-          } else {
-            set(key, args[i + 1]);
+        if (LETTERS.indexOf(letters[j]) !== -1) {
+          if (equalsRegex.test(next)) {
+            const value = next.split(/=(.+)/)[1];
+            set(key, value);
+            broken = true;
+            break;
           }
 
-          i++;
-        } else if (args[i + 1] === "true" || args[i + 1] === "false") {
-          set(key, args[i + 1] === "true");
-          i++;
-        } else {
-          set(key, bools[key] ? true : "");
+          if (shortNumRegex.test(next)) {
+            set(key, next);
+            broken = true;
+            break;
+          }
         }
+
+        if (letters[j + 1] && nonAlnumRegex.test(letters[j + 1])) {
+          const value = arg.slice(j + 2);
+          set(key, value);
+          broken = true;
+          break;
+        }
+
+        set(key, "");
+        continue;
       }
 
-      continue;
-    }
+      const key = arg[arg.length - 1];
+      const value = args[i + 1];
 
-    argv._.push(arg);
+      if (!broken && key !== "-") {
+        if (value && !flagRegex.test(value)) {
+          set(key, value);
+          i++;
+        } else {
+          set(key, "");
+        }
+      }
+    } else {
+      argv._.push(arg);
+    }
   }
 
-  // @ts-expect-error: it's fine
   return argv;
 }
 
-const equalityArgRegex = /^--([^=]+)=(.*)$/s;
-const negatableRegex = /^--no-/;
-const letterRegex = /[A-Za-z]/;
+const equalityArgRegex = /^--[^=]+=(.*)/;
+const LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const equalsRegex = /=/;
-const shortFlagRegex = /-?\d+(\.\d*)?(e-?\d+)?$/;
-const flagRegex = /^(-|--)[^-]/;
+const shortNumRegex = /^-?\d+(\.\d*)?(e-?\d+)?$/;
+const flagRegex = /^(-)[-]?[^\d]/;
 const nonAlnumRegex = /\W/;
+const falseStr = "false";
 
 /** The value returned from `parse`. */
 export type Args<TDoubleDash extends boolean | undefined = undefined> =
   Prettify<
-    & Record<string, unknown>
-    & {
+    Record<string, unknown> & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
       _: Array<string | number>;
-    }
-    & (boolean extends TDoubleDash ? DoubleDash
-      : true extends TDoubleDash ? Required<DoubleDash>
-      : Record<never, never>)
-  >;
 
-type DoubleDash = {
-  /** Contains all the arguments that appear after the double dash: "--". */
-  _doubleDash?: Array<string>;
-};
+      /** Contains all the arguments that appear after the double dash: "--". */
+      _doubleDash?: Array<string>;
+    }
+  >;
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined,
+  TDoubleDash extends boolean | undefined = boolean | undefined
 > {
   /**
    * An object mapping string names to strings or arrays of string argument
