@@ -1,25 +1,17 @@
-# zcli
-
-> A framework for building type-safe commandline tools powered by Zod
-
-## Getting started
-
-```ts
-import {
-  create,
-  globalFlags,
-  flags,
-  args,
-  flag,
-  arg,
-  env,
-  z,
-} from "https://deno.land/x/zcli/mod.ts";
+import { z, create, env, config, kv } from "../mod.ts";
+import { arg, args } from "../src/args.ts";
+import { globalFlags, flag, flags } from "../src/flags.ts";
 
 const zcli = create({
   globalFlags: globalFlags({
-    verbose: flag(z.boolean().default(false), { aliases: ["v"] }),
-    json: flag(z.boolean().default(false), { aliases: ["j"] }),
+    verbose: flag(
+      z.boolean().default(false).describe("Return verbose output"),
+      { aliases: ["v"] }
+    ),
+    json: flag(
+      z.boolean().default(false).describe("Log responses as raw JSON"),
+      { aliases: ["j"] }
+    ),
   }),
 
   ctx: {
@@ -66,10 +58,6 @@ const cli = zcli
     }
   })
   .run(async (flags, ctx) => {
-    if (ctx.env.get("DEBUG")) {
-      console.log("Fetching:", flags.url);
-    }
-
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
@@ -88,4 +76,3 @@ const cli = zcli
 if (import.meta.main) {
   await cli.execute();
 }
-```

@@ -14,7 +14,7 @@ import { Prettify } from "./lib/types.ts";
  */
 export function parse(
   args: string[],
-  { bools, numbers, negatable, collect, aliases }: Flags,
+  { bools, numbers, negatable, collect, aliases }: Flags
 ): Args {
   const argv: Args = { _: [], _doubleDash: [] };
 
@@ -22,9 +22,9 @@ export function parse(
     let o = argv;
     let key = aliases[name] ?? name;
 
-    if (bools[name]) {
+    if (bools[key]) {
       value = value !== falseStr;
-    } else if (numbers[name]) {
+    } else if (numbers[key]) {
       value = Number(value);
     }
 
@@ -179,7 +179,7 @@ export type Args<TDoubleDash extends boolean | undefined = undefined> =
 
 /** The options for the `parse` call. */
 export interface ParseOptions<
-  TDoubleDash extends boolean | undefined = boolean | undefined,
+  TDoubleDash extends boolean | undefined = boolean | undefined
 > {
   /**
    * An object mapping string names to strings or arrays of string argument

@@ -1,7 +1,6 @@
 import { z, create, env, config, kv } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
-import * as zsh from "../src/completions/zsh.ts";
 
 const { command } = create({
   globalFlags: globalFlags({
