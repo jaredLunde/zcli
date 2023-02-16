@@ -26,7 +26,7 @@ export function completion<
     commands: [
       // @ts-expect-error: it's fine
       commandFactory.command("bash").run(function (_args, ctx) {
-        Deno.stdout.write(encoder.encode(bash.complete(ctx.bin) + "\n"));
+        write(bash.complete(ctx.bin));
       }).describe(() => "Generate an autocompletion script for the bash shell")
         .long(
           () => `
@@ -53,13 +53,11 @@ export function completion<
       commandFactory.command("zsh", {
         flags: shellCommandFlags,
       }).run(function (args, ctx) {
-        Deno.stdout.write(
-          encoder.encode(
-            zsh.complete(ctx.bin, {
-              // @ts-expect-error: it's fine
-              disableDescriptions: args["no-descriptions"],
-            }) + "\n",
-          ),
+        write(
+          zsh.complete(ctx.bin, {
+            // @ts-expect-error: it's fine
+            disableDescriptions: args["no-descriptions"],
+          }),
         );
       }).describe("Generate an autocompletion script for the zsh shell").long(
         () => `
@@ -88,12 +86,12 @@ export function completion<
       commandFactory.command("fish", {
         flags: shellCommandFlags,
       }).run(function (args, ctx) {
-        Deno.stdout.write(encoder.encode(
+        write(
           fish.complete(ctx.bin, {
             // @ts-expect-error: it's fine
             disableDescriptions: args["no-descriptions"],
-          }) + "\n",
-        ));
+          }),
+        );
       }).describe("Generate an autocompletion script for the fish shell").long(
         () => `
         Generate the autocompletion script for the fish shell.
@@ -119,3 +117,14 @@ export function completion<
 }
 
 const encoder = new TextEncoder();
+
+export async function write(stream: Iterable<string>): Promise<void> {
+  const writes: Promise<number>[] = [];
+
+  for (const line of stream) {
+    writes.push(Deno.stdout.write(encoder.encode(line + "\n")));
+  }
+
+  await Promise.all(writes);
+  Deno.exit(0);
+}

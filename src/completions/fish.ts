@@ -4,10 +4,10 @@ import { shorten } from "../lib/shorten.ts";
 import { z } from "../z.ts";
 import { walkArgs } from "../args.ts";
 
-export function complete(
+export function* complete(
   command: GenericCommand,
   options: { disableDescriptions?: boolean } = {},
-) {
+): Iterable<string> {
   const name = escapeString(command.name);
   const fnNames: string[] = [];
   const stack: [GenericCommand, string[]][] = [[command, []]];
@@ -19,9 +19,8 @@ export function complete(
     stack.push(...cmd.commands.map((c) => [c, [...path, cmd.name]]));
   }
 
-  return `
-#!/usr/bin/env fish
-
+  yield `#!/usr/bin/env fish`;
+  yield `
 function __fish_${name}_using_command
   set -l cmds ${fnNames.join(" ")}
   set -l words (commandline -opc)
@@ -46,16 +45,18 @@ function __fish_${name}_using_command
   
   return 1
 end
+`.trimEnd();
 
-${completeCommand(command, [], options)}
-`.trim();
+  for (const line of completeCommand(command, [], options)) {
+    yield line;
+  }
 }
 
-function completeCommand(
+function* completeCommand(
   command: GenericCommand,
   path: string[],
   options: { disableDescriptions?: boolean } = {},
-) {
+): Iterable<string> {
   const name = escapeString(command.name);
   path = [...path, name];
   const fnName = `__${path.join("_")}`;
@@ -110,10 +111,6 @@ function completeCommand(
   });
 
   walkFlags(command.flags, (flag, name) => {
-    if (flag.hidden) {
-      return;
-    }
-
     const type = typeAsString(flag);
     const completion: string[] = [
       `complete -c ${path[0]} -n '__fish_${path[0]}_using_command ${fnName}'`,
@@ -150,11 +147,17 @@ function completeCommand(
     completions.push(completion.join(" "));
   });
 
-  for (const cmd of command.commands) {
-    if (!cmd.hidden) {
-      completions.push("\n" + completeCommand(cmd, path, options));
-    }
+  yield `\n# ${path.join(" ")}`;
+
+  for (const completion of completions) {
+    yield completion;
   }
 
-  return `# ${path.join(" ")} \n${completions.join("\n")}`;
+  for (const cmd of command.commands) {
+    if (!cmd.hidden) {
+      for (const line of completeCommand(cmd, path, options)) {
+        yield line;
+      }
+    }
+  }
 }

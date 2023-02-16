@@ -2,11 +2,11 @@ import { innerType, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
 
-export function complete(command: GenericCommand) {
+export function* complete(command: GenericCommand): Iterable<string> {
   const name = escapeString(command.name);
+  yield `#!/usr/bin/env bash`;
 
-  return `#!/usr/bin/env bash
-
+  yield `
 _${name}() {
   local word cur prev listFiles
   local -a opts
@@ -24,7 +24,6 @@ _${name}() {
     if [[ "$cur" == \~*/* ]]; then
       # shellcheck disable=SC2086
       eval cur=$cur
-
     elif [[ "$cur" == \~* ]]; then
       cur=\${cur#\~}
       # shellcheck disable=SC2086,SC2207
@@ -50,8 +49,13 @@ _${name}() {
     # shellcheck disable=SC2206,SC2207
     COMPREPLY=( \${COMPREPLY[@]:-} $( compgen -f -X "$xspec" -- "$cur" )           $( compgen -d -- "$cur" ) )
   }
-  ${completeCommand(command)}
+`.trimEnd();
 
+  for (const line of completeCommand(command)) {
+    yield line;
+  }
+
+  yield `
   for word in "\${COMP_WORDS[@]}"; do
     case "\${word}" in
       -*) ;;
@@ -80,6 +84,7 @@ _${name}() {
   local IFS=$'\\n'
   # shellcheck disable=SC2207
   local result=($(compgen -W "\${values[@]}" -- "\${cur}"))
+  
   if [[ \${#result[@]} -eq 0 ]]; then
     # shellcheck disable=SC2207
     COMPREPLY=($(compgen -f "\${cur}"))
@@ -91,10 +96,14 @@ _${name}() {
   return 0
 }
 
-complete -F _${name} -o bashdefault -o default ${command.name}`;
+complete -F _${name} -o bashdefault -o default ${command.name}
+`.trimEnd();
 }
 
-function completeCommand(command: GenericCommand, path: string[] = []): string {
+function* completeCommand(
+  command: GenericCommand,
+  path: string[] = [],
+): Iterable<string> {
   const name = [path.join("_"), escapeString(command.name)]
     .filter(Boolean)
     .join("_");
@@ -139,12 +148,12 @@ function completeCommand(command: GenericCommand, path: string[] = []): string {
     if (!subCommand.hidden) {
       opts.push(subCommand.name);
       subCommands.push(
-        completeCommand(subCommand, [...path, escapeString(command.name)]),
+        ...completeCommand(subCommand, [...path, escapeString(command.name)]),
       );
     }
   }
 
-  return `
+  yield `
   __${name}() {
     opts=(${opts.join(" ")})
     
@@ -152,10 +161,16 @@ function completeCommand(command: GenericCommand, path: string[] = []): string {
       return 0
     fi
 
-    case "\${prev}" in
-      ${cases.join(`\n${" ".repeat(6)}`)}
-    esac
+    case "\${prev}" in`;
+
+  for (const line of cases) {
+    yield `${" ".repeat(6)}${line}`;
   }
-${subCommands.join("\n")}
+  yield `    esac
+  }
 `.trimEnd();
+
+  for (const subCommand of subCommands) {
+    yield subCommand;
+  }
 }

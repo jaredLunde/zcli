@@ -3,31 +3,41 @@ import { innerType, typeAsString, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
 
-export function complete(
+export function* complete(
   command: GenericCommand,
   options: { disableDescriptions?: boolean } = {},
-) {
-  return [
-    `#compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}`,
-    completeCommand(command, [], options),
-  ].join("\n".repeat(2));
+): Iterable<string> {
+  yield `#compdef _${command.name} ${
+    [command.name, ...command.aliases].join(" ")
+  }`;
+
+  for (const completion of completeCommand(command, [], options)) {
+    yield completion;
+  }
 }
 
-function completeCommand(
+function* completeCommand(
   command: GenericCommand,
   path: string[] = [],
   options: { disableDescriptions?: boolean } = {},
-): string {
+): Iterable<string> {
   const name = `_${[...path, escapeString(command.name)].join("_")}`;
-  let functionBody = "";
+
+  yield `\nfunction ${name} {`;
 
   if (command.commands.length && !command.args) {
-    functionBody = completeCommands(command, [
-      ...path,
-      escapeString(command.name),
-    ], options);
+    for (
+      const line of completeCommands(command, [
+        ...path,
+        escapeString(command.name),
+      ], options)
+    ) {
+      yield `  ${line}`;
+    }
   } else {
-    functionBody = completeArgsAndFlags(command, options);
+    for (const line of completeArgsAndFlags(command, options)) {
+      yield `  ${line}`;
+    }
   }
 
   const subCommands = command.commands
@@ -37,23 +47,22 @@ function completeCommand(
         [...path, escapeString(command.name)],
         options,
       )
-    )
-    .join("\n\n");
+    );
 
-  return `
-function ${name} {
-  ${functionBody}
+  yield `}`;
+
+  for (const completion of subCommands) {
+    for (const line of completion) {
+      yield line;
+    }
+  }
 }
 
-${subCommands}
-`.trim();
-}
-
-function completeCommands<T extends GenericCommand>(
+function* completeCommands<T extends GenericCommand>(
   command: T,
   path: string[] = [],
   options: { disableDescriptions?: boolean } = {},
-) {
+): Iterable<string> {
   const indent = " ".repeat(10);
   const subCommands = command.commands
     .filter((subCommand) => !subCommand.hidden)
@@ -68,16 +77,18 @@ function completeCommands<T extends GenericCommand>(
     })
     .join(`\n`);
 
-  return `
-  local line state
-  local -a commands
-
-  _arguments -s -C \\
+  yield `local line state`;
+  yield `local -a commands\n`;
+  yield `_arguments -s -C \\
     "1: :->command" \\
-    "*::arg:->args" \\
-    ${completeFlags(command, options).join(" \\\n" + " ".repeat(4))}
+    "*::arg:->args" \\`;
 
-  case $state in
+  for (const flag of completeFlags(command, options)) {
+    yield `  ${flag}`;
+  }
+
+  yield "";
+  yield `case $state in
     command)
       commands=(
         ${
@@ -104,23 +115,26 @@ ${subCommands}
 `.trim();
 }
 
-function completeArgsAndFlags(
+function* completeArgsAndFlags(
   command: GenericCommand,
   options: { disableDescriptions?: boolean } = {},
-) {
+): Iterable<string> {
   const args = completeArgs(command, options);
   const flags = completeFlags(command, options);
 
   if (args.length > 0 || flags.length > 0) {
-    const indent = " ".repeat(4);
+    yield `_arguments -s \\`;
 
-    return [
-      `_arguments -s \\\n${indent}`,
-      [...args, ...flags].join(` \\\n${indent}`),
-    ].join("");
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      yield `  ${arg}` + (i === args.length - 1 ? "" : " \\");
+    }
+
+    for (let i = 0; i < flags.length; i++) {
+      const flag = flags[i];
+      yield `  ${flag}` + (i === flags.length - 1 ? "" : " \\");
+    }
   }
-
-  return "";
 }
 
 function completeArgs(

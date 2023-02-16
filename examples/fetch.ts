@@ -83,18 +83,23 @@ const cli = zcli
     });
 
     let ticks = "...";
-    while (!response) {
-      if (ticks !== "...") {
-        yield ansi.eraseLines(2);
-        yield ansi.cursorUp(2);
-      }
 
-      yield "Loading" + ticks;
-      ticks = ticks + ".";
+    while (!response) {
+      if (!flags.json) {
+        if (ticks !== "...") {
+          yield ansi.eraseLines(2);
+          yield ansi.cursorUp(2);
+        }
+
+        yield "Loading" + ticks;
+        ticks = ticks + ".";
+      }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    yield ansi.eraseLines(2) + ansi.cursorUp(1);
+    if (!flags.json) {
+      yield ansi.eraseLines(2) + ansi.cursorUp(1);
+    }
 
     if (flags.json) {
       yield await response.text();
