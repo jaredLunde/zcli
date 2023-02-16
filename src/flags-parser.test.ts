@@ -89,6 +89,24 @@ describe("flagsParser.parse()", () => {
       assertEquals(args.debug, 1e3);
     });
 
+    it("should parse a number long 3", () => {
+      const args = parse(["--debug=1.25"], {
+        ...defaults,
+        numbers: { debug: true },
+      });
+
+      assertEquals(args.debug, 1.25);
+    });
+
+    it("should parse a number long 4", () => {
+      const args = parse(["--debug", "1.25"], {
+        ...defaults,
+        numbers: { debug: true },
+      });
+
+      assertEquals(args.debug, 1.25);
+    });
+
     it("should parse a negatable boolean", () => {
       const args = parse(["--no-debug"], {
         ...defaults,
@@ -97,6 +115,17 @@ describe("flagsParser.parse()", () => {
       });
 
       assertEquals(args.debug, false);
+    });
+
+    it("should set a nested number long", () => {
+      const args = parse(["--debug.foo", "123", "--debug.bar", "123"], {
+        ...defaults,
+        numbers: { "debug.foo": true },
+      });
+      // @ts-expect-error: no biggie
+      assertEquals(args.debug.foo, 123);
+      // @ts-expect-error: no biggie
+      assertEquals(args.debug.bar, "123");
     });
   });
 
