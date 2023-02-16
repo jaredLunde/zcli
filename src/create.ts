@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Command, command, CommandConfig } from "./command.ts";
 import { Arg, arg, Args as ArgsTuple, args } from "./args.ts";
-import { helpOpt, writeHelp } from "./help.ts";
+import { helpFlag, writeHelp } from "./help.ts";
 import { flag, Flags, flags, GlobalFlags } from "./flags.ts";
 import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
@@ -12,12 +12,18 @@ import * as intl from "./intl.ts";
 export function create<
   Context extends Record<string, unknown>,
   GlobalOpts extends GlobalFlags,
->(config: CreateConfig<Context, GlobalOpts>) {
+>(
+  config: CreateConfig<Context, GlobalOpts>,
+): CommandFactory<Context, GlobalOpts> {
   const gOpts = config.globalFlags
     ? config.globalFlags.merge(helpOpts)
     : helpOpts;
+  let bin: Command<Context, any, any, GlobalOpts>;
 
   return {
+    get bin() {
+      return bin;
+    },
     /**
      * Create a CLI command. Commands can be nested to create a tree
      * of commands. Each command can have its own set of flags and
@@ -37,8 +43,17 @@ export function create<
       Opts extends Flags | unknown = unknown,
     >(
       name: string,
-      options: CommandConfig<Context & BaseContext, Args, Opts> = {},
-    ): Command<Context & BaseContext, Args, Opts, GlobalOpts> {
+      options: CommandConfig<
+        Context & BaseContext,
+        Args,
+        Opts
+      > = {},
+    ): Command<
+      Context & BaseContext,
+      Args,
+      Opts,
+      GlobalOpts
+    > {
       // @ts-expect-error: blah blah
       options.flags = options.flags ? options.flags.merge(gOpts) : gOpts;
 
@@ -108,7 +123,8 @@ export function create<
           .describe(`Show help for a ${name} command`)
           .run(async (args: any, ctx) => {
             if (!args.command) {
-              await writeHelp(command_.help());
+              // @ts-expect-error: it's fine ffs
+              await writeHelp(command_.help(ctx.path));
             }
 
             const cmd = options.commands!.find(
@@ -144,11 +160,17 @@ export function create<
             );
           });
 
-        const parse = helpCmd.execute;
+        const execute = helpCmd.execute;
         // @ts-expect-error: ugh
-        helpCmd.execute = (args: string[], ctx?: Context & BaseContext) => {
-          return parse(args, {
+        helpCmd.execute = (
+          args: string[],
+          ctx?: Context & BaseContext,
+        ) => {
+          bin = bin ?? ctx?.bin ?? command_;
+
+          return execute(args, {
             ...(ctx ?? config.ctx),
+            bin,
             path: args.includes("--help") || args.includes("-h")
               ? [...(ctx?.path ?? []), "help"]
               : ctx?.path,
@@ -158,24 +180,33 @@ export function create<
         options.commands = [...options.commands, helpCmd];
       }
 
-      const command_ = command<Context & BaseContext, Args, Opts>(
+      const command_ = command<
+        Context & BaseContext,
+        Args,
+        Opts
+      >(
         name,
         options,
       );
-      const execute = command_.execute;
+      const execute = command_.execute.bind(command_);
       const execOverride = {
-        execute: (args: string[], ctx?: Context & BaseContext) => {
+        execute: (
+          args: string[],
+          ctx?: Context & BaseContext,
+        ) => {
+          bin = bin ?? ctx?.bin ?? command_;
+
           return execute(
             args,
             // @ts-expect-error: it's cool
             {
               ...(ctx ?? config.ctx),
+              bin,
               path: [...(ctx?.path ?? []), name],
             },
           );
         },
       };
-
       // @ts-expect-error: it's fine ffs
       return Object.assign(command_, execOverride);
     },
@@ -183,7 +214,7 @@ export function create<
 }
 
 const helpOpts = flags({
-  help: helpOpt().describe("Show help for this command"),
+  help: helpFlag().describe("Show help for this command"),
 });
 
 export type CreateConfig<
@@ -205,6 +236,46 @@ export type BaseContext = {
    * The path of the command that is currently being parsed.
    */
   path: string[];
+  /**
+   * The main command that is being executed.
+   */
+  bin: Command<any, any, any, any>;
+};
+
+export type CommandFactory<
+  Context extends Record<string, unknown>,
+  GlobalOpts extends GlobalFlags,
+> = {
+  bin?: Command<Context, any, any, GlobalOpts>;
+  command<
+    Args extends
+      | ArgsTuple<
+        Arg<string, z.ZodTypeAny>,
+        Arg<string, z.ZodTypeAny>[],
+        Arg<string, z.ZodTypeAny> | null
+      >
+      | unknown = unknown,
+    Opts extends Flags | unknown = unknown,
+  >(
+    name: string,
+    options?: CommandConfig<
+      Context & BaseContext,
+      Args,
+      Opts
+    >,
+  ): Command<
+    Context & BaseContext,
+    Args,
+    Opts,
+    GlobalOpts
+  >;
 };
 
 export type DefaultContext = BaseContext & Record<string, unknown>;
+
+export type inferContext<Cmd extends CommandFactory<any, any>> = Cmd extends
+  CommandFactory<
+    infer Context,
+    infer GlobalOpts
+  > ? Context & BaseContext
+  : BaseContext;

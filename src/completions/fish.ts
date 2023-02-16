@@ -4,7 +4,10 @@ import { shorten } from "../lib/shorten.ts";
 import { z } from "../z.ts";
 import { walkArgs } from "../args.ts";
 
-export function complete(command: GenericCommand) {
+export function complete(
+  command: GenericCommand,
+  options: { disableDescriptions?: boolean } = {},
+) {
   const name = escapeString(command.name);
   const fnNames: string[] = [];
   const stack: [GenericCommand, string[]][] = [[command, []]];
@@ -16,7 +19,8 @@ export function complete(command: GenericCommand) {
     stack.push(...cmd.commands.map((c) => [c, [...path, cmd.name]]));
   }
 
-  return `#!/usr/bin/env fish
+  return `
+#!/usr/bin/env fish
 
 function __fish_${name}_using_command
   set -l cmds ${fnNames.join(" ")}
@@ -43,11 +47,15 @@ function __fish_${name}_using_command
   return 1
 end
 
-${completeCommand(command, [])}
-`;
+${completeCommand(command, [], options)}
+`.trim();
 }
 
-function completeCommand(command: GenericCommand, path: string[]) {
+function completeCommand(
+  command: GenericCommand,
+  path: string[],
+  options: { disableDescriptions?: boolean } = {},
+) {
   const name = escapeString(command.name);
   path = [...path, name];
   const fnName = `__${path.join("_")}`;
@@ -61,7 +69,9 @@ function completeCommand(command: GenericCommand, path: string[]) {
         path[0]
       }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${
         (
-          command.description ?? shorten(command.longDescription ?? "")
+          options.disableDescriptions
+            ? ""
+            : (command.description ?? shorten(command.longDescription ?? ""))
         ).replace(/'/g, "\\'")
       }'`,
     );
@@ -83,7 +93,9 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     completion.push("-k -f -a");
 
-    if (arg.description || arg.longDescription) {
+    if (
+      !options.disableDescriptions && (arg.description || arg.longDescription)
+    ) {
       completion.push(
         `-d '${
           (arg.description ?? shorten(arg.longDescription ?? "")).replace(
@@ -123,7 +135,9 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     completion.push("-k -f");
 
-    if (flag.description || flag.longDescription) {
+    if (
+      !options.disableDescriptions && (flag.description || flag.longDescription)
+    ) {
       completion.push(
         `-d '${
           (
@@ -138,7 +152,7 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
   for (const cmd of command.commands) {
     if (!cmd.hidden) {
-      completions.push("\n" + completeCommand(cmd, path));
+      completions.push("\n" + completeCommand(cmd, path, options));
     }
   }
 

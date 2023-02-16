@@ -14,12 +14,12 @@
   },
   "fmt": {
     "files": {
-      "include": ["mod.ts", "src", "bench", "test"]
+      "include": ["mod.ts", "src", "bench", "test", "examples"]
     }
   },
   "lint": {
     "files": {
-      "include": ["mod.ts", "src", "bench", "test"]
+      "include": ["mod.ts", "src", "bench", "test", "examples"]
     }
   },
   "test": {

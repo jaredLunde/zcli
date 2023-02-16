@@ -1,15 +1,15 @@
-import { z, create, env, config, kv } from "../mod.ts";
+import { config, create, env, kv, z } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
-import { globalFlags, flag, flags } from "../src/flags.ts";
+import { flag, flags, globalFlags } from "../src/flags.ts";
 
 const { command } = create({
   globalFlags: globalFlags({
     debug: flag(z.boolean().default(false)).describe("Enable debug mode"),
     json: flag(z.boolean().default(false), { aliases: ["j"] }).describe(
-      "Display the output as JSON"
+      "Display the output as JSON",
     ),
     verbose: flag(z.boolean().default(false), { aliases: ["v"] }).describe(
-      "Display verbose output"
+      "Display verbose output",
     ),
   }),
 
@@ -35,7 +35,7 @@ const { command } = create({
           z.object({
             name: z.string(),
             description: z.string(),
-          })
+          }),
         ),
       },
       {
@@ -49,7 +49,7 @@ const { command } = create({
           },
           types: [],
         },
-      }
+      },
     ),
 
     meta: {
@@ -69,28 +69,30 @@ const zcli = command("zcli", {
           args: args([arg("name", z.string())]),
           flags: flags({
             type: flag(z.enum(["web", "native"]).default("web")).describe(
-              "The type of app to launch"
+              "The type of app to launch",
             ),
           }),
         }).run((args) => {
           console.log(`launching ${args.type} app`, args.name);
         }),
       ],
-    }).run(async (args, { config, cache }) => {
+    }).run(async (_args, { config }) => {
       console.log("launching");
       await config.set("version.date", new Date().toISOString());
       console.log(await config.get("version.date"));
     }),
 
     command("version")
-      .run((args, { meta, path }) => {
+      .run((_args, { meta, path }) => {
         console.log(
-          `${path[0]} v${meta.version} (build date: ${meta.date} commit: ${meta.commit})`
+          `${
+            path[0]
+          } v${meta.version} (build date: ${meta.date} commit: ${meta.commit})`,
         );
       })
       .describe("Show version information")
       .long(
-        "Shows version information for the zcli command itself, including version number and build date."
+        "Shows version information for the zcli command itself, including version number and build date.",
       ),
   ],
 
@@ -126,9 +128,9 @@ const zcli = command("zcli", {
       * Check the status of an application with the status command
       
     To read more, use the docs command to view Fly's help on the web.
-    `
+    `,
   )
-  .preRun(async (args, { env, config }) => {
+  .preRun(() => {
     console.log("Checking if logged in...");
   })
   .run((args, { env }) => {
@@ -136,7 +138,7 @@ const zcli = command("zcli", {
     console.log(env.toObject());
     console.log(args);
   })
-  .postRun(async (args, { env }) => {
+  .postRun(() => {
     console.log('A new version is available! Run "zcli update" to update.');
   });
 

@@ -3,14 +3,21 @@ import { innerType, typeAsString, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
 
-export function complete(command: GenericCommand) {
+export function complete(
+  command: GenericCommand,
+  options: { disableDescriptions?: boolean } = {},
+) {
   return [
     `#compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}`,
-    completeCommand(command),
+    completeCommand(command, [], options),
   ].join("\n".repeat(2));
 }
 
-function completeCommand(command: GenericCommand, path: string[] = []): string {
+function completeCommand(
+  command: GenericCommand,
+  path: string[] = [],
+  options: { disableDescriptions?: boolean } = {},
+): string {
   const name = `_${[...path, escapeString(command.name)].join("_")}`;
   let functionBody = "";
 
@@ -18,14 +25,18 @@ function completeCommand(command: GenericCommand, path: string[] = []): string {
     functionBody = completeCommands(command, [
       ...path,
       escapeString(command.name),
-    ]);
+    ], options);
   } else {
-    functionBody = completeArgsAndFlags(command);
+    functionBody = completeArgsAndFlags(command, options);
   }
 
   const subCommands = command.commands
     .map((subCommand) =>
-      completeCommand(subCommand, [...path, escapeString(command.name)])
+      completeCommand(
+        subCommand,
+        [...path, escapeString(command.name)],
+        options,
+      )
     )
     .join("\n\n");
 
@@ -41,6 +52,7 @@ ${subCommands}
 function completeCommands<T extends GenericCommand>(
   command: T,
   path: string[] = [],
+  options: { disableDescriptions?: boolean } = {},
 ) {
   const indent = " ".repeat(10);
   const subCommands = command.commands
@@ -63,7 +75,7 @@ function completeCommands<T extends GenericCommand>(
   _arguments -s -C \\
     "1: :->command" \\
     "*::arg:->args" \\
-    ${completeFlags(command).join(" \\\n" + " ".repeat(4))}
+    ${completeFlags(command, options).join(" \\\n" + " ".repeat(4))}
 
   case $state in
     command)
@@ -72,7 +84,9 @@ function completeCommands<T extends GenericCommand>(
     command.commands
       .map((command) => {
         const name = escapeString(command.name);
-        const description = (command.description ?? "").replace(":", " ");
+        const description = options.disableDescriptions
+          ? ""
+          : (command.description ?? "").replace(":", " ");
         return `"${name}:${description}"`;
       })
       .join(`\n${" ".repeat(8)}`)
@@ -90,9 +104,12 @@ ${subCommands}
 `.trim();
 }
 
-function completeArgsAndFlags(command: GenericCommand) {
-  const args = completeArgs(command);
-  const flags = completeFlags(command);
+function completeArgsAndFlags(
+  command: GenericCommand,
+  options: { disableDescriptions?: boolean } = {},
+) {
+  const args = completeArgs(command, options);
+  const flags = completeFlags(command, options);
 
   if (args.length > 0 || flags.length > 0) {
     const indent = " ".repeat(4);
@@ -106,13 +123,18 @@ function completeArgsAndFlags(command: GenericCommand) {
   return "";
 }
 
-function completeArgs(command: GenericCommand): string[] {
+function completeArgs(
+  command: GenericCommand,
+  options: { disableDescriptions?: boolean } = {},
+): string[] {
   const args: string[] = [];
   const hasOptionalArgs = command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
-    const message = (arg.description ?? arg.name).replace(":", " ");
+    const message =
+      ((options.disableDescriptions ? "" : arg.description) || arg.name)
+        .replace(":", " ");
     let action = ``;
     // A zsh variadic argument
     const variadicPrefix = variadic ? "*" : " ";
@@ -141,7 +163,10 @@ function completeArgs(command: GenericCommand): string[] {
   return args;
 }
 
-function completeFlags(command: GenericCommand): string[] {
+function completeFlags(
+  command: GenericCommand,
+  options: { disableDescriptions?: boolean } = {},
+): string[] {
   const args: string[] = [];
 
   walkFlags(command.flags, (flag, name) => {
@@ -199,7 +224,12 @@ function completeFlags(command: GenericCommand): string[] {
       }
     }
 
-    const explanation = `[${(flag.description ?? "").replace(":", " ")}]`;
+    const explanation = `[${
+      ((options.disableDescriptions ? "" : flag.description) ?? "").replace(
+        ":",
+        " ",
+      )
+    }]`;
     const message = `${name}`;
     let action = ``;
 

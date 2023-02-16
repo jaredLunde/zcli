@@ -60,8 +60,8 @@ export function command<
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
-  let description = "";
-  let longDescription = "";
+  let description: string | (() => string) = "";
+  let longDescription: string | (() => string) = "";
   const hasOptionalArgs = args instanceof z.ZodOptional ||
     args instanceof z.ZodDefault;
   const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
@@ -76,7 +76,15 @@ export function command<
     const displayName = path.join(" ") || name;
 
     if (longDescription || description) {
-      for (const line of dedent(longDescription || description)) {
+      const desc = typeof longDescription === "function"
+        ? longDescription()
+        : longDescription
+        ? longDescription
+        : typeof description === "function"
+        ? description()
+        : description;
+
+      for (const line of dedent(desc)) {
         yield line;
       }
 
@@ -112,6 +120,8 @@ export function command<
       });
 
       yield argsUsage + ` [flags]`;
+    } else {
+      yield `  ${displayName} [flags]`;
     }
 
     if (hasAvailableCmds) {
@@ -228,19 +238,21 @@ export function command<
     help,
 
     get description() {
-      return description;
+      return typeof description === "function" ? description() : description;
     },
 
-    describe(str: string) {
+    describe(str: string | (() => string)) {
       description = str;
       return this;
     },
 
     get longDescription() {
-      return longDescription;
+      return typeof longDescription === "function"
+        ? longDescription()
+        : longDescription;
     },
 
-    long(description: string) {
+    long(description: string | (() => string)) {
       longDescription = description;
       return this;
     },
@@ -595,13 +607,17 @@ export type Command<
    *
    * @param description The description of the command
    */
-  describe(description: string): Command<Context, Args, Opts, GlobalOpts>;
+  describe(
+    description: string | (() => string),
+  ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * A long description of the command
    *
    * @param description The description of the command
    */
-  long(description: string): Command<Context, Args, Opts, GlobalOpts>;
+  long(
+    description: string | (() => string),
+  ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * The short description of the command
    */

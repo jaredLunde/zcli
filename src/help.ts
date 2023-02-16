@@ -3,7 +3,7 @@ import { flag } from "./flags.ts";
 
 export const SHOW_HELP = Symbol("SHOW_HELP");
 
-export function help() {
+export function helpSchema() {
   return z
     .string()
     .refine(
@@ -20,8 +20,8 @@ export function help() {
     .optional();
 }
 
-export function helpOpt() {
-  return flag(help(), { aliases: ["h"] });
+export function helpFlag() {
+  return flag(helpSchema(), { aliases: ["h"] });
 }
 
 export function showHelp() {

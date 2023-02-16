@@ -1,19 +1,21 @@
-import { z, create, env, config, kv } from "../mod.ts";
+import { create, env, z } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
-import { globalFlags, flag, flags } from "../src/flags.ts";
+import { flag, flags, globalFlags } from "../src/flags.ts";
 import { colors } from "../src/fmt.ts";
 import { table } from "../src/lib/simple-table.ts";
+import { version } from "../src/version.ts";
+import { completion } from "../src/completion.ts";
 import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 
 const zcli = create({
   globalFlags: globalFlags({
     verbose: flag(
       z.boolean().default(false).describe("Return verbose output"),
-      { aliases: ["v"] }
+      { aliases: ["v"] },
     ),
     json: flag(
       z.boolean().default(false).describe("Log responses as raw JSON"),
-      { aliases: ["j"] }
+      { aliases: ["j"] },
     ),
   }),
 
@@ -43,16 +45,21 @@ const cli = zcli
           .describe("The HTTP method to use"),
         {
           aliases: ["m"],
-        }
+        },
       ),
       headers: flag(
         z.array(z.string()).optional().describe("Add headers to the request"),
-        { aliases: ["H"] }
+        { aliases: ["H"] },
       ),
       data: flag(z.string().optional().describe("Send request data"), {
         aliases: ["d"],
       }),
     }),
+
+    commands: [
+      version(zcli),
+      completion(zcli),
+    ],
   })
   .describe("Fetch a resource from the internet")
   .preRun((flags, { env }) => {
@@ -66,7 +73,7 @@ const cli = zcli
     fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
       ),
       body: flags.data,
     }).then((res) => {
@@ -94,19 +101,21 @@ const cli = zcli
     } else {
       yield colors.bold("Response");
 
-      for (const line of table(
-        [
-          [colors.blue("URL"), flags.url],
+      for (
+        const line of table(
           [
-            colors.blue("Status"),
-            colors.green(response.status + "") + " " + response.statusText,
+            [colors.blue("URL"), flags.url],
+            [
+              colors.blue("Status"),
+              colors.green(response.status + "") + " " + response.statusText,
+            ],
           ],
-        ],
-        {
-          indent: 1,
-          cellPadding: 2,
-        }
-      )) {
+          {
+            indent: 1,
+            cellPadding: 2,
+          },
+        )
+      ) {
         yield line;
       }
 
@@ -118,19 +127,23 @@ const cli = zcli
         headers.push([colors.yellow(key), value]);
       }
 
-      for (const line of table(headers, {
-        indent: 2,
-        cellPadding: 2,
-      })) {
+      for (
+        const line of table(headers, {
+          indent: 2,
+          cellPadding: 2,
+        })
+      ) {
         yield line;
       }
 
       yield "";
 
-      for (const line of table([[colors.blue("Body"), await response.text()]], {
-        indent: 1,
-        cellPadding: 2,
-      })) {
+      for (
+        const line of table([[colors.blue("Body"), await response.text()]], {
+          indent: 1,
+          cellPadding: 2,
+        })
+      ) {
         yield line;
       }
     }
