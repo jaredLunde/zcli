@@ -18,6 +18,14 @@ export function create<
     : helpOpts;
 
   return {
+    /**
+     * Create a CLI command. Commands can be nested to create a tree
+     * of commands. Each command can have its own set of flags and
+     * arguments.
+     *
+     * @param name - The name of the command
+     * @param param1 - The command configuration
+     */
     command<
       Args extends
         | ArgsTuple<

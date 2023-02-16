@@ -1,4 +1,4 @@
-import { parse } from "./flags-parser.ts";
+import { parse } from "../src/flags-parser.ts";
 import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 

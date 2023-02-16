@@ -7,16 +7,13 @@ import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
 
-export const parsers = {
-  jsonc: {
-    stringify: (value: unknown) => JSON.stringify(value, null, 2),
-    parse: JSONc.parse,
-  },
-  yaml: YAML,
-  toml: TOML,
-  ini: INI,
-} as const;
-
+/**
+ * Add a type-safe configuration file to your CLI context. This is
+ * useful for storing things like user preferences.
+ *
+ * @param schema - The schema for the config.
+ * @param options - Configuration options
+ */
 export function config<Schema extends z.ZodRawShape>(
   /**
    * The schema for the config.
@@ -106,6 +103,16 @@ export function config<Schema extends z.ZodRawShape>(
     },
   };
 }
+
+export const parsers = {
+  jsonc: {
+    stringify: (value: unknown) => JSON.stringify(value, null, 2),
+    parse: JSONc.parse,
+  },
+  yaml: YAML,
+  toml: TOML,
+  ini: INI,
+} as const;
 
 export const configUtil = {
   /**

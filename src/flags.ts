@@ -1,17 +1,17 @@
 // deno-lint-ignore-file no-explicit-any
 import { z } from "./z.ts";
 
+/**
+ * A flag for a command. This is just a Zod schema with additional
+ * properties.
+ *
+ * @param schema - The schema for the flag.
+ * @param config - The configuration for the flag.
+ */
 export function flag<
   Schema extends z.ZodSchema<any>,
   Aliases extends Readonly<string>,
->(
-  schema: Schema,
-  config: {
-    aliases?: Aliases[];
-    negatable?: boolean;
-    hidden?: boolean;
-  } = {},
-): Flag<Schema, Aliases> {
+>(schema: Schema, config: FlagConfig<Aliases> = {}): Flag<Schema, Aliases> {
   let longDescription: string | undefined;
 
   const extras = {
@@ -46,6 +46,12 @@ export function flag<
   });
 }
 
+/**
+ * A flags object. These flags are available to the specific commands
+ * they are defined in.
+ *
+ * @param shape - The shape of the flags.
+ */
 export function flags<Shape extends FlagsShape>(shape: Shape): Flags<Shape> {
   // @ts-expect-error: it's fine, great actually
   return Object.assign(z.object(shape).strict(), {
@@ -68,6 +74,13 @@ export function flags<Shape extends FlagsShape>(shape: Shape): Flags<Shape> {
   });
 }
 
+/**
+ * A global flags object. These flags are available to all commands.
+ * This also adds the flags to the "Global Flags" section of the help
+ * output.
+ *
+ * @param shape - The shape of the flags.
+ */
 export function globalFlags<Shape extends FlagsShape>(
   shape: Shape,
 ): GlobalFlags<Shape> {
@@ -102,6 +115,7 @@ export function globalFlags<Shape extends FlagsShape>(
 
 /**
  * Returns `true` if the given schema is a flag.
+ *
  * @param schema - The object to check
  */
 export function isFlag(schema: unknown): schema is Flag<any, any> {
@@ -110,6 +124,7 @@ export function isFlag(schema: unknown): schema is Flag<any, any> {
 
 /**
  * Returns `true` if the given schema is a global flag.
+ *
  * @param schema - The object to check
  */
 export function isGlobalFlag(schema: unknown): schema is Flag<any, any> {
@@ -118,6 +133,7 @@ export function isGlobalFlag(schema: unknown): schema is Flag<any, any> {
 
 /**
  * Returns `true` if the given schema is a flags object.
+ *
  * @param schema - The object to check
  */
 export function isFlags(schema: unknown): schema is Flags {
@@ -126,6 +142,7 @@ export function isFlags(schema: unknown): schema is Flags {
 
 /**
  * Returns `true` if the given schema is a global flags object.
+ *
  * @param schema - The object to check
  */
 export function isGlobalFlags(schema: unknown): schema is GlobalFlags {
@@ -266,12 +283,39 @@ export type Flag<
   Schema extends z.ZodTypeAny,
   Aliases extends Readonly<string>,
 > = {
+  /**
+   * The short aliases of the flag.
+   */
   aliases: Readonly<Aliases[]>;
+  /**
+   * The flag is negatable. This means that the flag can be prefixed with
+   * `--no-` to negate it.
+   */
   negatable: boolean;
+  /**
+   * The flag as hidden. This will prevent it from being shown in the help
+   * text or in the generated completion script.
+   */
   hidden: boolean;
+  /**
+   * Set the short description of the flag.
+   *
+   * @param description - The short description of the flag
+   */
   describe(description: string): Flag<Schema, Aliases>;
+  /**
+   * The short description of the flag.
+   */
   description: string | undefined;
+  /**
+   * Set the long description of the flag.
+   *
+   * @param description - The long description of the flag
+   */
   long(description: string): Flag<Schema, Aliases>;
+  /**
+   * The long description of the flag.
+   */
   longDescription: string | undefined;
   _def: Schema["_def"];
   _output: Schema["_output"];
@@ -289,6 +333,11 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
     "_output" | "_def" | "shape"
   >
   & {
+    /**
+     * Merge another flags object into this one.
+     *
+     * @param merging - The flags to merge into this flags object
+     */
     merge<Incoming extends Flags<any>>(
       merging: Incoming,
     ): Flags<
@@ -298,6 +347,11 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
         Incoming["_def"]["catchall"]
       >["shape"]
     >;
+    /**
+     * Set the default value of the flags object.
+     *
+     * @param shape - The default shape of the flags object
+     */
     default(
       shape: z.ZodObject<
         // @ts-expect-error: it's fine
@@ -305,6 +359,9 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
         "strict"
       >["_input"],
     ): Flags<Shape>;
+    /**
+     * Make this flags object optional.
+     */
     optional(): OptionalFlags<Shape>;
     __flags: true;
     __global: boolean;
@@ -331,6 +388,30 @@ export type FlagAliases<T extends { aliases: ReadonlyArray<string> }> =
   T["aliases"] extends ReadonlyArray<infer Names> ? Names extends string ? Names
     : never
     : never;
+
+export type FlagConfig<Aliases extends Readonly<string>> = {
+  /**
+   * Add short aliases for the flag.
+   * @example
+   * ```ts
+   * const flags = flags({
+   *  verbose: flag('verbose', { aliases: ['v'] })
+   * })
+   * ```
+   */
+  aliases?: Aliases[];
+  /**
+   * Make the flag negatable. This is only available for boolean flags.
+   * A negated flag will be set to `false` when passed. For example, `--no-verbose`
+   * will set a `verbose` to `false`.
+   */
+  negatable?: boolean;
+  /**
+   * Hide the flag from the help and autocomoplete output.
+   * This is useful for flags that are used internally.
+   */
+  hidden?: boolean;
+};
 
 export type inferFlags<T extends Flags | OptionalFlags> = T["_output"];
 export type inferFlag<T extends Flag<any, any>> = T["_output"];

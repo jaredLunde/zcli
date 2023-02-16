@@ -1,6 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
 import { z } from "./z.ts";
 
+/**
+ * A positional argument for a command. This is just a Zod schema
+ * with additional properties.
+ *
+ * @param name - The name of the argument.
+ * @param schema - The schema for the argument.
+ */
 export function arg<
   Name extends Readonly<string>,
   Schema extends z.ZodSchema<any>,
@@ -35,12 +42,18 @@ export function arg<
   });
 }
 
+/**
+ * An arguments tuple for a command. This is just a `ZodTuple` where
+ * each element is an `Arg` and `.rest()` is a variadic `Arg`.
+ *
+ * @param zodType - The Zod schema for the arguments tuple.
+ */
 export function args<
   ZodType extends Arg<string, z.ZodTypeAny>,
   ZodTypes extends Arg<string, z.ZodTypeAny>[],
 >(zodType: [ZodType, ...ZodTypes]): ArgsWithoutVariadic<ZodType, ZodTypes> {
   // @ts-expect-error: it's fine
-  return Object.assign(z.tuple(zodType));
+  return z.tuple(zodType);
 }
 
 export function isArg(schema: unknown): schema is Arg<any, any> {
@@ -118,6 +131,9 @@ export type ArgsWithoutVariadic<
     "_def" | "_output"
   >
   & {
+    /**
+     * Make the arguments in the tuple optional.
+     */
     optional(): OptionalArgsWithoutVariadic<ZodType, ZodTypes>;
     rest<Rest extends Arg<string, z.ZodTypeAny>>(
       rest: Rest,
@@ -145,6 +161,9 @@ export type ArgsWithVariadic<
     "_def" | "_output"
   >
   & {
+    /**
+     * Make the arguments in the tuple optional.
+     */
     optional(): OptionalArgsWithVariadic<ZodType, ZodTypes, VariadicType>;
   };
 

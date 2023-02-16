@@ -1,5 +1,5 @@
-import { parse } from "./flags-parser.ts";
 import * as flags from "https://deno.land/std@0.177.0/flags/mod.ts";
+import { parse } from "../src/flags-parser.ts";
 
 console.log(
   parse(

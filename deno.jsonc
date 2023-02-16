@@ -9,22 +9,22 @@
   },
   "bench": {
     "files": {
-      "include": ["src"]
+      "include": ["bench"]
     }
   },
   "fmt": {
     "files": {
-      "include": ["mod.ts", "src"]
+      "include": ["mod.ts", "src", "bench", "test"]
     }
   },
   "lint": {
     "files": {
-      "include": ["mod.ts", "src"]
+      "include": ["mod.ts", "src", "bench", "test"]
     }
   },
   "test": {
     "files": {
-      "include": ["src"]
+      "include": ["test"]
     }
   }
 }

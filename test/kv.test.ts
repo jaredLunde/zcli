@@ -6,8 +6,8 @@ import {
 } from "https://deno.land/std@0.177.0/testing/mock.ts";
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import { kv } from "./kv.ts";
-import { z } from "./z.ts";
+import { kv } from "../src/kv.ts";
+import { z } from "../src/z.ts";
 import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 
 describe("kv()", () => {

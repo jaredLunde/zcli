@@ -6,16 +6,14 @@ import * as INI from "https://deno.land/x/ini@v2.1.0/mod.ts";
 import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { z } from "./z.ts";
 
-const parsers = {
-  jsonc: {
-    stringify: (value: unknown) => JSON.stringify(value, null, 2),
-    parse: JSONc.parse,
-  },
-  yaml: YAML,
-  toml: TOML,
-  ini: INI,
-} as const;
-
+/**
+ * Add a type-safe key-value store to your CLI context. This is useful for
+ * storing things like authentication tokens and other values that you want to
+ * persist between CLI invocations.
+ *
+ * @param schema - The schema for the key-value store.
+ * @param options - Configuration options
+ */
 export function kv<Schema extends z.ZodRawShape>(
   /**
    * The schema for the key-value store.
@@ -129,6 +127,16 @@ export function kv<Schema extends z.ZodRawShape>(
     },
   };
 }
+
+const parsers = {
+  jsonc: {
+    stringify: (value: unknown) => JSON.stringify(value, null, 2),
+    parse: JSONc.parse,
+  },
+  yaml: YAML,
+  toml: TOML,
+  ini: INI,
+} as const;
 
 function isExpired({ expires }: { expires: number; value: unknown }): boolean {
   return expires !== -1 && Date.now() > expires;
