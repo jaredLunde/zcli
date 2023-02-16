@@ -7,7 +7,24 @@ export function env<EnvSchema extends z.ZodRawShape>(
   env?: EnvSchema
 ): Prettify<Env<EnvSchema>> {
   const envSchema = env ? z.object(env) : undefined;
-  envSchema?.parse(Deno.env.toObject());
+
+  function toObject() {
+    if (envSchema) {
+      try {
+        return envSchema.parse(Deno.env.toObject());
+      } catch (err) {
+        if (err instanceof z.ZodError) {
+          throw new EnvError(err);
+        }
+
+        throw err;
+      }
+    }
+
+    return Deno.env.toObject();
+  }
+
+  toObject();
 
   return {
     get(key) {
@@ -34,21 +51,7 @@ export function env<EnvSchema extends z.ZodRawShape>(
       Deno.env.delete(key);
     },
     // @ts-expect-error: it's fine
-    toObject() {
-      if (envSchema) {
-        try {
-          return envSchema.parse(Deno.env.toObject());
-        } catch (err) {
-          if (err instanceof z.ZodError) {
-            throw new EnvError(err);
-          }
-
-          throw err;
-        }
-      }
-
-      return Deno.env.toObject();
-    },
+    toObject,
   };
 }
 

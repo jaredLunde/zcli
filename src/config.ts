@@ -7,7 +7,7 @@ import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
 
-const parsers = {
+export const parsers = {
   jsonc: {
     stringify: (value: unknown) => JSON.stringify(value, null, 2),
     parse: JSONc.parse,
@@ -22,7 +22,7 @@ export function config<Schema extends z.ZodRawShape>(
    * The schema for the config.
    */
   schema: Schema,
-  options: ConfigOptions<Schema>,
+  options: ConfigOptions<Schema>
 ): Config<Schema> {
   const schemaObject = z.object(schema);
   const execPath = Deno.execPath();
@@ -38,59 +38,28 @@ export function config<Schema extends z.ZodRawShape>(
   const defaultConfigPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `config.${format}`,
+    `config.${format}`
   );
   const configPath = userConfigPath ?? defaultConfigPath;
   const configDir = path.dirname(configPath);
   const parser = parsers[format];
   let cached: z.infer<typeof schemaObject> | undefined;
 
-  async function write(config: z.infer<typeof schemaObject>) {
-    try {
-      Deno.statSync(configDir);
-    } catch (_err) {
-      await Deno.mkdir(configDir, { recursive: true });
-    }
-
-    config = await schemaObject.parseAsync(config);
-    await Deno.writeTextFile(configPath, parser.stringify(config), {
-      mode,
-    });
-    cached = config;
-  }
-
-  async function read() {
-    try {
-      Deno.statSync(configPath);
-    } catch (_err) {
-      return await schemaObject.parseAsync(defaultConfig);
-    }
-
-    try {
-      const config = parser.parse(await Deno.readTextFile(configPath));
-      return (cached = await schemaObject.parseAsync(config));
-    } catch (_err) {
-      const nextConfig = await schemaObject.parseAsync(defaultConfig);
-      await write(nextConfig);
-      return (cached = nextConfig);
-    }
-  }
-
-  async function get(key?: any): Promise<any> {
-    if (cached) return key ? configUtil.get(cached, key.split(".")) : cached;
-    const config = await read();
-    return key ? configUtil.get(config, key.split(".")) : config;
-  }
-
   return {
     async set(key, value) {
-      const config = await get();
+      const config = await this.get();
       configUtil.set(config, key.split("."), value);
-      await write(config);
+      await this.write(config);
     },
-    get,
+
+    async get(key?: any): Promise<any> {
+      if (cached) return key ? configUtil.get(cached, key.split(".")) : cached;
+      const config = await this.read();
+      return key ? configUtil.get(config, key.split(".")) : config;
+    },
+
     async delete(key) {
-      const config = await get();
+      const config = await this.get();
       const path = key.split(".");
       configUtil.delete(config, path);
       // Prevent knowingly failing validation
@@ -98,13 +67,43 @@ export function config<Schema extends z.ZodRawShape>(
         configUtil.set(config, path, configUtil.get(defaultConfig, path));
       }
 
-      await write(config);
+      await this.write(config);
     },
+
     async clear() {
-      await write(defaultConfig as any);
+      await this.write(defaultConfig as any);
     },
-    write,
-    read,
+
+    async write(config: z.infer<typeof schemaObject>) {
+      try {
+        Deno.statSync(configDir);
+      } catch (_err) {
+        await Deno.mkdir(configDir, { recursive: true });
+      }
+
+      config = await schemaObject.parseAsync(config);
+      await Deno.writeTextFile(configPath, parser.stringify(config), {
+        mode,
+      });
+      cached = config;
+    },
+
+    async read() {
+      try {
+        Deno.statSync(configPath);
+      } catch (_err) {
+        return await schemaObject.parseAsync(defaultConfig);
+      }
+
+      try {
+        const config = parser.parse(await Deno.readTextFile(configPath));
+        return (cached = await schemaObject.parseAsync(config));
+      } catch (_err) {
+        const nextConfig = await schemaObject.parseAsync(defaultConfig);
+        await this.write(nextConfig);
+        return (cached = nextConfig);
+      }
+    },
   };
 }
 
@@ -202,7 +201,7 @@ export type ConfigOptions<Schema extends z.ZodRawShape> = {
 
 export type Config<
   Schema extends z.ZodRawShape,
-  Inferred extends z.infer<z.ZodObject<any>> = z.infer<z.ZodObject<Schema>>,
+  Inferred extends z.infer<z.ZodObject<any>> = z.infer<z.ZodObject<Schema>>
 > = {
   /**
    * Set a value in the config.
@@ -212,7 +211,7 @@ export type Config<
    */
   set<Key extends Join<NestedKeys<Inferred>>>(
     key: Key,
-    value: NestedValue<Inferred, Split<Key>>,
+    value: NestedValue<Inferred, Split<Key>>
   ): Promise<void>;
   /**
    * Get a value from the config.
@@ -220,7 +219,7 @@ export type Config<
    * @param key - The path to the value.
    */
   get<Keys extends Join<NestedKeys<Inferred>>>(
-    key: Keys,
+    key: Keys
   ): Promise<NestedValue<Inferred, Split<Keys>>>;
   /**
    * Get the entire config.
