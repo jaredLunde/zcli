@@ -173,8 +173,10 @@ export function command<
       rows_.push([
         opt.aliases.map((a) => `-${a},`).join(" "),
         `--${path}`,
-        type instanceof z.ZodBoolean || type instanceof z.ZodEnum
+        type instanceof z.ZodBoolean
           ? ""
+          : type instanceof z.ZodEnum
+          ? typeof type._def.values[0]
           : typeAsString(opt),
         (opt.description ?? "") +
         (!(type instanceof z.ZodBoolean) && defaultValue

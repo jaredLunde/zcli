@@ -3,6 +3,7 @@ import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
 import { colors } from "../src/fmt.ts";
 import { table } from "../src/lib/simple-table.ts";
+import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 
 const zcli = create({
   globalFlags: globalFlags({
@@ -59,14 +60,34 @@ const cli = zcli
       console.log("Fetching:", flags.url);
     }
   })
-  .run(async function* (flags, ctx) {
-    const response = await fetch(flags.url, {
+  .run(async function* (flags) {
+    let response: Response | undefined;
+
+    fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
         flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
       ),
       body: flags.data,
+    }).then((res) => {
+      setTimeout(() => {
+        response = res;
+      }, 10000);
     });
+
+    let ticks = "...";
+    while (!response) {
+      if (ticks !== "...") {
+        yield ansi.eraseLines(2);
+        yield ansi.cursorUp(2);
+      }
+
+      yield "Loading" + ticks;
+      ticks = ticks + ".";
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    yield ansi.eraseLines(2) + ansi.cursorUp(1);
 
     if (flags.json) {
       yield await response.text();
@@ -103,6 +124,8 @@ const cli = zcli
       })) {
         yield line;
       }
+
+      yield "";
 
       for (const line of table([[colors.blue("Body"), await response.text()]], {
         indent: 1,
