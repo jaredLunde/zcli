@@ -21,7 +21,7 @@ export function kv<Schema extends z.ZodRawShape>(
    * The schema for the key-value store.
    */
   schema: Schema,
-  options: KvOptions = {},
+  options: KvOptions = {}
 ): Kv<Schema> {
   const execPath = Deno.execPath();
   const basename = path.basename(execPath, path.extname(execPath));
@@ -30,19 +30,19 @@ export function kv<Schema extends z.ZodRawShape>(
   const defaultKvPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `kv.${format}`,
+    `kv.${format}`
   );
   const kvPath = userKvPath ?? defaultKvPath;
   const kvDir = path.dirname(kvPath);
   const parser = parsers[format];
   let cached:
     | Record<
-      string,
-      {
-        value: unknown;
-        expires: number;
-      }
-    >
+        string,
+        {
+          value: unknown;
+          expires: number;
+        }
+      >
     | undefined;
 
   async function write(kv: typeof cached = {}) {
@@ -70,26 +70,41 @@ export function kv<Schema extends z.ZodRawShape>(
   }
 
   async function get(key?: any): Promise<any> {
-    function _get(obj: any, key?: any) {
+    async function _get(obj: any, key?: any) {
       const cachedValue = key ? obj[key] : obj;
 
       if (key && cachedValue && !isExpired(cachedValue as any)) {
-        return cachedValue.value;
+        try {
+          return await schema[key].parseAsync(cachedValue.value);
+        } catch (_err) {
+          return undefined;
+        }
       } else if (!key) {
         return Object.fromEntries(
-          Object.entries(cachedValue as Exclude<typeof cached, undefined>)
-            .filter(([, val]) => !isExpired(val))
-            .map(([key, val]) => [key, val.value]),
+          (
+            await Promise.all(
+              Object.entries(
+                cachedValue as Exclude<typeof cached, undefined>
+              ).filter(async ([key, val]) => {
+                if (isExpired(val)) {
+                  return false;
+                }
+
+                const parsedValue = await schema[key].safeParseAsync(val.value);
+                return parsedValue.success;
+              })
+            )
+          ).map(([key, val]) => [key, val.value])
         );
       }
     }
 
     if (cached) {
-      return _get(cached, key);
+      return await _get(cached, key);
     }
 
     const kv = await read();
-    return _get(kv, key);
+    return await _get(kv, key);
   }
 
   return {
@@ -138,7 +153,7 @@ export type KvOptions = {
 
 export type Kv<
   Schema extends z.ZodRawShape,
-  Inferred extends z.infer<z.ZodObject<Schema>> = z.infer<z.ZodObject<Schema>>,
+  Inferred extends z.infer<z.ZodObject<Schema>> = z.infer<z.ZodObject<Schema>>
 > = {
   /**
    * Set a value in the key-value store.
@@ -150,7 +165,7 @@ export type Kv<
   set<Key extends keyof Inferred>(
     key: Key,
     value: Inferred[Key],
-    ttl?: number,
+    ttl?: number
   ): Promise<void>;
   /**
    * Get a value from the key-value-store.
