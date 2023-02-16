@@ -40,12 +40,12 @@ export function command<
   Context extends Record<string, unknown>,
   Args extends
     | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
+      Arg<string, z.ZodTypeAny>,
+      Arg<string, z.ZodTypeAny>[],
+      Arg<string, z.ZodTypeAny> | null
+    >
     | unknown = unknown,
-  Opts extends Flags | unknown = unknown
+  Opts extends Flags | unknown = unknown,
 >(
   name: string,
   {
@@ -55,15 +55,15 @@ export function command<
     meta,
     aliases = [],
     hidden = false,
-  }: CommandConfig<Context, Args, Opts> = { flags: opts_({}) as any }
+  }: CommandConfig<Context, Args, Opts> = { flags: opts_({}) as any },
 ): Command<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
   let description = "";
   let longDescription = "";
-  const hasOptionalArgs =
-    args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+  const hasOptionalArgs = args instanceof z.ZodOptional ||
+    args instanceof z.ZodDefault;
   const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
   const variadicArg = !hasArgs
     ? null
@@ -96,19 +96,18 @@ export function command<
     } else if (args) {
       let argsUsage = `  ${displayName}`;
 
-      const hasOptionalArgs =
-        args instanceof z.ZodOptional || args instanceof z.ZodDefault;
+      const hasOptionalArgs = args instanceof z.ZodOptional ||
+        args instanceof z.ZodDefault;
 
       walkArgs(args, (arg, { variadic }) => {
         if (variadic) {
           argsUsage += ` [${arg.name}...]`;
         } else {
-          argsUsage +=
-            hasOptionalArgs ||
-            arg instanceof z.ZodOptional ||
-            arg instanceof z.ZodDefault
-              ? ` [${arg.name}]`
-              : ` <${arg.name}>`;
+          argsUsage += hasOptionalArgs ||
+              arg instanceof z.ZodOptional ||
+              arg instanceof z.ZodDefault
+            ? ` [${arg.name}]`
+            : ` <${arg.name}>`;
         }
       });
 
@@ -124,7 +123,7 @@ export function command<
           get(item) {
             return item.name;
           },
-        }
+        },
       );
 
       const rows: string[][] = new Array(sortedCmds.length);
@@ -137,10 +136,12 @@ export function command<
         }
       }
 
-      for (const line of table(rows, {
-        indent: 2,
-        cellPadding: 2,
-      })) {
+      for (
+        const line of table(rows, {
+          indent: 2,
+          cellPadding: 2,
+        })
+      ) {
         yield line;
       }
     }
@@ -158,11 +159,13 @@ export function command<
       docFlags.push({ path, flag: opt });
     });
 
-    for (const { path, flag: opt } of intl.collate(docFlags, {
-      get(item) {
-        return item.path;
-      },
-    })) {
+    for (
+      const { path, flag: opt } of intl.collate(docFlags, {
+        get(item) {
+          return item.path;
+        },
+      })
+    ) {
       const type = innerType(opt);
       const rows_ = opt.__global ? globalRows : rows;
       const defaultValue = getDefault(opt);
@@ -174,19 +177,21 @@ export function command<
           ? ""
           : typeAsString(opt),
         (opt.description ?? "") +
-          (!(type instanceof z.ZodBoolean) && defaultValue
-            ? ` (default: ${defaultValue})`
-            : ""),
+        (!(type instanceof z.ZodBoolean) && defaultValue
+          ? ` (default: ${defaultValue})`
+          : ""),
       ]);
     }
 
     if (rows.length) {
       yield colors.bold("\nFlags");
 
-      for (const line of table(rows, {
-        indent: 2,
-        cellPadding: [1, 1, 2],
-      })) {
+      for (
+        const line of table(rows, {
+          indent: 2,
+          cellPadding: [1, 1, 2],
+        })
+      ) {
         yield line;
       }
     }
@@ -194,10 +199,12 @@ export function command<
     if (globalRows.length) {
       yield colors.bold("\nGlobal Flags");
 
-      for (const line of table(globalRows, {
-        indent: 2,
-        cellPadding: [1, 2],
-      })) {
+      for (
+        const line of table(globalRows, {
+          indent: 2,
+          cellPadding: [1, 2],
+        })
+      ) {
         yield line;
       }
     }
@@ -255,7 +262,7 @@ export function command<
       if (hasCmds) {
         const [cmd, ...rest] = argv;
         const match = commands.find(
-          (c) => c.name === cmd || c.aliases.includes(cmd)
+          (c) => c.name === cmd || c.aliases.includes(cmd),
         );
 
         if (match) {
@@ -324,24 +331,30 @@ export function command<
             const errors = err.errors.map((e) => {
               if (e.code === z.ZodIssueCode.unrecognized_keys) {
                 return (
-                  `${intl.plural(e.keys.length, "Unknown flag", {
-                    hideCount: true,
-                  })}: ${e.keys.join(", ")}\n` +
+                  `${
+                    intl.plural(e.keys.length, "Unknown flag", {
+                      hideCount: true,
+                    })
+                  }: ${e.keys.join(", ")}\n` +
                   didYouMean(e.keys[0], optionNames)
                 );
               } else if (e.code === z.ZodIssueCode.invalid_type) {
-                return `Invalid type for flag "${e.path.join(".")}". Expected ${
-                  e.expected
-                }, but received ${e.received}.`;
+                return `Invalid type for flag "${
+                  e.path.join(".")
+                }". Expected ${e.expected}, but received ${e.received}.`;
               } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
-                return `Invalid value for flag "${e.path.join(
-                  "."
-                )}". Expected ${intl.list(
-                  e.options.map((o) => "" + o),
-                  {
-                    type: "disjunction",
-                  }
-                )}. Received ${e.received}.`;
+                return `Invalid value for flag "${
+                  e.path.join(
+                    ".",
+                  )
+                }". Expected ${
+                  intl.list(
+                    e.options.map((o) => "" + o),
+                    {
+                      type: "disjunction",
+                    },
+                  )
+                }. Received ${e.received}.`;
               }
 
               return `Invalid value for flag "${e.path.join(".")}". ${
@@ -351,8 +364,8 @@ export function command<
 
             await Deno.stderr.write(
               encoder.encode(
-                errors[0] + `\n⚘ See --help for more information.\n`
-              )
+                errors[0] + `\n⚘ See --help for more information.\n`,
+              ),
             );
 
             Deno.exit(1);
@@ -367,12 +380,11 @@ export function command<
           : {};
 
         if (hasArgs) {
-          const defaultArgs =
-            _.length === 0 && args instanceof z.ZodOptional
-              ? undefined
-              : _.length === 0 && args instanceof z.ZodDefault
-              ? args._def.defaultValue()
-              : _;
+          const defaultArgs = _.length === 0 && args instanceof z.ZodOptional
+            ? undefined
+            : _.length === 0 && args instanceof z.ZodDefault
+            ? args._def.defaultValue()
+            : _;
           let parsedArgs: unknown[] = [];
 
           try {
@@ -381,24 +393,30 @@ export function command<
             if (err instanceof z.ZodError) {
               const errors = err.errors.map((e) => {
                 if (e.code === z.ZodIssueCode.too_small) {
-                  return `expected at least ${intl.plural(
-                    e.minimum,
-                    "argument"
-                  )} arguments`;
+                  return `expected at least ${
+                    intl.plural(
+                      e.minimum,
+                      "argument",
+                    )
+                  } arguments`;
                 } else if (e.code === z.ZodIssueCode.too_big) {
-                  return `expected at most ${intl.plural(
-                    e.maximum,
-                    "argument"
-                  )}`;
+                  return `expected at most ${
+                    intl.plural(
+                      e.maximum,
+                      "argument",
+                    )
+                  }`;
                 } else if (e.code === z.ZodIssueCode.invalid_type) {
                   return `expected ${e.expected}, but received ${e.received}`;
                 } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
-                  return `expected ${intl.list(
-                    e.options.map((o) => "" + o),
-                    {
-                      type: "disjunction",
-                    }
-                  )}. Received ${e.received}.`;
+                  return `expected ${
+                    intl.list(
+                      e.options.map((o) => "" + o),
+                      {
+                        type: "disjunction",
+                      },
+                    )
+                  }. Received ${e.received}.`;
                 }
 
                 return e.message;
@@ -406,8 +424,10 @@ export function command<
 
               await Deno.stderr.write(
                 encoder.encode(
-                  `Invalid arguments: ${errors[0]}.\n⚘ See --help for more information.\n`
-                )
+                  `Invalid arguments: ${
+                    errors[0]
+                  }.\n⚘ See --help for more information.\n`,
+                ),
               );
 
               Deno.exit(1);
@@ -453,18 +473,15 @@ export function command<
 
         // Run the action
         if (preAction) {
-          // @ts-expect-error: balh blah
-          await preAction(actionArgs, ctx!);
+          await handleAction(preAction, actionArgs, ctx!);
         }
 
         if (action) {
-          // @ts-expect-error: balh blah
-          await action(actionArgs, ctx!);
+          await handleAction(action, actionArgs, ctx!);
         }
 
         if (postAction) {
-          // @ts-expect-error: balh blah
-          await postAction(actionArgs, ctx!);
+          await handleAction(postAction, actionArgs, ctx!);
         }
       } catch (err) {
         if (err instanceof EnvError) {
@@ -482,19 +499,66 @@ export function command<
   };
 }
 
+async function handleAction<ActionFn extends Action<any, any, any, any>>(
+  action: ActionFn,
+  args: unknown,
+  ctx: unknown,
+) {
+  if (isAsyncGenerator(action)) {
+    const writes: Promise<number>[] = [];
+    // @ts-expect-error: it's fine
+    for await (const output of action(args, ctx)) {
+      writes.push(Deno.stdout.write(encoder.encode((await output) + "\n")));
+    }
+
+    await Promise.all(writes);
+  } else if (isGenerator(action)) {
+    const writes: Promise<number>[] = [];
+    // @ts-expect-error: it's fine
+    for (const output of action(args, ctx)) {
+      writes.push(Deno.stdout.write(encoder.encode(output + "\n")));
+    }
+
+    await Promise.all(writes);
+  } else if ("then" in action && typeof action.then === "function") {
+    // @ts-expect-error: it's fine
+    await action(Args, ctx);
+  } else {
+    // @ts-expect-error: it's fine
+    action(args, ctx);
+  }
+}
+
+function isAsyncGenerator<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  // @ts-expect-error: it's fine
+): fn is (...args: Parameters<Fn>) => AsyncGenerator<any, any, any> {
+  return fn.constructor === _asyncGenerator.constructor;
+}
+
+function isGenerator<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  // @ts-expect-error: it's fine
+): fn is (...args: Parameters<Fn>) => Generator<any, any, any> {
+  return fn.constructor === _generator.constructor;
+}
+
+async function* _asyncGenerator() {}
+function* _generator() {}
+
 const encoder = new TextEncoder();
 
 export type Command<
   Context extends Record<string, unknown>,
   Args extends
     | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
+      Arg<string, z.ZodTypeAny>,
+      Arg<string, z.ZodTypeAny>[],
+      Arg<string, z.ZodTypeAny> | null
+    >
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
-  GlobalOpts extends GlobalFlags | unknown = unknown
+  GlobalOpts extends GlobalFlags | unknown = unknown,
 > = {
   /**
    * The name of the command
@@ -549,21 +613,21 @@ export type Command<
    * @param action The action to run before the "run" command
    */
   preRun(
-    action: Action<Context, Args, Opts, GlobalOpts>
+    action: Action<Context, Args, Opts, GlobalOpts>,
   ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * Run this action when the command is invoked
    * @param action The action to run when the command is invoked
    */
   run(
-    action: Action<Context, Args, Opts, GlobalOpts>
+    action: Action<Context, Args, Opts, GlobalOpts>,
   ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * Run this action after the "run" command
    * @param action The action to run after the "run" command
    */
   postRun(
-    action: Action<Context, Args, Opts, GlobalOpts>
+    action: Action<Context, Args, Opts, GlobalOpts>,
   ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * Parse `Deno.args` and run the command
@@ -576,12 +640,12 @@ export type CommandConfig<
   Context extends Record<string, unknown>,
   Args extends
     | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
+      Arg<string, z.ZodTypeAny>,
+      Arg<string, z.ZodTypeAny>[],
+      Arg<string, z.ZodTypeAny> | null
+    >
     | unknown = unknown,
-  Opts extends Flags | unknown = unknown
+  Opts extends Flags | unknown = unknown,
 > = {
   /**
    * Add arguments to the command
@@ -613,13 +677,13 @@ export type Action<
   Context extends Record<string, unknown>,
   Args extends
     | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
+      Arg<string, z.ZodTypeAny>,
+      Arg<string, z.ZodTypeAny>[],
+      Arg<string, z.ZodTypeAny> | null
+    >
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
-  GlobalOpts extends GlobalFlags | unknown = unknown
+  GlobalOpts extends GlobalFlags | unknown = unknown,
 > = {
   /**
    * The action to run when the command is invoked
@@ -636,8 +700,8 @@ export type Action<
         >
       >
     >,
-    ctx: Prettify<Context>
-  ): Promise<void> | void;
+    ctx: Prettify<Context>,
+  ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
 };
 
 export type Execute<Context> = {
@@ -647,40 +711,42 @@ export type Execute<Context> = {
 export type ArgsMap<
   Args extends
     | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
-    | unknown = unknown
+      Arg<string, z.ZodTypeAny>,
+      Arg<string, z.ZodTypeAny>[],
+      Arg<string, z.ZodTypeAny> | null
+    >
+    | unknown = unknown,
 > = Args extends ArgsTuple<infer ZodType, infer ZodTypes, infer VariadicType>
   ? Merge<
-      Args extends
-        | OptionalArgsWithoutVariadic<any, any>
-        | OptionalArgsWithVariadic<any, any, any>
-        ? Partial<ArgsTupleMap<ZodType, ZodTypes>>
-        : ArgsTupleMap<ZodType, ZodTypes>,
-      VariadicType extends Arg<string, z.ZodTypeAny>
-        ? {
-            [k in VariadicType["name"]]: VariadicType["_output"][];
-          }
-        : {}
-    >
+    Args extends
+      | OptionalArgsWithoutVariadic<any, any>
+      | OptionalArgsWithVariadic<any, any, any>
+      ? Partial<ArgsTupleMap<ZodType, ZodTypes>>
+      : ArgsTupleMap<ZodType, ZodTypes>,
+    VariadicType extends Arg<string, z.ZodTypeAny> ? {
+        [k in VariadicType["name"]]: VariadicType["_output"][];
+      }
+      : {}
+  >
   : {};
 
 export type ArgsTupleMap<
   ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[]
-> = {
-  [k in ZodType["name"]]: ZodType["_output"];
-} & {
-  [Index in Exclude<keyof ZodTypes, keyof any[]> as ZodTypes[Index] extends {
-    name: string;
+  ZodTypes extends Arg<string, z.ZodTypeAny>[],
+> =
+  & {
+    [k in ZodType["name"]]: ZodType["_output"];
   }
-    ? ZodTypes[Index]["name"]
-    : never]: ZodTypes[Index] extends Arg<string, z.ZodTypeAny>
-    ? ZodTypes[Index]["_output"]
-    : never;
-};
+  & {
+    [
+      Index in Exclude<keyof ZodTypes, keyof any[]> as ZodTypes[Index] extends {
+        name: string;
+      } ? ZodTypes[Index]["name"]
+        : never
+    ]: ZodTypes[Index] extends Arg<string, z.ZodTypeAny>
+      ? ZodTypes[Index]["_output"]
+      : never;
+  };
 
 export type Meta = {
   usage?: string[];

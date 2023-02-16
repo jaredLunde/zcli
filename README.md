@@ -73,7 +73,7 @@ const cli = zcli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split("=").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
       ),
       body: flags.data,
     });

@@ -2,7 +2,7 @@
   "tasks": {
     "bench": "deno task compile && hyperfine --runs 100 --warmup 5 'examples/bin/fetch --help' -i",
     "compile": "deno compile --allow-env --allow-read --allow-write --allow-net --v8-flags=--use-strict,--predictable --output examples/bin/fetch examples/fetch.ts",
-    "run": "deno run --allow-env --allow-read --allow-write examples/main.ts",
+    "run": "deno run --allow-env --allow-read --allow-write --allow-net examples/fetch.ts",
     "test": "deno test --allow-env --allow-read",
     "test:watch": "deno test --allow-env --allow-read --watch src",
     "test:coverage": "deno test --allow-env --allow-read --coverage=coverage && deno coverage coverage"

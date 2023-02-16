@@ -1,6 +1,8 @@
 import { z, create, env, config, kv } from "../mod.ts";
 import { arg, args } from "../src/args.ts";
 import { globalFlags, flag, flags } from "../src/flags.ts";
+import { colors } from "../src/fmt.ts";
+import { table } from "../src/lib/simple-table.ts";
 
 const zcli = create({
   globalFlags: globalFlags({
@@ -57,19 +59,57 @@ const cli = zcli
       console.log("Fetching:", flags.url);
     }
   })
-  .run(async (flags, ctx) => {
+  .run(async function* (flags, ctx) {
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split("=").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
       ),
       body: flags.data,
     });
 
     if (flags.json) {
-      console.log(await response.json());
+      yield await response.text();
     } else {
-      console.log("Response:", response);
+      yield colors.bold("Response");
+
+      for (const line of table(
+        [
+          [colors.blue("URL"), flags.url],
+          [
+            colors.blue("Status"),
+            colors.green(response.status + "") + " " + response.statusText,
+          ],
+        ],
+        {
+          indent: 1,
+          cellPadding: 2,
+        }
+      )) {
+        yield line;
+      }
+
+      yield colors.blue(" Headers");
+
+      const headers: string[][] = [];
+
+      for (const [key, value] of response.headers) {
+        headers.push([colors.yellow(key), value]);
+      }
+
+      for (const line of table(headers, {
+        indent: 2,
+        cellPadding: 2,
+      })) {
+        yield line;
+      }
+
+      for (const line of table([[colors.blue("Body"), await response.text()]], {
+        indent: 1,
+        cellPadding: 2,
+      })) {
+        yield line;
+      }
     }
   });
 
