@@ -4,9 +4,10 @@ import { table } from "./lib/simple-table.ts";
 import { Prettify } from "./lib/types.ts";
 
 export function env<EnvSchema extends z.ZodRawShape>(
-  env?: EnvSchema,
+  env?: EnvSchema
 ): Prettify<Env<EnvSchema>> {
   const envSchema = env ? z.object(env) : undefined;
+  envSchema?.parse(Deno.env.toObject());
 
   return {
     get(key) {
@@ -51,6 +52,10 @@ export function env<EnvSchema extends z.ZodRawShape>(
   };
 }
 
+env.string = function string(message?: string) {
+  return z.string({ invalid_type_error: message, required_error: message });
+};
+
 env.bool = function boolean(message?: string) {
   return z
     .union([
@@ -68,24 +73,43 @@ env.bool = function boolean(message?: string) {
     });
 };
 
-env.port = function port(
-  message = "Invalid port. Must be an integer between 0 and 65536.",
-) {
+env.number = function number(message = "Must be a number.") {
   return z
-    .number({ invalid_type_error: message, required_error: message })
-    .int(message)
-    .min(0, message)
-    .max(65536, message)
-    .default(8080);
+    .string({ invalid_type_error: message, required_error: message })
+    .transform((value) => {
+      return Number(value);
+    })
+    .refine((value) => {
+      return !isNaN(value);
+    }, message);
 };
 
-env.url = function number(message?: string) {
+env.int = function int(message = "Must be an integer.") {
+  return z
+    .string({ invalid_type_error: message, required_error: message })
+    .transform((value) => {
+      return Number(value);
+    })
+    .refine((value) => {
+      return Number.isInteger(value);
+    }, message);
+};
+
+env.port = function port(
+  message = "Invalid port. Must be an integer between 0 and 65536."
+) {
+  return env.int().refine((value) => {
+    return value >= 0 && value <= 65536;
+  }, message);
+};
+
+env.url = function url(message?: string) {
   return z.string().url(message);
 };
 
 env.json = function json<Schema extends z.ZodTypeAny>(
   schema: Schema,
-  message?: string,
+  message?: string
 ) {
   return z.string().transform((s, ctx): z.infer<Schema> => {
     try {
@@ -117,11 +141,11 @@ export class EnvError extends Error {
 
 export type Env<EnvSchema extends z.ZodRawShape> = {
   get<Key extends Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>>(
-    key: Key,
+    key: Key
   ): z.infer<z.ZodObject<EnvSchema>>[Key];
   set(
     key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>,
-    value: string,
+    value: string
   ): void;
   delete(key: Extract<keyof z.infer<z.ZodObject<EnvSchema>>, string>): void;
   toObject(): z.infer<z.ZodObject<EnvSchema>>;
