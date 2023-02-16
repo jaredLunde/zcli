@@ -21,7 +21,7 @@ describe("config()", () => {
         defaultConfig: {
           foo: "bar",
         },
-      }
+      },
     );
 
     const write = stub(cfg, "write", returnsNext([Promise.resolve()]));
@@ -42,13 +42,13 @@ describe("config()", () => {
         defaultConfig: {
           foo: "bar",
         },
-      }
+      },
     );
 
     const read = stub(
       cfg,
       "read",
-      returnsNext([Promise.resolve({ foo: "baz" })])
+      returnsNext([Promise.resolve({ foo: "baz" })]),
     );
     assertEquals(await cfg.get("foo"), "baz");
     assertSpyCall(read, 0, { args: [] });
@@ -64,14 +64,14 @@ describe("config()", () => {
         defaultConfig: {
           foo: "bar",
         },
-      }
+      },
     );
 
     const write = stub(cfg, "write", returnsNext([Promise.resolve()]));
     const read = stub(
       cfg,
       "read",
-      returnsNext([Promise.resolve({ foo: "baz" })])
+      returnsNext([Promise.resolve({ foo: "baz" })]),
     );
     await cfg.delete("foo");
     assertSpyCall(write, 0, { args: [{ foo: "bar" }] });
@@ -87,14 +87,14 @@ describe("config()", () => {
       },
       {
         defaultConfig: {},
-      }
+      },
     );
 
     const write = stub(cfg, "write", returnsNext([Promise.resolve()]));
     const read = stub(
       cfg,
       "read",
-      returnsNext([Promise.resolve({ foo: "baz" })])
+      returnsNext([Promise.resolve({ foo: "baz" })]),
     );
     await cfg.delete("foo");
     assertSpyCall(write, 0, { args: [{}] });
@@ -112,7 +112,7 @@ describe("config()", () => {
         defaultConfig: {
           foo: "bar",
         },
-      }
+      },
     );
 
     const write = stub(cfg, "write", returnsNext([Promise.resolve()]));
@@ -133,7 +133,7 @@ describe("config()", () => {
         },
         path: "/tmp/does/not/exist/config.jsonc",
         mode: 0o700,
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -177,7 +177,7 @@ describe("config()", () => {
         },
         path: "/tmp/does/not/exist/config.jsonc",
         mode: 0o700,
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -209,7 +209,7 @@ describe("config()", () => {
         },
         path: "/tmp/does/not/exist/config.jsonc",
         mode: 0o700,
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -239,7 +239,7 @@ describe("config()", () => {
         },
         path: "/tmp/does/not/exist/config.jsonc",
         mode: 0o700,
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -269,7 +269,7 @@ describe("config()", () => {
         defaultConfig: {
           foo: "bar",
         },
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {

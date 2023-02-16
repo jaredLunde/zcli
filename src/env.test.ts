@@ -4,9 +4,9 @@ import {
   assertThrows,
 } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
+  afterEach,
   describe,
   it,
-  afterEach,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import { z } from "./z.ts";
 

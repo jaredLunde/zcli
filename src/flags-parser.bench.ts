@@ -20,8 +20,8 @@ console.log(
       aliases: { d: "debug" },
       collect: { port: true },
       negatable: { debug: true },
-    }
-  )
+    },
+  ),
 );
 
 console.log(
@@ -43,8 +43,8 @@ console.log(
       collect: ["port"],
       negatable: ["debug"],
       "--": true,
-    }
-  )
+    },
+  ),
 );
 
 Deno.bench("zcli.parse()", { group: "parser", baseline: true }, () => {
@@ -65,6 +65,6 @@ Deno.bench("flags.parse()", { group: "parser" }, () => {
       alias: { debug: ["d"], help: ["h"] },
       collect: ["port"],
       negatable: ["debug"],
-    }
+    },
   );
 });

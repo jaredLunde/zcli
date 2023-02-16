@@ -22,7 +22,7 @@ export function config<Schema extends z.ZodRawShape>(
    * The schema for the config.
    */
   schema: Schema,
-  options: ConfigOptions<Schema>
+  options: ConfigOptions<Schema>,
 ): Config<Schema> {
   const schemaObject = z.object(schema);
   const execPath = Deno.execPath();
@@ -38,7 +38,7 @@ export function config<Schema extends z.ZodRawShape>(
   const defaultConfigPath = path.join(
     Deno.env.get("HOME")!,
     `.${name}`,
-    `config.${format}`
+    `config.${format}`,
   );
   const configPath = userConfigPath ?? defaultConfigPath;
   const configDir = path.dirname(configPath);
@@ -201,7 +201,7 @@ export type ConfigOptions<Schema extends z.ZodRawShape> = {
 
 export type Config<
   Schema extends z.ZodRawShape,
-  Inferred extends z.infer<z.ZodObject<any>> = z.infer<z.ZodObject<Schema>>
+  Inferred extends z.infer<z.ZodObject<any>> = z.infer<z.ZodObject<Schema>>,
 > = {
   /**
    * Set a value in the config.
@@ -211,7 +211,7 @@ export type Config<
    */
   set<Key extends Join<NestedKeys<Inferred>>>(
     key: Key,
-    value: NestedValue<Inferred, Split<Key>>
+    value: NestedValue<Inferred, Split<Key>>,
   ): Promise<void>;
   /**
    * Get a value from the config.
@@ -219,7 +219,7 @@ export type Config<
    * @param key - The path to the value.
    */
   get<Keys extends Join<NestedKeys<Inferred>>>(
-    key: Keys
+    key: Keys,
   ): Promise<NestedValue<Inferred, Split<Keys>>>;
   /**
    * Get the entire config.

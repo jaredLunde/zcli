@@ -19,7 +19,7 @@ describe("kv()", () => {
       {
         format: "jsonc",
         path: "kv.jsonc",
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -28,7 +28,7 @@ describe("kv()", () => {
     const readTextFile = stub(
       Deno,
       "readTextFile",
-      async () => await Promise.resolve("{}")
+      async () => await Promise.resolve("{}"),
     );
     const writeTextFile = stub(Deno, "writeTextFile", async () => {});
 
@@ -48,7 +48,7 @@ describe("kv()", () => {
             },
           },
           null,
-          2
+          2,
         ),
         {
           mode: 0o600,
@@ -69,7 +69,7 @@ describe("kv()", () => {
       {
         format: "jsonc",
         path: "kv.jsonc",
-      }
+      },
     );
 
     const dateNow = stub(Date, "now", () => 0);
@@ -79,7 +79,7 @@ describe("kv()", () => {
     const readTextFile = stub(
       Deno,
       "readTextFile",
-      async () => await Promise.resolve("{}")
+      async () => await Promise.resolve("{}"),
     );
     const writeTextFile = stub(Deno, "writeTextFile", async () => {});
 
@@ -101,7 +101,7 @@ describe("kv()", () => {
             },
           },
           null,
-          2
+          2,
         ),
         {
           mode: 0o600,
@@ -123,7 +123,7 @@ describe("kv()", () => {
       {
         format: "jsonc",
         path: "kv.jsonc",
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -139,8 +139,8 @@ describe("kv()", () => {
               value: "bar",
               expires: 0,
             },
-          })
-        )
+          }),
+        ),
     );
 
     assertEquals(await kvStore.get("foo"), undefined);
@@ -158,7 +158,7 @@ describe("kv()", () => {
       {
         format: "jsonc",
         path: "kv.jsonc",
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -174,8 +174,8 @@ describe("kv()", () => {
               value: "bar",
               expires: -1,
             },
-          })
-        )
+          }),
+        ),
     );
     const writeTextFile = stub(Deno, "writeTextFile", async () => {});
 
@@ -208,7 +208,7 @@ describe("kv()", () => {
         format: "jsonc",
         path: "kv.jsonc",
         mode: 0o700,
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
@@ -240,7 +240,7 @@ describe("kv()", () => {
       },
       {
         format: "jsonc",
-      }
+      },
     );
 
     const statSync = stub(Deno, "statSync", () => {
