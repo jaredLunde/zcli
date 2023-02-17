@@ -19,7 +19,14 @@ export function env<EnvSchema extends z.ZodRawShape>(
         return envSchema.parse(Deno.env.toObject());
       } catch (err) {
         if (err instanceof z.ZodError) {
-          throw new EnvError(err);
+          const envErr = new EnvError(err);
+
+          Deno.stderr.write(new TextEncoder().encode(envErr.message))
+            .then(
+              () => {
+                Deno.exit(1);
+              },
+            );
         }
 
         throw err;

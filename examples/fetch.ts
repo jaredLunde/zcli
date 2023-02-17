@@ -14,9 +14,9 @@ const zcli = create({
       z.boolean().default(false).describe("Return verbose output"),
       { aliases: ["v"] },
     ),
-    json: flag(
-      z.boolean().default(false).describe("Log responses as raw JSON"),
-      { aliases: ["j"] },
+    raw: flag(
+      z.boolean().default(false).describe("Log the raw body of responses"),
+      { aliases: ["r"] },
     ),
   }),
 
@@ -79,15 +79,13 @@ const cli = zcli
       ),
       body: flags.data,
     }).then((res) => {
-      setTimeout(() => {
-        response = res;
-      }, 10000);
+      response = res;
     });
 
     let ticks = "...";
 
     while (!response) {
-      if (!flags.json) {
+      if (!flags.raw) {
         if (ticks !== "...") {
           yield ansi.eraseLines(2);
           yield ansi.cursorUp(2);
@@ -96,14 +94,15 @@ const cli = zcli
         yield "Loading" + ticks;
         ticks = ticks + ".";
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
-    if (!flags.json) {
+    if (!flags.raw) {
       yield ansi.eraseLines(2) + ansi.cursorUp(1);
     }
 
-    if (flags.json) {
+    if (flags.raw) {
       yield await response.text();
     } else {
       yield colors.bold("Response");
