@@ -60,8 +60,8 @@ export function command<
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
-  let description: string | (() => string) = "";
-  let longDescription: string | (() => string) = "";
+  let description: string | (() => string) | undefined;
+  let longDescription: string | (() => string) | undefined;
   const hasOptionalArgs = args instanceof z.ZodOptional ||
     args instanceof z.ZodDefault;
   const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
@@ -82,7 +82,7 @@ export function command<
         ? longDescription
         : typeof description === "function"
         ? description()
-        : description;
+        : description + "";
 
       for (const line of dedent(desc)) {
         yield line;

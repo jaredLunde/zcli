@@ -21,6 +21,10 @@ export function flag<
     get longDescription() {
       return longDescription;
     },
+    long(description: string): any {
+      longDescription = description;
+      return this;
+    },
     __flag: true as const,
     __global: false,
   };
@@ -38,10 +42,6 @@ export function flag<
         }),
         extras,
       );
-    },
-    long(description: string): any {
-      longDescription = description;
-      return this;
     },
   });
 }

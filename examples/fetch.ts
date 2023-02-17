@@ -4,6 +4,7 @@ import { flag, flags, globalFlags } from "../flags.ts";
 import { colors } from "../fmt.ts";
 import { table } from "../lib/simple-table.ts";
 import { version } from "../version.ts";
+import { jsonSchema } from "../json-schema.ts";
 import { completion } from "../completion.ts";
 import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 
@@ -59,6 +60,7 @@ const cli = zcli
     commands: [
       version(zcli),
       completion(zcli),
+      jsonSchema(zcli),
     ],
   })
   .describe("Fetch a resource from the internet")

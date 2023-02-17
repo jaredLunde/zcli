@@ -4,6 +4,7 @@ import * as bash from "./completions/bash.ts";
 import * as fish from "./completions/fish.ts";
 import * as zsh from "./completions/zsh.ts";
 import { z } from "./z.ts";
+import { writeHelp } from "./help.ts";
 
 const shellCommandFlags = flags({
   "no-descriptions": flag(
@@ -17,12 +18,22 @@ export function completion<
 >(
   commandFactory: CommandFactory<Context, GlobalOpts>,
   options: {
-    name: string;
-  } = { name: "completion" },
+    /**
+     * Change the name of the command
+     * @default "completion"
+     */
+    name?: string;
+    /**
+     * Add aliases for the command
+     */
+    aliases?: string[];
+  } = {},
 ) {
+  const { name = "completion", aliases } = options;
   const bin = () => commandFactory.bin?.name ?? "[bin]";
 
-  return commandFactory.command(options.name, {
+  const command = commandFactory.command(name, {
+    aliases,
     commands: [
       // @ts-expect-error: it's fine
       commandFactory.command("bash").run(function (_args, ctx) {
@@ -107,6 +118,9 @@ export function completion<
       ),
     ],
   })
+    .run(async (_args, ctx) => {
+      await writeHelp(command.help(ctx.path));
+    })
     .describe("Generate an autocompletion script for the specified shell")
     .long(
       () => `
@@ -114,6 +128,8 @@ export function completion<
       See each sub-command's help for details on how to use the generated script.
       `,
     );
+
+  return command;
 }
 
 const encoder = new TextEncoder();

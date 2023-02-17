@@ -19,6 +19,10 @@ export function arg<
     get longDescription() {
       return longDescription;
     },
+    long(description: string): any {
+      longDescription = description;
+      return this;
+    },
     __arg: true as const,
   };
 
@@ -34,10 +38,6 @@ export function arg<
         }),
         extras,
       );
-    },
-    long(description: string): any {
-      longDescription = description;
-      return this;
     },
   });
 }

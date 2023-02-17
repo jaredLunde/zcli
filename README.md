@@ -5,26 +5,18 @@
 ## Getting started
 
 ```ts
-import {
-  arg,
-  args,
-  create,
-  env,
-  flag,
-  flags,
-  globalFlags,
-  z,
-} from "https://deno.land/x/zcli/mod.ts";
+import * as zcli from "https://deno.land/x/zcli/mod.ts";
+import { z } from "https://deno.land/x/zcli/z.ts";
 
-const zcli = create({
-  globalFlags: globalFlags({
-    verbose: flag(z.boolean().default(false), { aliases: ["v"] }),
-    json: flag(z.boolean().default(false), { aliases: ["j"] }),
+const cli = zcli.create({
+  globalFlags: zcli.globalFlags({
+    verbose: zcli.flag(z.boolean().default(false), { aliases: ["v"] }),
+    json: zcli.flag(z.boolean().default(false), { aliases: ["j"] }),
   }),
 
   ctx: {
-    env: env({
-      DEBUG: env.bool().default("false"),
+    env: zcli.env({
+      DEBUG: zcli.env.bool().default("false"),
     }),
 
     meta: {
@@ -36,12 +28,14 @@ const zcli = create({
   },
 });
 
-const cli = zcli
-  .command("fetch", {
-    args: args([arg("url", z.string().url().describe("The URL to fetch"))]),
+const fetcher = cli
+  .command("fetcher", {
+    args: zcli.args([
+      zcli.arg("url", z.string().url().describe("The URL to fetch")),
+    ]),
 
-    flags: flags({
-      method: flag(
+    flags: zcli.flags({
+      method: zcli.flag(
         z
           .enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
           .default("GET")
@@ -50,11 +44,11 @@ const cli = zcli
           aliases: ["m"],
         },
       ),
-      headers: flag(
+      headers: zcli.flag(
         z.array(z.string()).optional().describe("Add headers to the request"),
         { aliases: ["H"] },
       ),
-      data: flag(z.string().optional().describe("Send request data"), {
+      data: zcli.flag(z.string().optional().describe("Send request data"), {
         aliases: ["d"],
       }),
     }),
@@ -86,6 +80,6 @@ const cli = zcli
   });
 
 if (import.meta.main) {
-  await cli.execute();
+  await fetcher.execute();
 }
 ```

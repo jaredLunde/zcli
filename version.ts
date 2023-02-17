@@ -6,8 +6,20 @@ export function version<
   Context extends {
     meta: { version: string; date?: string; commit?: string };
   },
->(commandFactory: CommandFactory<Context, any>) {
-  return commandFactory.command("version")
+>(commandFactory: CommandFactory<Context, any>, options: {
+  /**
+   * Change the name of the command
+   * @default "version"
+   */
+  name?: string;
+  /**
+   * Add aliases for the command
+   */
+  aliases?: string[];
+} = {}) {
+  const { name = "version", ...config } = options;
+
+  return commandFactory.command(name, config)
     .run(function* (_args, { meta, path }) {
       const bin = path[0];
       const metaStr = [

@@ -112,7 +112,9 @@ export function create<
             arg(
               "command",
               z.enum(
-                options.commands.flatMap((c) => [c.name, ...c.aliases]) as [
+                options.commands.flatMap((c) => [c.name, ...c.aliases]).concat(
+                  "help",
+                ) as [
                   string,
                   ...string[],
                 ],
