@@ -1,12 +1,12 @@
-export { env } from "./src/env.ts";
-export type { Env } from "./src/env.ts";
-export { showHelp } from "./src/help.ts";
-export { create } from "./src/create.ts";
-export { config, configUtil } from "./src/config.ts";
-export { kv } from "./src/kv.ts";
-export { locale } from "./src/locale.ts";
-export { isArg } from "./src/args.ts";
-export { isFlag, isGlobalFlag } from "./src/flags.ts";
+export { env } from "./env.ts";
+export type { Env } from "./env.ts";
+export { showHelp } from "./help.ts";
+export { create } from "./create.ts";
+export { config, configUtil } from "./config.ts";
+export { kv } from "./kv.ts";
+export { locale } from "./locale.ts";
+export { isArg } from "./args.ts";
+export { isFlag, isGlobalFlag } from "./flags.ts";
 
 export type {
   Action,
@@ -15,10 +15,10 @@ export type {
   Command,
   CommandConfig,
   Execute,
-} from "./src/command.ts";
-export type { Arg, ArgName, Args } from "./src/args.ts";
-export type { Flag, FlagAliases, Flags, GlobalFlags } from "./src/flags.ts";
-export type { Config, ConfigOptions } from "./src/config.ts";
-export type { Kv, KvOptions } from "./src/kv.ts";
+} from "./command.ts";
+export type { Arg, ArgName, Args } from "./args.ts";
+export type { Flag, FlagAliases, Flags, GlobalFlags } from "./flags.ts";
+export type { Config, ConfigOptions } from "./config.ts";
+export type { Kv, KvOptions } from "./kv.ts";
 
-export { z } from "./src/z.ts";
+export { z } from "./z.ts";

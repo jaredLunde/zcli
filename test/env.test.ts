@@ -8,8 +8,8 @@ import {
   describe,
   it,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import { z } from "../src/z.ts";
-import { env } from "../src/env.ts";
+import { z } from "../z.ts";
+import { env } from "../env.ts";
 
 describe("env()", () => {
   const originalEnv = Deno.env.toObject();

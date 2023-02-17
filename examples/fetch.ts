@@ -1,10 +1,10 @@
 import { create, env, z } from "../mod.ts";
-import { arg, args } from "../src/args.ts";
-import { flag, flags, globalFlags } from "../src/flags.ts";
-import { colors } from "../src/fmt.ts";
-import { table } from "../src/lib/simple-table.ts";
-import { version } from "../src/version.ts";
-import { completion } from "../src/completion.ts";
+import { arg, args } from "../args.ts";
+import { flag, flags, globalFlags } from "../flags.ts";
+import { colors } from "../fmt.ts";
+import { table } from "../lib/simple-table.ts";
+import { version } from "../version.ts";
+import { completion } from "../completion.ts";
 import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 
 const zcli = create({

@@ -1,6 +1,6 @@
 import { config, create, env, kv, z } from "../mod.ts";
-import { arg, args } from "../src/args.ts";
-import { flag, flags, globalFlags } from "../src/flags.ts";
+import { arg, args } from "../args.ts";
+import { flag, flags, globalFlags } from "../flags.ts";
 
 const { command } = create({
   globalFlags: globalFlags({

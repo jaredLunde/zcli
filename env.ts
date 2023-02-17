@@ -1,7 +1,7 @@
-import { z } from "../src/z.ts";
-import { colors } from "../src/fmt.ts";
-import { table } from "../src/lib/simple-table.ts";
-import { Prettify } from "../src/lib/types.ts";
+import { z } from "./z.ts";
+import { colors } from "./fmt.ts";
+import { table } from "./lib/simple-table.ts";
+import { Prettify } from "./lib/types.ts";
 
 /**
  * Add type-safe environment variables to your CLI context.

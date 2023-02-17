@@ -6,13 +6,13 @@
 
 ```ts
 import {
-  create,
-  globalFlags,
-  flags,
-  args,
-  flag,
   arg,
+  args,
+  create,
   env,
+  flag,
+  flags,
+  globalFlags,
   z,
 } from "https://deno.land/x/zcli/mod.ts";
 
@@ -48,11 +48,11 @@ const cli = zcli
           .describe("The HTTP method to use"),
         {
           aliases: ["m"],
-        }
+        },
       ),
       headers: flag(
         z.array(z.string()).optional().describe("Add headers to the request"),
-        { aliases: ["H"] }
+        { aliases: ["H"] },
       ),
       data: flag(z.string().optional().describe("Send request data"), {
         aliases: ["d"],
@@ -73,7 +73,7 @@ const cli = zcli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
       ),
       body: flags.data,
     });
