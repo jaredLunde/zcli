@@ -1,11 +1,12 @@
 // deno-lint-ignore-file no-explicit-any
 import { CommandFactory } from "./create.ts";
-import { flag, flags } from "./flags.ts";
+import { flag, flags, innerType, walkFlags } from "./flags.ts";
 import { Command } from "./command.ts";
 import * as intl from "./intl.ts";
 import { z } from "./z.ts";
 import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { dedent } from "./lib/dedent.ts";
+import { walkArgs } from "./args.ts";
 
 export function jsonSchema<
   Context extends {
@@ -47,7 +48,14 @@ export function jsonSchema<
   })
     .run(async function (args, { bin }) {
       function generateCommand(command: Command<any, any, any>) {
-        const commands: z.ZodObject<any>[] = [];
+        const commands: {
+          name: string;
+          description?: string;
+          summary?: string;
+          arguments?: any[];
+          flags?: any[];
+          commands?: any[];
+        }[] = [];
 
         for (
           const cmd of intl.collate(command.commands, {
@@ -61,15 +69,60 @@ export function jsonSchema<
           }
         }
 
+        const a: any[] = [];
+        const hasOptionalArgs = args instanceof z.ZodOptional ||
+          args instanceof z.ZodDefault;
+
+        walkArgs(command.args, (arg, { variadic }) => {
+          a.push({
+            name: arg.name,
+            description: [
+              ...dedent(arg.longDescription ?? arg.description ?? ""),
+            ]
+              .join("\n"),
+            summary: (arg.description ?? "").trim(),
+            required: !hasOptionalArgs,
+            variadic: variadic,
+            schema: zodToJsonSchema(arg as any, { strictUnions: true }),
+          });
+        });
+
+        const flags: any[] = [];
+
+        walkFlags(command.flags, (flag, name) => {
+          if (flag.hidden && !args.all) return;
+          const multiple = flag instanceof z.ZodArray ||
+            flag._def.innerType instanceof z.ZodArray;
+          const itemType = multiple ? flag._def.items : flag;
+          flags.push({
+            name,
+            aliases: flag.aliases,
+            description: [
+              ...dedent(flag.longDescription ?? flag.description ?? ""),
+            ]
+              .join("\n"),
+            summary: (flag.description ?? "").trim(),
+            required: !(flag instanceof z.ZodOptional) &&
+              !(flag instanceof z.ZodDefault),
+            multiple,
+            negatable: flag.negatable,
+            schema: zodToJsonSchema(
+              itemType,
+              { strictUnions: true },
+            ),
+          });
+        });
+
         return {
           name: command.name,
-          description: [...dedent(command.longDescription)].join("\n"),
-          summary: command.description,
-          arguments: command.args &&
-            zodToJsonSchema(command.args, { strictUnions: true }),
-          flags: command.flags &&
-            zodToJsonSchema(command.flags, { strictUnions: true }),
-          commands,
+          description: !command.longDescription && !command.description
+            ? undefined
+            : [...dedent(command.longDescription ?? command.description ?? "")]
+              .join("\n"),
+          summary: (command.description ?? "").trim(),
+          arguments: a,
+          flags,
+          commands: commands,
         };
       }
 

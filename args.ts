@@ -98,7 +98,7 @@ export function walkArgs(
   if (argsItems.length) {
     for (let i = 0; i < argsItems.length; i++) {
       const arg = argsItems[i];
-      callback(arg, { position: i, variadic: false });
+      callback(arg, { position: i, variadic: arg.name === variadicArg?.name });
     }
 
     if (variadicArg) {
