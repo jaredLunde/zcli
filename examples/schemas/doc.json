@@ -38,8 +38,6 @@
           "DELETE",
           "HEAD"
         ],
-        "default": "GET",
-        "description": "The HTTP method to use",
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     },
@@ -51,21 +49,10 @@
       "description": "Add headers to the request",
       "summary": "Add headers to the request",
       "required": false,
-      "multiple": false,
+      "multiple": true,
       "negatable": false,
       "schema": {
-        "anyOf": [
-          {
-            "not": {}
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        ],
-        "description": "Add headers to the request",
+        "type": "string",
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     },
@@ -80,15 +67,7 @@
       "multiple": false,
       "negatable": false,
       "schema": {
-        "anyOf": [
-          {
-            "not": {}
-          },
-          {
-            "type": "string"
-          }
-        ],
-        "description": "Send request data",
+        "type": "string",
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     },
@@ -104,8 +83,6 @@
       "negatable": false,
       "schema": {
         "type": "boolean",
-        "default": false,
-        "description": "Return verbose output",
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     },
@@ -121,8 +98,6 @@
       "negatable": false,
       "schema": {
         "type": "boolean",
-        "default": false,
-        "description": "Log the raw body of responses",
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     },
@@ -137,15 +112,8 @@
       "multiple": false,
       "negatable": false,
       "schema": {
-        "anyOf": [
-          {
-            "not": {}
-          },
-          {
-            "type": "string"
-          }
-        ],
-        "description": "Show help for this command",
+        "type": "boolean",
+        "default": false,
         "$schema": "http://json-schema.org/draft-07/schema#"
       }
     }
@@ -169,8 +137,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Return verbose output",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -186,8 +152,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Log the raw body of responses",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -202,15 +166,8 @@
           "multiple": false,
           "negatable": false,
           "schema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "description": "Show help for this command",
+            "type": "boolean",
+            "default": false,
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         }
@@ -234,8 +191,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Return verbose output",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -251,8 +206,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Log the raw body of responses",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -267,15 +220,8 @@
               "multiple": false,
               "negatable": false,
               "schema": {
-                "anyOf": [
-                  {
-                    "not": {}
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "description": "Show help for this command",
+                "type": "boolean",
+                "default": false,
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
@@ -298,8 +244,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Disable completion descriptions",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -315,8 +259,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Return verbose output",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -332,8 +274,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Log the raw body of responses",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -348,15 +288,8 @@
               "multiple": false,
               "negatable": false,
               "schema": {
-                "anyOf": [
-                  {
-                    "not": {}
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "description": "Show help for this command",
+                "type": "boolean",
+                "default": false,
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
@@ -400,8 +333,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Return verbose output",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -417,8 +348,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Log the raw body of responses",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -433,15 +362,8 @@
               "multiple": false,
               "negatable": false,
               "schema": {
-                "anyOf": [
-                  {
-                    "not": {}
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "description": "Show help for this command",
+                "type": "boolean",
+                "default": false,
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
@@ -465,8 +387,6 @@
                   "negatable": false,
                   "schema": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Return verbose output",
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 },
@@ -482,8 +402,6 @@
                   "negatable": false,
                   "schema": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Log the raw body of responses",
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 },
@@ -498,15 +416,8 @@
                   "multiple": false,
                   "negatable": false,
                   "schema": {
-                    "anyOf": [
-                      {
-                        "not": {}
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ],
-                    "description": "Show help for this command",
+                    "type": "boolean",
+                    "default": false,
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 },
@@ -522,8 +433,6 @@
                   "negatable": false,
                   "schema": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Show all commands, including hidden ones",
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 }
@@ -548,8 +457,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Disable completion descriptions",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -565,8 +472,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Return verbose output",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -582,8 +487,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Log the raw body of responses",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -598,15 +501,8 @@
               "multiple": false,
               "negatable": false,
               "schema": {
-                "anyOf": [
-                  {
-                    "not": {}
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "description": "Show help for this command",
+                "type": "boolean",
+                "default": false,
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
@@ -652,8 +548,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Return verbose output",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -669,8 +563,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Log the raw body of responses",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -685,15 +577,8 @@
           "multiple": false,
           "negatable": false,
           "schema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "description": "Show help for this command",
+            "type": "boolean",
+            "default": false,
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         }
@@ -717,8 +602,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Return verbose output",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -734,8 +617,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Log the raw body of responses",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -750,15 +631,8 @@
               "multiple": false,
               "negatable": false,
               "schema": {
-                "anyOf": [
-                  {
-                    "not": {}
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
-                "description": "Show help for this command",
+                "type": "boolean",
+                "default": false,
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             },
@@ -774,8 +648,6 @@
               "negatable": false,
               "schema": {
                 "type": "boolean",
-                "default": false,
-                "description": "Show all commands, including hidden ones",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
@@ -802,8 +674,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Return verbose output",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -819,8 +689,6 @@
           "negatable": false,
           "schema": {
             "type": "boolean",
-            "default": false,
-            "description": "Log the raw body of responses",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         },
@@ -835,15 +703,8 @@
           "multiple": false,
           "negatable": false,
           "schema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "description": "Show help for this command",
+            "type": "boolean",
+            "default": false,
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         }

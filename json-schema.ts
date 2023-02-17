@@ -93,7 +93,12 @@ export function jsonSchema<
           if (flag.hidden && !args.all) return;
           const multiple = flag instanceof z.ZodArray ||
             flag._def.innerType instanceof z.ZodArray;
-          const itemType = multiple ? flag._def.items : flag;
+          const itemType = multiple
+            ? flag instanceof z.ZodArray
+              ? flag._def.type
+              : flag._def.innerType._def.type
+            : flag;
+
           flags.push({
             name,
             aliases: flag.aliases,
@@ -107,7 +112,11 @@ export function jsonSchema<
             multiple,
             negatable: flag.negatable,
             schema: zodToJsonSchema(
-              itemType,
+              name === "help"
+                ? z.boolean().default(false)
+                : multiple
+                ? itemType
+                : innerType(flag),
               { strictUnions: true },
             ),
           });
