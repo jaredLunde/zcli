@@ -47,15 +47,15 @@ export function completion<
           If it is not installed already, you can install it via your OS's package manager.
 
           To load completions in your current shell session:
-          $ source <(${bin()} ${options.name} bash)
+          $ source <(${bin()} ${name} bash)
 
           To load completions for every new session, execute once:
           
           Linux:
-            $ ${bin()} ${options.name} bash > /etc/bash_completion.d/${bin()}
+            $ ${bin()} ${name} bash > /etc/bash_completion.d/${bin()}
             
           MacOS:
-            $ ${bin()} ${options.name} bash > /usr/local/etc/bash_completion.d/${bin()}
+            $ ${bin()} ${name} bash > /usr/local/etc/bash_completion.d/${bin()}
 
           You will need to start a new shell for this setup to take effect.
         `,
@@ -82,13 +82,13 @@ export function completion<
         To load completions for every new session, execute once:
 
         # Linux:
-        $ ${bin()} ${options.name} zsh > "\${fpath[1]}/_${bin()}"
+        $ ${bin()} ${name} zsh > "\${fpath[1]}/_${bin()}"
         
         # macOS:
-        $ ${bin()} ${options.name} zsh > /usr/local/share/zsh/site-functions/_${bin()}
+        $ ${bin()} ${name} zsh > /usr/local/share/zsh/site-functions/_${bin()}
 
         # Oh My Zsh
-        $ ${bin()} ${options.name} zsh > ~/.oh-my-zsh/completions/_${bin()}
+        $ ${bin()} ${name} zsh > ~/.oh-my-zsh/completions/_${bin()}
         
         You will need to start a new shell for this setup to take effect.
         `,
@@ -108,10 +108,10 @@ export function completion<
         Generate the autocompletion script for the fish shell.
         
         To load completions in your current shell session:
-        $ ${bin()} ${options.name} fish | source
+        $ ${bin()} ${name} fish | source
 
         To load completions for every new session, execute once:
-        $ ${bin()} ${options.name} fish > ~/.config/fish/completions/${bin()}.fish
+        $ ${bin()} ${name} fish > ~/.config/fish/completions/${bin()}.fish
 
         You will need to start a new shell for this setup to take effect.
         `,
