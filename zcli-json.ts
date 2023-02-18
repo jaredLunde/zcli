@@ -8,14 +8,14 @@ import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { dedent } from "./lib/dedent.ts";
 import { walkArgs } from "./args.ts";
 
-export function jsonSchema<
+export function zcliJson<
   Context extends {
     meta: { version: string; date?: string; commit?: string };
   },
 >(commandFactory: CommandFactory<Context, any>, options: {
   /**
    * Change the name of the command
-   * @default "jsonschema"
+   * @default "zcli.json"
    */
   name?: string;
   /**
@@ -28,7 +28,7 @@ export function jsonSchema<
    */
   hidden?: boolean;
 } = {}) {
-  const { name = "jsonschema", hidden = true, aliases } = options;
+  const { name = "zcli.json", hidden = true, aliases } = options;
 
   return commandFactory.command(name, {
     hidden,
@@ -90,10 +90,10 @@ export function jsonSchema<
         const flags: any[] = [];
 
         walkFlags(command.flags, (flag, name) => {
-          if (flag.hidden && !args.all) return;
-          const multiple = flag instanceof z.ZodArray ||
+          if (flag.__global || (flag.hidden && !args.all)) return;
+          const collects = flag instanceof z.ZodArray ||
             flag._def.innerType instanceof z.ZodArray;
-          const itemType = multiple
+          const itemType = collects
             ? flag instanceof z.ZodArray
               ? flag._def.type
               : flag._def.innerType._def.type
@@ -109,12 +109,12 @@ export function jsonSchema<
             summary: (flag.description ?? "").trim(),
             required: !(flag instanceof z.ZodOptional) &&
               !(flag instanceof z.ZodDefault),
-            multiple,
+            collects,
             negatable: flag.negatable,
             schema: zodToJsonSchema(
               name === "help"
                 ? z.boolean().default(false)
-                : multiple
+                : collects
                 ? itemType
                 : innerType(flag),
               { strictUnions: true },
@@ -135,17 +135,75 @@ export function jsonSchema<
         };
       }
 
+      const globalFlags: any[] = [];
+
+      if (commandFactory.globalFlags) {
+        walkFlags(commandFactory.globalFlags, (flag, name) => {
+          if (flag.hidden && !args.all) return;
+          const collects = flag instanceof z.ZodArray ||
+            flag._def.innerType instanceof z.ZodArray;
+          const itemType = collects
+            ? flag instanceof z.ZodArray
+              ? flag._def.type
+              : flag._def.innerType._def.type
+            : flag;
+
+          globalFlags.push({
+            name,
+            aliases: flag.aliases,
+            description: [
+              ...dedent(flag.longDescription ?? flag.description ?? ""),
+            ]
+              .join("\n"),
+            summary: (flag.description ?? "").trim(),
+            required: !(flag instanceof z.ZodOptional) &&
+              !(flag instanceof z.ZodDefault),
+            collects,
+            negatable: flag.negatable,
+            schema: zodToJsonSchema(
+              name === "help"
+                ? z.boolean().default(false)
+                : collects
+                ? itemType
+                : innerType(flag),
+              { strictUnions: true },
+            ),
+          });
+        });
+      }
+
       const text = new TextEncoder();
 
       await Deno.stdout.write(text.encode(
-        JSON.stringify(generateCommand(bin), null, 2) + "\n",
+        JSON.stringify(
+          {
+            "zcli": "1.0.0",
+            info: {
+              name: bin.name,
+              version: commandFactory.ctx?.meta.version,
+              commit: commandFactory.ctx?.meta.commit,
+              buildDate: commandFactory.ctx?.meta.date,
+              description: [
+                ...dedent(bin.longDescription ?? bin.description ?? ""),
+              ]
+                .join("\n"),
+              summary: (bin.description || "").trim(),
+            },
+            commands: [generateCommand(bin)],
+            globalFlags,
+          },
+          null,
+          2,
+        ) + "\n",
       ));
     })
-    .describe("Prints the CLI command structure as JSONSchema")
+    .describe(
+      "Prints the CLI command structure to a specification with JSONSchemas.",
+    )
     .long(
       `
-      Prints the CLI command structure as JSONSchema. This is useful for
-      the purposes of outputting your command structure in a documentable
+      Prints the CLI command structure to a specification with JSONSchemas. This is 
+      useful for the purposes of outputting your command structure in a documentable
       format.
       `,
     );

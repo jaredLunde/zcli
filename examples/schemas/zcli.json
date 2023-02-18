@@ -1,0 +1,295 @@
+{
+  "zcli": "1.0.0",
+  "info": {
+    "name": "fetch",
+    "version": "1.3.2",
+    "commit": "development",
+    "buildDate": "2023-02-18T14:57:19.261Z",
+    "description": "Fetch a resource from the internet\n\nThis command will fetch a resource from the internet and print the response.",
+    "summary": "Fetch a resource from the internet"
+  },
+  "commands": [
+    {
+      "name": "fetch",
+      "description": "Fetch a resource from the internet\n\nThis command will fetch a resource from the internet and print the response.",
+      "summary": "Fetch a resource from the internet",
+      "arguments": [
+        {
+          "name": "url",
+          "description": "The URL to fetch",
+          "summary": "The URL to fetch",
+          "required": true,
+          "variadic": false,
+          "schema": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URL to fetch",
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        }
+      ],
+      "flags": [
+        {
+          "name": "method",
+          "aliases": [
+            "m"
+          ],
+          "description": "The HTTP method to use",
+          "summary": "The HTTP method to use",
+          "required": false,
+          "collects": false,
+          "negatable": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "POST",
+              "GET",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "headers",
+          "aliases": [
+            "H"
+          ],
+          "description": "Add headers to the request",
+          "summary": "Add headers to the request",
+          "required": false,
+          "collects": true,
+          "negatable": false,
+          "schema": {
+            "type": "string",
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "data",
+          "aliases": [
+            "d"
+          ],
+          "description": "Send request data",
+          "summary": "Send request data",
+          "required": false,
+          "collects": false,
+          "negatable": false,
+          "schema": {
+            "type": "string",
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "completion",
+          "description": "Generate an autocompletion script for fetch in the specified shell.\nSee each sub-command's help for details on how to use the generated script.",
+          "summary": "Generate an autocompletion script for the specified shell",
+          "arguments": [],
+          "flags": [],
+          "commands": [
+            {
+              "name": "bash",
+              "description": "Generate the autocompletion script for the bash shell.\n\nThis script depends on the 'bash-completion' package.\nIf it is not installed already, you can install it via your OS's package manager.\n\nTo load completions in your current shell session:\n$ source <(fetch undefined bash)\n\nTo load completions for every new session, execute once:\n\nLinux:\n  $ fetch undefined bash > /etc/bash_completion.d/fetch\n  \nMacOS:\n  $ fetch undefined bash > /usr/local/etc/bash_completion.d/fetch\n\nYou will need to start a new shell for this setup to take effect.",
+              "summary": "Generate an autocompletion script for the bash shell",
+              "arguments": [],
+              "flags": [],
+              "commands": []
+            },
+            {
+              "name": "fish",
+              "description": "Generate the autocompletion script for the fish shell.\n\nTo load completions in your current shell session:\n$ fetch undefined fish | source\n\nTo load completions for every new session, execute once:\n$ fetch undefined fish > ~/.config/fish/completions/fetch.fish\n\nYou will need to start a new shell for this setup to take effect.",
+              "summary": "Generate an autocompletion script for the fish shell",
+              "arguments": [],
+              "flags": [
+                {
+                  "name": "no-descriptions",
+                  "aliases": [],
+                  "description": "Disable completion descriptions",
+                  "summary": "Disable completion descriptions",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
+              "commands": []
+            },
+            {
+              "name": "help",
+              "description": "Show help for a completion command",
+              "summary": "Show help for a completion command",
+              "arguments": [
+                {
+                  "name": "command",
+                  "description": "The command to read help for",
+                  "summary": "The command to read help for",
+                  "required": true,
+                  "variadic": false,
+                  "schema": {
+                    "type": "string",
+                    "enum": [
+                      "bash",
+                      "zsh",
+                      "fish",
+                      "help"
+                    ],
+                    "description": "The command to read help for",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
+              "flags": [],
+              "commands": [
+                {
+                  "name": "commands",
+                  "description": "List completion commands",
+                  "summary": "List completion commands",
+                  "arguments": [],
+                  "flags": [
+                    {
+                      "name": "all",
+                      "aliases": [
+                        "a"
+                      ],
+                      "description": "Show all commands, including hidden ones",
+                      "summary": "Show all commands, including hidden ones",
+                      "required": false,
+                      "collects": false,
+                      "negatable": false,
+                      "schema": {
+                        "type": "boolean",
+                        "$schema": "http://json-schema.org/draft-07/schema#"
+                      }
+                    }
+                  ],
+                  "commands": []
+                }
+              ]
+            },
+            {
+              "name": "zsh",
+              "description": "Generate the autocompletion script for the zsh shell.\n\nIf shell completion is not already enabled in your environment you will need\nto enable it.  You can execute the following once:\n\n$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc\n\nTo load completions for every new session, execute once:\n\n# Linux:\n$ fetch undefined zsh > \"${fpath[1]}/_fetch\"\n\n# macOS:\n$ fetch undefined zsh > /usr/local/share/zsh/site-functions/_fetch\n\n# Oh My Zsh\n$ fetch undefined zsh > ~/.oh-my-zsh/completions/_fetch\n\nYou will need to start a new shell for this setup to take effect.",
+              "summary": "Generate an autocompletion script for the zsh shell",
+              "arguments": [],
+              "flags": [
+                {
+                  "name": "no-descriptions",
+                  "aliases": [],
+                  "description": "Disable completion descriptions",
+                  "summary": "Disable completion descriptions",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
+              "commands": []
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Show help for a fetch command",
+          "summary": "Show help for a fetch command",
+          "arguments": [
+            {
+              "name": "command",
+              "description": "The command to read help for",
+              "summary": "The command to read help for",
+              "required": true,
+              "variadic": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "version",
+                  "completion",
+                  "zcli.json",
+                  "help"
+                ],
+                "description": "The command to read help for",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          ],
+          "flags": [],
+          "commands": [
+            {
+              "name": "commands",
+              "description": "List fetch commands",
+              "summary": "List fetch commands",
+              "arguments": [],
+              "flags": [
+                {
+                  "name": "all",
+                  "aliases": [
+                    "a"
+                  ],
+                  "description": "Show all commands, including hidden ones",
+                  "summary": "Show all commands, including hidden ones",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
+              "commands": []
+            }
+          ]
+        },
+        {
+          "name": "version",
+          "description": "Shows version information command, including version number and build date.",
+          "summary": "Show version information",
+          "arguments": [],
+          "flags": [],
+          "commands": []
+        }
+      ]
+    }
+  ],
+  "globalFlags": [
+    {
+      "name": "verbose",
+      "aliases": [
+        "v"
+      ],
+      "description": "Return verbose output",
+      "summary": "Return verbose output",
+      "required": false,
+      "collects": false,
+      "negatable": false,
+      "schema": {
+        "type": "boolean",
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "raw",
+      "aliases": [
+        "r"
+      ],
+      "description": "Log the raw body of responses",
+      "summary": "Log the raw body of responses",
+      "required": false,
+      "collects": false,
+      "negatable": false,
+      "schema": {
+        "type": "boolean",
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    }
+  ]
+}

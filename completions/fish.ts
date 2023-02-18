@@ -117,7 +117,7 @@ function* completeCommand(
     ];
 
     if (flag.aliases.length > 0) {
-      completion.push(`-s ${flag.aliases[0]}`);
+      completion.push(`-s ${flag.aliases.filter((a) => a.length === 1)[0]}`);
     }
 
     completion.push(`-l ${name}`);

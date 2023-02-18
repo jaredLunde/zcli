@@ -116,7 +116,9 @@ function* completeCommand(
     }
 
     const type = innerType(flag);
-    const aliases = flag.aliases.map((alias) => `-${alias}`);
+    const aliases = flag.aliases.map((alias) =>
+      alias.length === 1 ? `-${alias}` : `--${alias}`
+    );
     opts.push(...aliases, `--${name}`);
     // TODO: add support for file types
     // if (type && type.handler instanceof FileType) {

@@ -181,7 +181,7 @@ export function command<
       const defaultValue = getDefault(opt);
 
       rows_.push([
-        opt.aliases.map((a) => `-${a},`).join(" "),
+        opt.aliases.filter((a) => a.length === 1).map((a) => `-${a},`)[0] ?? "",
         `--${path}`,
         type instanceof z.ZodBoolean
           ? ""
@@ -528,7 +528,7 @@ async function handleAction<ActionFn extends Action<any, any, any, any>>(
     await Promise.all(writes);
   } else if ("then" in action && typeof action.then === "function") {
     // @ts-expect-error: it's fine
-    await action(Args, ctx);
+    await action(args, ctx);
   } else {
     // @ts-expect-error: it's fine
     action(args, ctx);

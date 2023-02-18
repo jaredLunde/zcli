@@ -198,7 +198,9 @@ function completeFlags(
     };
 
     if (flag.aliases.length) {
-      optname.short = `-${flag.aliases.join(" -")}`;
+      optname.short = `-${
+        flag.aliases.filter((a) => a.length === 1).join(" -")
+      }`;
     }
 
     if (flag.negatable) {

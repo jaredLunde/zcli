@@ -21,17 +21,11 @@ export function create<
   let bin: Command<Context, any, any, GlobalOpts>;
 
   return {
+    ctx: config.ctx,
     get bin() {
       return bin;
     },
-    /**
-     * Create a CLI command. Commands can be nested to create a tree
-     * of commands. Each command can have its own set of flags and
-     * arguments.
-     *
-     * @param name - The name of the command
-     * @param param1 - The command configuration
-     */
+    globalFlags: config.globalFlags,
     command<
       Args extends
         | ArgsTuple<
@@ -248,7 +242,22 @@ export type CommandFactory<
   Context extends Record<string, unknown>,
   GlobalOpts extends GlobalFlags,
 > = {
+  /**
+   * Meta information about the CLI.
+   */
+  ctx?: Context;
+  /**
+   * The main/root command that is being executed.
+   */
   bin?: Command<Context, any, any, GlobalOpts>;
+  /**
+   * Create a CLI command. Commands can be nested to create a tree
+   * of commands. Each command can have its own set of flags and
+   * arguments.
+   *
+   * @param name - The name of the command
+   * @param param1 - The command configuration
+   */
   command<
     Args extends
       | ArgsTuple<
@@ -271,7 +280,19 @@ export type CommandFactory<
     Opts,
     GlobalOpts
   >;
+  /**
+   * Global flags that are passed to each command.
+   */
+  globalFlags?: GlobalOpts;
 };
+
+export type Meta = {
+  /**
+   * The version of the CLI.
+   * @default "0.0.0"
+   */
+  version?: string;
+} & Record<string, unknown>;
 
 export type DefaultContext = BaseContext & Record<string, unknown>;
 
