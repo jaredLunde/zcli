@@ -1,12 +1,16 @@
-import { create, env, z } from "../mod.ts";
-import { args } from "../args.ts";
-import { flag, flags } from "../flags.ts";
-import { colors } from "../fmt.ts";
-import { table } from "../lib/simple-table.ts";
-import { version } from "../version.ts";
-import { zcliJson } from "../zcli-json.ts";
-import { completion } from "../completion.ts";
 import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
+import {
+  args,
+  completion,
+  create,
+  env,
+  flag,
+  flags,
+  fmt,
+  version,
+  z,
+} from "../mod.ts";
+import { table } from "../lib/simple-table.ts";
 
 const cli = create({
   globalFlags: flags({
@@ -61,7 +65,6 @@ const fetcher = cli
     commands: [
       version(cli),
       completion(cli),
-      zcliJson(cli),
     ],
 
     short: "Fetch a resource from the internet",
@@ -113,15 +116,16 @@ const fetcher = cli
     if (flags.raw) {
       yield await response.text();
     } else {
-      yield colors.bold("Response");
+      yield fmt.colors.bold("Response");
 
       for (
         const line of table(
           [
-            [colors.blue("URL"), args[0]],
+            [fmt.colors.blue("URL"), args[0]],
             [
-              colors.blue("Status"),
-              colors.green(response.status + "") + " " + response.statusText,
+              fmt.colors.blue("Status"),
+              fmt.colors.green(response.status + "") + " " +
+              response.statusText,
             ],
           ],
           {
@@ -133,12 +137,12 @@ const fetcher = cli
         yield line;
       }
 
-      yield colors.blue(" Headers");
+      yield fmt.colors.blue(" Headers");
 
       const headers: string[][] = [];
 
       for (const [key, value] of response.headers) {
-        headers.push([colors.yellow(key), value]);
+        headers.push([fmt.colors.yellow(key), value]);
       }
 
       for (
@@ -153,10 +157,13 @@ const fetcher = cli
       yield "";
 
       for (
-        const line of table([[colors.blue("Body"), await response.text()]], {
-          indent: 1,
-          cellPadding: 2,
-        })
+        const line of table(
+          [[fmt.colors.blue("Body"), await response.text()]],
+          {
+            indent: 1,
+            cellPadding: 2,
+          },
+        )
       ) {
         yield line;
       }

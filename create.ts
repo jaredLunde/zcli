@@ -183,7 +183,7 @@ export function create<
         name,
         options,
       );
-      const execute = command_.execute.bind(command_);
+      const execute = command_.execute;
       const execOverride = {
         execute: (
           args: string[],
@@ -295,6 +295,6 @@ export type DefaultContext = BaseContext & Record<string, unknown>;
 export type inferContext<Cmd extends CommandFactory<any, any>> = Cmd extends
   CommandFactory<
     infer Context,
-    infer GlobalOpts
+    any
   > ? Context & BaseContext
   : BaseContext;

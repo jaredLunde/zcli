@@ -1,9 +1,11 @@
+// deno-lint-ignore-file no-explicit-any
 import { CommandFactory } from "./create.ts";
 import { flag, Flags, flags } from "./flags.ts";
 import * as bash from "./completions/bash.ts";
 import * as fish from "./completions/fish.ts";
 import * as zsh from "./completions/zsh.ts";
 import { writeHelp } from "./help.ts";
+import { CommandConfig } from "./command.ts";
 
 const shellCommandFlags = flags({
   "no-descriptions": flag({
@@ -16,19 +18,20 @@ export function completion<
   GlobalOpts extends Flags,
 >(
   commandFactory: CommandFactory<Context, GlobalOpts>,
-  options: {
-    /**
-     * Change the name of the command
-     * @default "completion"
-     */
-    name?: string;
-    /**
-     * Add aliases for the command
-     */
-    aliases?: string[];
-  } = {},
+  options:
+    & {
+      /**
+       * Change the name of the command
+       * @default "completion"
+       */
+      name?: string;
+    }
+    & Pick<
+      CommandConfig<Context, any, any>,
+      "aliases" | "short" | "long" | "use" | "hidden"
+    > = {},
 ) {
-  const { name = "completion", aliases } = options;
+  const { name = "completion", ...config } = options;
   const bin = () => commandFactory.bin?.name ?? "[bin]";
 
   const command = commandFactory.command(name, {
@@ -37,7 +40,7 @@ export function completion<
       Generate an autocompletion script for ${bin()} in the specified shell.
       See each sub-command's help for details on how to use the generated script.
     `,
-    aliases,
+    ...config,
     commands: [
       commandFactory.command("bash", {
         short: () => "Generate an autocompletion script for the bash shell",
