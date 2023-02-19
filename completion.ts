@@ -1,20 +1,19 @@
 import { CommandFactory } from "./create.ts";
-import { flag, flags, GlobalFlags } from "./flags.ts";
+import { flag, Flags, flags } from "./flags.ts";
 import * as bash from "./completions/bash.ts";
 import * as fish from "./completions/fish.ts";
 import * as zsh from "./completions/zsh.ts";
-import { z } from "./z.ts";
 import { writeHelp } from "./help.ts";
 
 const shellCommandFlags = flags({
-  "no-descriptions": flag(
-    z.boolean().default(false).describe("Disable completion descriptions"),
-  ),
+  "no-descriptions": flag({
+    short: "Disable completion descriptions",
+  }).boolean().default(false),
 });
 
 export function completion<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalFlags,
+  GlobalOpts extends Flags,
 >(
   commandFactory: CommandFactory<Context, GlobalOpts>,
   options: {
@@ -33,14 +32,16 @@ export function completion<
   const bin = () => commandFactory.bin?.name ?? "[bin]";
 
   const command = commandFactory.command(name, {
+    short: "Generate an autocompletion script for the specified shell",
+    long: () => `
+      Generate an autocompletion script for ${bin()} in the specified shell.
+      See each sub-command's help for details on how to use the generated script.
+    `,
     aliases,
     commands: [
-      // @ts-expect-error: it's fine
-      commandFactory.command("bash").run(function (_args, ctx) {
-        write(bash.complete(ctx.bin));
-      }).describe(() => "Generate an autocompletion script for the bash shell")
-        .long(
-          () => `
+      commandFactory.command("bash", {
+        short: () => "Generate an autocompletion script for the bash shell",
+        long: () => `
           Generate the autocompletion script for the bash shell.
 
           This script depends on the 'bash-completion' package.
@@ -59,75 +60,68 @@ export function completion<
 
           You will need to start a new shell for this setup to take effect.
         `,
-        ),
-      // @ts-expect-error: it's fine
+      }).run(function ({ ctx }) {
+        write(bash.complete(ctx.bin));
+      }),
       commandFactory.command("zsh", {
+        short: "Generate an autocompletion script for the zsh shell",
+        long: () => `
+          Generate the autocompletion script for the zsh shell.
+
+          If shell completion is not already enabled in your environment you will need
+          to enable it.  You can execute the following once:
+          
+          $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+          
+          To load completions for every new session, execute once:
+
+          # Linux:
+          $ ${bin()} ${name} zsh > "\${fpath[1]}/_${bin()}"
+          
+          # macOS:
+          $ ${bin()} ${name} zsh > /usr/local/share/zsh/site-functions/_${bin()}
+
+          # Oh My Zsh
+          $ ${bin()} ${name} zsh > ~/.oh-my-zsh/completions/_${bin()}
+          
+          You will need to start a new shell for this setup to take effect.
+        `,
         flags: shellCommandFlags,
-      }).run(function (args, ctx) {
+      }).run(function ({ flags, ctx }) {
         write(
           zsh.complete(ctx.bin, {
             // @ts-expect-error: it's fine
-            disableDescriptions: args["no-descriptions"],
+            disableDescriptions: flags["no-descriptions"],
           }),
         );
-      }).describe("Generate an autocompletion script for the zsh shell").long(
-        () => `
-        Generate the autocompletion script for the zsh shell.
-
-        If shell completion is not already enabled in your environment you will need
-        to enable it.  You can execute the following once:
-        
-        $ echo "autoload -U compinit; compinit" >> ~/.zshrc
-        
-        To load completions for every new session, execute once:
-
-        # Linux:
-        $ ${bin()} ${name} zsh > "\${fpath[1]}/_${bin()}"
-        
-        # macOS:
-        $ ${bin()} ${name} zsh > /usr/local/share/zsh/site-functions/_${bin()}
-
-        # Oh My Zsh
-        $ ${bin()} ${name} zsh > ~/.oh-my-zsh/completions/_${bin()}
-        
-        You will need to start a new shell for this setup to take effect.
-        `,
-      ),
-      // @ts-expect-error: it's fine
+      }),
       commandFactory.command("fish", {
+        short: "Generate an autocompletion script for the fish shell",
+        long: () => `
+          Generate the autocompletion script for the fish shell.
+          
+          To load completions in your current shell session:
+          $ ${bin()} ${name} fish | source
+
+          To load completions for every new session, execute once:
+          $ ${bin()} ${name} fish > ~/.config/fish/completions/${bin()}.fish
+
+          You will need to start a new shell for this setup to take effect.
+        `,
         flags: shellCommandFlags,
-      }).run(function (args, ctx) {
+      }).run(function ({ flags, ctx }) {
         write(
           fish.complete(ctx.bin, {
             // @ts-expect-error: it's fine
-            disableDescriptions: args["no-descriptions"],
+            disableDescriptions: flags["no-descriptions"],
           }),
         );
-      }).describe("Generate an autocompletion script for the fish shell").long(
-        () => `
-        Generate the autocompletion script for the fish shell.
-        
-        To load completions in your current shell session:
-        $ ${bin()} ${name} fish | source
-
-        To load completions for every new session, execute once:
-        $ ${bin()} ${name} fish > ~/.config/fish/completions/${bin()}.fish
-
-        You will need to start a new shell for this setup to take effect.
-        `,
-      ),
+      }),
     ],
   })
-    .run(async (_args, ctx) => {
+    .run(async ({ ctx }) => {
       await writeHelp(command.help(ctx.path));
-    })
-    .describe("Generate an autocompletion script for the specified shell")
-    .long(
-      () => `
-      Generate an autocompletion script for ${bin()} in the specified shell.
-      See each sub-command's help for details on how to use the generated script.
-      `,
-    );
+    });
 
   return command;
 }

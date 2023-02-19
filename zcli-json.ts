@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { CommandFactory } from "./create.ts";
-import { flag, flags, innerType, walkFlags } from "./flags.ts";
+import { flag, flags, getDefault, innerType, walkFlags } from "./flags.ts";
 import { Command } from "./command.ts";
 import * as intl from "./intl.ts";
 import { z } from "./z.ts";
@@ -31,22 +31,27 @@ export function zcliJson<
   const { name = "zcli.json", hidden = true, aliases } = options;
 
   return commandFactory.command(name, {
+    short:
+      "Prints the CLI command structure to a specification with JSONSchemas.",
+    long: `
+      Prints the CLI command structure to a specification with JSONSchemas. This is 
+      useful for the purposes of outputting your command structure in a documentable
+      format.
+    `,
     hidden,
     aliases,
     flags: flags({
       all: flag(
-        z.boolean().default(false),
         {
           aliases: ["a"],
+          short: "Show all commands and flags, including hidden ones.",
+          long:
+            `Show all commands and flags in the output, including hidden ones.`,
         },
-      ).describe(
-        "Show all commands and flags, including hidden ones.",
-      ).long(
-        `Show all commands and flags in the output, including hidden ones.`,
-      ),
+      ).boolean().default(false),
     }),
   })
-    .run(async function (args, { bin }) {
+    .run(async function ({ args, flags, ctx: { bin } }) {
       function generateCommand(command: Command<any, any, any>) {
         const commands: {
           name: string;
@@ -64,7 +69,7 @@ export function zcliJson<
             },
           })
         ) {
-          if (args.all || !cmd.hidden) {
+          if (flags.all || !cmd.hidden) {
             commands.push(generateCommand(cmd));
           }
         }
@@ -73,24 +78,20 @@ export function zcliJson<
         const hasOptionalArgs = args instanceof z.ZodOptional ||
           args instanceof z.ZodDefault;
 
-        walkArgs(command.args, (arg, { variadic }) => {
+        walkArgs(command.args, (arg, { position, variadic }) => {
           a.push({
-            name: arg.name,
-            description: [
-              ...dedent(arg.longDescription ?? arg.description ?? ""),
-            ]
-              .join("\n"),
+            position,
             summary: (arg.description ?? "").trim(),
             required: !hasOptionalArgs,
-            variadic: variadic,
+            variadic,
             schema: zodToJsonSchema(arg as any, { strictUnions: true }),
           });
         });
 
-        const flags: any[] = [];
+        const commandFlags: any[] = [];
 
         walkFlags(command.flags, (flag, name) => {
-          if (flag.__global || (flag.hidden && !args.all)) return;
+          if (flag.__global || (flag.hidden && !flags.all)) return;
           const collects = flag instanceof z.ZodArray ||
             flag._def.innerType instanceof z.ZodArray;
           const itemType = collects
@@ -98,19 +99,21 @@ export function zcliJson<
               ? flag._def.type
               : flag._def.innerType._def.type
             : flag;
+          const defaultValue = getDefault(flag);
 
-          flags.push({
+          commandFlags.push({
             name,
             aliases: flag.aliases,
             description: [
-              ...dedent(flag.longDescription ?? flag.description ?? ""),
+              ...dedent(flag.longDescription ?? flag.shortDescription ?? ""),
             ]
               .join("\n"),
-            summary: (flag.description ?? "").trim(),
+            summary: (flag.shortDescription ?? "").trim(),
             required: !(flag instanceof z.ZodOptional) &&
               !(flag instanceof z.ZodDefault),
             collects,
             negatable: flag.negatable,
+            default: defaultValue,
             schema: zodToJsonSchema(
               name === "help"
                 ? z.boolean().default(false)
@@ -124,13 +127,17 @@ export function zcliJson<
 
         return {
           name: command.name,
-          description: !command.longDescription && !command.description
+          description: !command.longDescription && !command.shortDescription
             ? undefined
-            : [...dedent(command.longDescription ?? command.description ?? "")]
+            : [
+              ...dedent(
+                command.longDescription ?? command.shortDescription ?? "",
+              ),
+            ]
               .join("\n"),
-          summary: (command.description ?? "").trim(),
+          summary: (command.shortDescription ?? "").trim(),
           arguments: a,
-          flags,
+          flags: commandFlags,
           commands: commands,
         };
       }
@@ -139,7 +146,7 @@ export function zcliJson<
 
       if (commandFactory.globalFlags) {
         walkFlags(commandFactory.globalFlags, (flag, name) => {
-          if (flag.hidden && !args.all) return;
+          if (flag.hidden && !flags.all) return;
           const collects = flag instanceof z.ZodArray ||
             flag._def.innerType instanceof z.ZodArray;
           const itemType = collects
@@ -147,19 +154,21 @@ export function zcliJson<
               ? flag._def.type
               : flag._def.innerType._def.type
             : flag;
+          const defaultValue = getDefault(flag);
 
           globalFlags.push({
             name,
             aliases: flag.aliases,
             description: [
-              ...dedent(flag.longDescription ?? flag.description ?? ""),
+              ...dedent(flag.longDescription ?? flag.shortDescription ?? ""),
             ]
               .join("\n"),
-            summary: (flag.description ?? "").trim(),
+            summary: (flag.shortDescription ?? "").trim(),
             required: !(flag instanceof z.ZodOptional) &&
               !(flag instanceof z.ZodDefault),
             collects,
             negatable: flag.negatable,
+            default: defaultValue,
             schema: zodToJsonSchema(
               name === "help"
                 ? z.boolean().default(false)
@@ -184,10 +193,10 @@ export function zcliJson<
               commit: commandFactory.ctx?.meta.commit,
               buildDate: commandFactory.ctx?.meta.date,
               description: [
-                ...dedent(bin.longDescription ?? bin.description ?? ""),
+                ...dedent(bin.longDescription ?? bin.shortDescription ?? ""),
               ]
                 .join("\n"),
-              summary: (bin.description || "").trim(),
+              summary: (bin.shortDescription || "").trim(),
             },
             commands: [generateCommand(bin)],
             globalFlags,
@@ -196,15 +205,5 @@ export function zcliJson<
           2,
         ) + "\n",
       ));
-    })
-    .describe(
-      "Prints the CLI command structure to a specification with JSONSchemas.",
-    )
-    .long(
-      `
-      Prints the CLI command structure to a specification with JSONSchemas. This is 
-      useful for the purposes of outputting your command structure in a documentable
-      format.
-      `,
-    );
+    });
 }

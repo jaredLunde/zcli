@@ -1,49 +1,33 @@
 // deno-lint-ignore-file no-explicit-any
+import { Prettify } from "./lib/types.ts";
 import { z } from "./z.ts";
+import { zodProxy } from "./zod-proxy.ts";
 
 /**
- * A flag for a command. This is just a Zod schema with additional
- * properties.
+ * A flag for a command. This is just a Zod schema with an additional
+ * builder.
  *
- * @param schema - The schema for the flag.
  * @param config - The configuration for the flag.
  */
-export function flag<
-  Schema extends z.ZodSchema<any>,
-  Aliases extends Readonly<string>,
->(schema: Schema, config: FlagConfig<Aliases> = {}): Flag<Schema, Aliases> {
-  let longDescription: string | undefined;
-
-  const extras = {
+export function flag(config: FlagConfig = {}) {
+  const flagProps = {
     aliases: config.aliases ?? [],
     negatable: !!config.negatable,
     hidden: config.hidden ?? false,
+    get shortDescription() {
+      return typeof config.short === "function" ? config.short() : config.short;
+    },
     get longDescription() {
-      return longDescription;
+      return typeof config.long === "function" ? config.long() : config.long;
     },
-    long(description: string): any {
-      longDescription = description;
-      return this;
-    },
+    deprecated: config.deprecated,
     __flag: true as const,
     __global: false,
   };
 
-  return Object.assign(schema, {
-    ...extras,
-    // @ts-expect-error: blah blah
-    describe(description: string) {
-      const This = (this as any).constructor;
-      return Object.assign(
-        new This({
-          // @ts-expect-error: blah blah
-          ...this._def,
-          description,
-        }),
-        extras,
-      );
-    },
-  });
+  return zodProxy(z, flagProps) as Prettify<
+    FlagTypes & typeof flagProps
+  >;
 }
 
 /**
@@ -52,65 +36,12 @@ export function flag<
  *
  * @param shape - The shape of the flags.
  */
-export function flags<Shape extends FlagsShape>(shape: Shape): Flags<Shape> {
-  // @ts-expect-error: it's fine, great actually
-  return Object.assign(z.object(shape).strict(), {
+export function flags<Shape extends FlagsShape>(shape: Shape) {
+  const flagsProps = {
     __flags: true,
-    __global: false,
-    merge(merging: GlobalFlags<Shape>) {
-      const merged: any = new z.ZodObject({
-        unknownKeys: merging._def.unknownKeys,
-        catchall: merging._def.catchall,
-        shape: () =>
-          // @ts-expect-error: it's fine, great actually
-          z.objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
-        typeName: z.ZodFirstPartyTypeKind.ZodObject,
-      }) as any;
+  };
 
-      merged.__global = false;
-      merged.__flags = true;
-      return merged;
-    },
-  });
-}
-
-/**
- * A global flags object. These flags are available to all commands.
- * This also adds the flags to the "Global Flags" section of the help
- * output.
- *
- * @param shape - The shape of the flags.
- */
-export function globalFlags<Shape extends FlagsShape>(
-  shape: Shape,
-): GlobalFlags<Shape> {
-  walkFlags(flags(shape as any), (schema) => {
-    schema.__global = true;
-  });
-
-  // @ts-expect-error: it's fine, great actually
-  return Object.assign(z.object(shape).strict(), {
-    __flags: true,
-    __global: true,
-    merge(merging: GlobalFlags<Shape>) {
-      const merged: any = new z.ZodObject({
-        unknownKeys: merging._def.unknownKeys,
-        catchall: merging._def.catchall,
-        shape: () =>
-          // @ts-expect-error: it's fine, great actually
-          z.objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
-        typeName: z.ZodFirstPartyTypeKind.ZodObject,
-      }) as any;
-
-      walkFlags(merged, (schema) => {
-        schema.__global = true;
-      });
-
-      merged.__global = true;
-      merged.__flags = true;
-      return merged;
-    },
-  });
+  return zodProxy(z, flagsProps).object(shape).strict() as Flags<Shape>;
 }
 
 /**
@@ -118,7 +49,7 @@ export function globalFlags<Shape extends FlagsShape>(
  *
  * @param schema - The object to check
  */
-export function isFlag(schema: unknown): schema is Flag<any, any> {
+export function isFlag(schema: unknown): schema is Flag {
   return schema instanceof z.ZodType && "__flag" in schema;
 }
 
@@ -127,7 +58,7 @@ export function isFlag(schema: unknown): schema is Flag<any, any> {
  *
  * @param schema - The object to check
  */
-export function isGlobalFlag(schema: unknown): schema is Flag<any, any> {
+export function isGlobalFlag(schema: unknown): schema is Flag {
   return isFlag(schema) && !!schema.__global;
 }
 
@@ -137,16 +68,7 @@ export function isGlobalFlag(schema: unknown): schema is Flag<any, any> {
  * @param schema - The object to check
  */
 export function isFlags(schema: unknown): schema is Flags {
-  return schema instanceof z.ZodObject && "__flags" in schema;
-}
-
-/**
- * Returns `true` if the given schema is a global flags object.
- *
- * @param schema - The object to check
- */
-export function isGlobalFlags(schema: unknown): schema is GlobalFlags {
-  return isFlags(schema) && !!schema.__global;
+  return schema instanceof z.ZodType && "__flags" in schema;
 }
 
 /**
@@ -171,7 +93,7 @@ export function innerType<T>(schema: T): z.ZodTypeAny | T {
  *
  * @param schema - The schema to find the default value of
  */
-export function getDefault<T extends Flag<z.ZodTypeAny, string>>(
+export function getDefault<T extends Flag>(
   schema: T,
 ): inferFlag<T> | undefined {
   if (schema instanceof z.ZodDefault) {
@@ -182,11 +104,48 @@ export function getDefault<T extends Flag<z.ZodTypeAny, string>>(
 }
 
 /**
+ * Walk a flags object and call a function for each flag that is found.
+ *
+ * @param schema - The schema to walk
+ * @param visitor - The function to call for each flag
+ */
+export function walkFlags<Schema extends Flags | unknown = unknown>(
+  schema: Schema,
+  visitor: (
+    schema: Flag,
+    name: Extract<
+      Schema extends Flags | OptionalFlags ? keyof inferFlags<Schema>
+        : Record<string, unknown>,
+      string
+    >,
+  ) => void,
+) {
+  // Eliminate the tail call above
+  // This looks dumb now but might add more stuff e.g. nested opts later
+  // @ts-expect-error: it's fine
+  const stack: [Flags | OptionalFlags, string][] = schema ? [[schema, ""]] : [];
+
+  while (stack.length > 0) {
+    const [s, baseName] = stack.pop()!;
+    // @ts-expect-error: it works
+    for (const [name, prop] of Object.entries(innerType(s).shape)) {
+      const type = innerType(prop);
+
+      if (isFlags(type)) {
+        stack.push([type as any, baseName ? `${baseName}.${name}` : name]);
+      } else if (isFlag(prop)) {
+        visitor(prop, (baseName ? `${baseName}.${name}` : name) as any);
+      }
+    }
+  }
+}
+
+/**
  * Return the type of a flag as a string.
  *
  * @param schema - The schema to find the type of
  */
-export function typeAsString(schema: Flag<z.ZodTypeAny, string>): string {
+export function typeAsString(schema: Flag): string {
   if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault) {
     return typeAsString(schema._def.innerType);
   } else if (schema instanceof z.ZodArray) {
@@ -242,51 +201,11 @@ export function typeAsString(schema: Flag<z.ZodTypeAny, string>): string {
   return "";
 }
 
-/**
- * Walk a flags object and call a function for each flag that is found.
- *
- * @param schema - The schema to walk
- * @param visitor - The function to call for each flag
- */
-export function walkFlags<Schema extends Flags | unknown = unknown>(
-  schema: Schema,
-  visitor: (
-    schema: Flag<z.ZodTypeAny, string>,
-    name: Extract<
-      Schema extends Flags | OptionalFlags ? keyof inferFlags<Schema>
-        : Record<string, unknown>,
-      string
-    >,
-  ) => void,
-) {
-  // Eliminate the tail call above
-  // This looks dumb now but might add more stuff e.g. nested opts later
-  // @ts-expect-error: it's fine
-  const stack: [Flags | OptionalFlags, string][] = schema ? [[schema, ""]] : [];
-
-  while (stack.length > 0) {
-    const [s, baseName] = stack.pop()!;
-    // @ts-expect-error: it works
-    for (const [name, prop] of Object.entries(innerType(s).shape)) {
-      const type = innerType(prop);
-
-      if (isFlags(type)) {
-        stack.push([type as any, baseName ? `${baseName}.${name}` : name]);
-      } else if (isFlag(prop)) {
-        visitor(prop, (baseName ? `${baseName}.${name}` : name) as any);
-      }
-    }
-  }
-}
-
-export type Flag<
-  Schema extends z.ZodTypeAny,
-  Aliases extends Readonly<string>,
-> = {
+export type Flag<Schema extends z.ZodTypeAny = z.ZodTypeAny> = {
   /**
    * The short aliases of the flag.
    */
-  aliases: Readonly<Aliases[]>;
+  aliases: Readonly<string[]>;
   /**
    * The flag is negatable. This means that the flag can be prefixed with
    * `--no-` to negate it.
@@ -298,25 +217,17 @@ export type Flag<
    */
   hidden: boolean;
   /**
-   * Set the short description of the flag.
-   *
-   * @param description - The short description of the flag
-   */
-  describe(description: string): Flag<Schema, Aliases>;
-  /**
    * The short description of the flag.
    */
-  description: string | undefined;
-  /**
-   * Set the long description of the flag.
-   *
-   * @param description - The long description of the flag
-   */
-  long(description: string): Flag<Schema, Aliases>;
+  shortDescription: string | undefined;
   /**
    * The long description of the flag.
    */
   longDescription: string | undefined;
+  /**
+   * If `true`, this flag is deprecated.
+   */
+  deprecated?: boolean;
   _def: Schema["_def"];
   _output: Schema["_output"];
   __flag: true;
@@ -364,7 +275,6 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
      */
     optional(): OptionalFlags<Shape>;
     __flags: true;
-    __global: boolean;
   };
 
 export type OptionalFlags<Shape extends FlagsShape = FlagsShape> =
@@ -377,19 +287,19 @@ export type OptionalFlags<Shape extends FlagsShape = FlagsShape> =
     __optional: true;
   };
 
-export type GlobalFlags<Shape extends FlagsShape = FlagsShape> = Flags<Shape>;
+export type FlagsShape = {
+  [k: string]: z.ZodTypeAny | Flags<any> | OptionalFlags<any>;
+};
 
-export type FlagsShape = Record<
-  string,
-  Flag<z.ZodTypeAny, string> | Flags<any> | OptionalFlags<any>
->;
-
-export type FlagAliases<T extends { aliases: ReadonlyArray<string> }> =
-  T["aliases"] extends ReadonlyArray<infer Names> ? Names extends string ? Names
-    : never
-    : never;
-
-export type FlagConfig<Aliases extends Readonly<string>> = {
+export type FlagConfig = {
+  /**
+   * A short description of the flag.
+   */
+  short?: string | (() => string);
+  /**
+   * A long description of the flag.
+   */
+  long?: string | (() => string);
   /**
    * Add short aliases for the flag.
    * @example
@@ -399,7 +309,7 @@ export type FlagConfig<Aliases extends Readonly<string>> = {
    * })
    * ```
    */
-  aliases?: Aliases[];
+  aliases?: string[];
   /**
    * Make the flag negatable. This is only available for boolean flags.
    * A negated flag will be set to `false` when passed. For example, `--no-verbose`
@@ -411,7 +321,53 @@ export type FlagConfig<Aliases extends Readonly<string>> = {
    * This is useful for flags that are used internally.
    */
   hidden?: boolean;
+  /**
+   * Mark the flag as deprecated. This will show a warning when the flag is used.
+   * It will also hide the flag from the help and autocomplete output.
+   *
+   * @example
+   * ```ts
+   * flags({
+   *  verbose: flag({
+   *    deprecated: 'Use --log-level instead'
+   *  })
+   *    .boolean()
+   *    .default(false)
+   * })
+   * ```
+   */
+  deprecated?: string;
 };
 
-export type inferFlags<T extends Flags | OptionalFlags> = T["_output"];
-export type inferFlag<T extends Flag<any, any>> = T["_output"];
+export type FlagTypes = Pick<
+  typeof z,
+  | "any"
+  | "array"
+  | "bigint"
+  | "boolean"
+  | "coerce"
+  | "custom"
+  | "date"
+  | "discriminatedUnion"
+  | "enum"
+  | "lazy"
+  | "literal"
+  | "nativeEnum"
+  | "number"
+  | "object"
+  | "oboolean"
+  | "onumber"
+  | "ostring"
+  | "pipeline"
+  | "preprocess"
+  | "quotelessJson"
+  | "record"
+  | "set"
+  | "string"
+  | "tuple"
+  | "union"
+  | "unknown"
+>;
+
+export type inferFlags<T extends { _output: any }> = T["_output"];
+export type inferFlag<T extends Flag> = T["_output"];

@@ -1,8 +1,8 @@
 // deno-lint-ignore-file no-explicit-any
 import { Command, command, CommandConfig } from "./command.ts";
-import { Arg, arg, Args as ArgsTuple, args } from "./args.ts";
+import { Args as ArgsTuple, args } from "./args.ts";
 import { helpFlag, writeHelp } from "./help.ts";
-import { flag, Flags, flags, GlobalFlags } from "./flags.ts";
+import { flag, Flags, flags, walkFlags } from "./flags.ts";
 import { z } from "./z.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
@@ -11,7 +11,7 @@ import * as intl from "./intl.ts";
 
 export function create<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalFlags,
+  GlobalOpts extends Flags,
 >(
   config: CreateConfig<Context, GlobalOpts>,
 ): CommandFactory<Context, GlobalOpts> {
@@ -19,6 +19,10 @@ export function create<
     ? config.globalFlags.merge(helpOpts)
     : helpOpts;
   let bin: Command<Context, any, any, GlobalOpts>;
+
+  walkFlags(gOpts, (flag) => {
+    flag.__global = true;
+  });
 
   return {
     ctx: config.ctx,
@@ -28,11 +32,7 @@ export function create<
     globalFlags: config.globalFlags,
     command<
       Args extends
-        | ArgsTuple<
-          Arg<string, z.ZodTypeAny>,
-          Arg<string, z.ZodTypeAny>[],
-          Arg<string, z.ZodTypeAny> | null
-        >
+        | ArgsTuple
         | unknown = unknown,
       Opts extends Flags | unknown = unknown,
     >(
@@ -53,24 +53,28 @@ export function create<
 
       if (options.commands?.length) {
         const helpCmd = command("help", {
+          short: `Show help for a ${name} command`,
           flags: gOpts,
           commands: [
             command("commands", {
+              short: `List ${name} commands`,
+
               flags: gOpts.merge(
                 flags({
-                  all: flag(z.boolean().default(false), {
+                  all: flag({
                     aliases: ["a"],
-                  }).describe("Show all commands, including hidden ones"),
+                    short: "Show all commands, including hidden ones",
+                  }).boolean().default(false),
                 }),
               ),
             })
-              .run(async (args) => {
+              .run(async ({ flags }) => {
                 await writeHelp(
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
                     const sortedCmds = intl.collate(
                       options.commands!.filter(
-                        (cmd) => args.all || !cmd.hidden,
+                        (cmd) => flags.all || !cmd.hidden,
                       ),
                       {
                         get(item) {
@@ -83,7 +87,7 @@ export function create<
 
                     for (let i = 0; i < sortedCmds!.length; i++) {
                       const cmd = sortedCmds![i];
-                      rows[i] = [cmd.name, cmd.description ?? ""];
+                      rows[i] = [cmd.name, cmd.shortDescription ?? ""];
                     }
 
                     for (
@@ -98,48 +102,43 @@ export function create<
                     yield `\nUse "${name} help [command]" for more information about a command.`;
                   })(),
                 );
-              })
-              .describe(`List ${name} commands`),
+              }),
           ],
 
-          args: args([
-            arg(
-              "command",
-              z.enum(
-                options.commands.flatMap((c) => [c.name, ...c.aliases]).concat(
-                  "help",
-                ) as [
-                  string,
-                  ...string[],
-                ],
-              ),
-            ).describe("The command to read help for"),
+          args: args().tuple([
+            z.enum(
+              options.commands.flatMap((c) => [c.name, ...c.aliases]).concat(
+                "help",
+              ) as [
+                string,
+                ...string[],
+              ],
+            ),
           ]).optional(),
         })
-          .describe(`Show help for a ${name} command`)
-          .run(async (args: any, ctx) => {
-            if (!args.command) {
+          .run(async ({ args, ctx }) => {
+            if (!args[0]) {
               // @ts-expect-error: it's fine ffs
               await writeHelp(command_.help(ctx.path));
             }
 
             const cmd = options.commands!.find(
               (cmd) =>
-                cmd.name === args.command ||
-                cmd.aliases.includes(args.command!),
+                cmd.name === args[0] ||
+                cmd.aliases.includes(args[0]!),
             );
 
             if (!cmd) {
               await Promise.all([
                 Deno.stderr.write(
                   new TextEncoder().encode(
-                    `Unknown help topic: "${args.command}"\n`,
+                    `Unknown help topic: "${args[0]}"\n`,
                   ),
                 ),
                 Deno.stderr.write(
                   new TextEncoder().encode(
                     didYouMean(
-                      args.command + "",
+                      args[0] + "",
                       options
                         .commands!.flatMap((cmd) => [cmd.name, ...cmd.aliases])
                         .concat("commands"),
@@ -210,12 +209,12 @@ export function create<
 }
 
 const helpOpts = flags({
-  help: helpFlag().describe("Show help for this command"),
+  help: helpFlag({ short: "Show help for a command" }),
 });
 
 export type CreateConfig<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalFlags,
+  GlobalOpts extends Flags,
 > = {
   /**
    * The context that will be passed to each command.
@@ -233,21 +232,22 @@ export type BaseContext = {
    */
   path: string[];
   /**
-   * The main command that is being executed.
+   * The root command that is being executed.
    */
   bin: Command<any, any, any, any>;
 };
 
 export type CommandFactory<
   Context extends Record<string, unknown>,
-  GlobalOpts extends GlobalFlags,
+  GlobalOpts extends Flags,
 > = {
   /**
    * Meta information about the CLI.
    */
   ctx?: Context;
   /**
-   * The main/root command that is being executed.
+   * The main/root command that is being executed. This will
+   * be `undefined` if accessed outside of an execution environment.
    */
   bin?: Command<Context, any, any, GlobalOpts>;
   /**
@@ -260,16 +260,12 @@ export type CommandFactory<
    */
   command<
     Args extends
-      | ArgsTuple<
-        Arg<string, z.ZodTypeAny>,
-        Arg<string, z.ZodTypeAny>[],
-        Arg<string, z.ZodTypeAny> | null
-      >
+      | ArgsTuple
       | unknown = unknown,
     Opts extends Flags | unknown = unknown,
   >(
     name: string,
-    options?: CommandConfig<
+    config?: CommandConfig<
       Context & BaseContext,
       Args,
       Opts

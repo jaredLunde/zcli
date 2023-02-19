@@ -70,9 +70,8 @@ function* completeCommand(
         path[0]
       }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${
         (
-          options.disableDescriptions
-            ? ""
-            : (command.description ?? shorten(command.longDescription ?? ""))
+          options.disableDescriptions ? "" : (command.shortDescription ??
+            shorten(command.longDescription ?? ""))
         ).replace(/'/g, "\\'")
       }'`,
     );
@@ -95,11 +94,11 @@ function* completeCommand(
     completion.push("-k -f -a");
 
     if (
-      !options.disableDescriptions && (arg.description || arg.longDescription)
+      !options.disableDescriptions && (arg.description)
     ) {
       completion.push(
         `-d '${
-          (arg.description ?? shorten(arg.longDescription ?? "")).replace(
+          (arg.description ?? "").replace(
             /'/g,
             "\\'",
           )
@@ -133,12 +132,13 @@ function* completeCommand(
     completion.push("-k -f");
 
     if (
-      !options.disableDescriptions && (flag.description || flag.longDescription)
+      !options.disableDescriptions &&
+      (flag.shortDescription || flag.longDescription)
     ) {
       completion.push(
         `-d '${
           (
-            flag.description ?? shorten(flag.longDescription ?? "")
+            flag.shortDescription ?? shorten(flag.longDescription ?? "")
           ).replace(/'/g, "\\'")
         }'`,
       );

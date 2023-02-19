@@ -19,8 +19,13 @@ export function version<
 } = {}) {
   const { name = "version", ...config } = options;
 
-  return commandFactory.command(name, config)
-    .run(function* (_args, { meta, path }) {
+  return commandFactory.command(name, {
+    short: "Show version information",
+    long:
+      "Shows version information command, including version number and build date.",
+    ...config,
+  })
+    .run(function* ({ ctx: { meta, path } }) {
       const bin = path[0];
       const metaStr = [
         meta.date &&
@@ -36,9 +41,5 @@ export function version<
       yield `${bin} v${meta.version}${
         metaStr.length > 1 ? ` (${metaStr})` : ""
       }`;
-    })
-    .describe("Show version information")
-    .long(
-      "Shows version information command, including version number and build date.",
-    );
+    });
 }

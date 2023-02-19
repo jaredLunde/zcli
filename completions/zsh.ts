@@ -97,7 +97,7 @@ function* completeCommands<T extends GenericCommand>(
         const name = escapeString(command.name);
         const description = options.disableDescriptions
           ? ""
-          : (command.description ?? "").replace(":", " ");
+          : (command.shortDescription ?? "").replace(":", " ");
         return `"${name}:${description}"`;
       })
       .join(`\n${" ".repeat(8)}`)
@@ -146,9 +146,8 @@ function completeArgs(
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
-    const message =
-      ((options.disableDescriptions ? "" : arg.description) || arg.name)
-        .replace(":", " ");
+    const message = ((options.disableDescriptions ? "" : arg.description) || "")
+      .replace(":", " ");
     let action = ``;
     // A zsh variadic argument
     const variadicPrefix = variadic ? "*" : " ";
@@ -241,10 +240,11 @@ function completeFlags(
     }
 
     const explanation = `[${
-      ((options.disableDescriptions ? "" : flag.description) ?? "").replace(
-        ":",
-        " ",
-      )
+      ((options.disableDescriptions ? "" : flag.shortDescription) ?? "")
+        .replace(
+          ":",
+          " ",
+        )
     }]`;
     const message = `${name}`;
     let action = ``;

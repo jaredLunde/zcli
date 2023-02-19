@@ -1,6 +1,6 @@
 import { create, env, z } from "../mod.ts";
-import { arg, args } from "../args.ts";
-import { flag, flags, globalFlags } from "../flags.ts";
+import { args } from "../args.ts";
+import { flag, flags } from "../flags.ts";
 import { colors } from "../fmt.ts";
 import { table } from "../lib/simple-table.ts";
 import { version } from "../version.ts";
@@ -8,16 +8,16 @@ import { zcliJson } from "../zcli-json.ts";
 import { completion } from "../completion.ts";
 import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 
-const zcli = create({
-  globalFlags: globalFlags({
-    verbose: flag(
-      z.boolean().default(false).describe("Return verbose output"),
-      { aliases: ["v"] },
-    ),
-    raw: flag(
-      z.boolean().default(false).describe("Log the raw body of responses"),
-      { aliases: ["r"] },
-    ),
+const cli = create({
+  globalFlags: flags({
+    verbose: flag({
+      short: "Enable verbose logging",
+      aliases: ["v"],
+    }).oboolean(),
+    raw: flag({
+      short: "Print a raw response output",
+      aliases: ["r"],
+    }).oboolean(),
   }),
 
   ctx: {
@@ -34,52 +34,53 @@ const zcli = create({
   },
 });
 
-const cli = zcli
-  .command("fetch", {
-    args: args([arg("url", z.string().url().describe("The URL to fetch"))]),
+const fetcher = cli
+  .command("fetcher", {
+    args: args({
+      short: "A URL to fetch.",
+    }).tuple([z.string().url()]),
 
     flags: flags({
-      method: flag(
-        z
-          .enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
-          .default("GET")
-          .describe("The HTTP method to use"),
-        {
-          aliases: ["m"],
-        },
-      ),
-      headers: flag(
-        z.array(z.string()).optional().describe("Add headers to the request"),
-        { aliases: ["H"] },
-      ),
-      data: flag(z.string().optional().describe("Send request data"), {
+      method: flag({
+        aliases: ["m"],
+        short: "The HTTP method to use",
+      }).enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
+        .default("GET"),
+
+      headers: flag({
+        aliases: ["H"],
+        short: "Add headers to the request",
+      }).array(z.string()).optional(),
+
+      data: flag({
         aliases: ["d"],
-      }),
+        short: "Send request data",
+      }).ostring(),
     }),
 
     commands: [
-      version(zcli),
-      completion(zcli),
-      zcliJson(zcli),
+      version(cli),
+      completion(cli),
+      zcliJson(cli),
     ],
-  })
-  .describe("Fetch a resource from the internet")
-  .long(
-    `
-    Fetch a resource from the internet
 
-    This command will fetch a resource from the internet and print the response.
+    short: "Fetch a resource from the internet",
+
+    long: `
+      Fetch a resource from the internet
+
+      This command will fetch a resource from the internet and print the response.
     `,
-  )
-  .preRun((flags, { env }) => {
-    if (env.get("DEBUG")) {
-      console.log("Fetching:", flags.url);
+  })
+  .preRun(({ args, ctx }) => {
+    if (ctx.env.get("DEBUG")) {
+      console.log("Fetching:", args[0]);
     }
   })
-  .run(async function* (flags) {
+  .run(async function* ({ args, flags }) {
     let response: Response | undefined;
 
-    fetch(flags.url, {
+    fetch(args[0], {
       method: flags.method,
       headers: new Headers(
         flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
@@ -117,7 +118,7 @@ const cli = zcli
       for (
         const line of table(
           [
-            [colors.blue("URL"), flags.url],
+            [colors.blue("URL"), args[0]],
             [
               colors.blue("Status"),
               colors.green(response.status + "") + " " + response.statusText,
@@ -163,5 +164,5 @@ const cli = zcli
   });
 
 if (import.meta.main) {
-  await cli.execute();
+  await fetcher.execute();
 }

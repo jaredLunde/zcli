@@ -1,17 +1,10 @@
 // deno-lint-ignore-file no-explicit-any ban-types no-explicit-any no-explicit-any
-import {
-  Arg,
-  Args as ArgsTuple,
-  OptionalArgsWithoutVariadic,
-  OptionalArgsWithVariadic,
-  walkArgs,
-} from "./args.ts";
+import { Args as ArgsTuple, inferArgs, isArgs, walkArgs } from "./args.ts";
 import {
   Flag,
   Flags,
   flags as opts_,
   getDefault,
-  GlobalFlags,
   inferFlags,
   innerType,
   typeAsString,
@@ -39,11 +32,7 @@ import * as flagsParser from "./flags-parser.ts";
 export function command<
   Context extends Record<string, unknown>,
   Args extends
-    | ArgsTuple<
-      Arg<string, z.ZodTypeAny>,
-      Arg<string, z.ZodTypeAny>[],
-      Arg<string, z.ZodTypeAny> | null
-    >
+    | ArgsTuple
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
 >(
@@ -52,7 +41,9 @@ export function command<
     args,
     commands,
     flags,
-    meta,
+    use,
+    short,
+    long,
     aliases = [],
     hidden = false,
   }: CommandConfig<Context, Args, Opts> = { flags: opts_({}) as any },
@@ -60,29 +51,20 @@ export function command<
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
-  let description: string | (() => string) | undefined;
-  let longDescription: string | (() => string) | undefined;
-  const hasOptionalArgs = args instanceof z.ZodOptional ||
-    args instanceof z.ZodDefault;
-  const hasArgs = args instanceof z.ZodTuple || hasOptionalArgs;
-  const variadicArg = !hasArgs
-    ? null
-    : hasOptionalArgs
-    ? args._def.innerType._def.rest
-    : args._def.rest;
+  const hasArgs = isArgs(args);
   const hasCmds = !!commands?.length;
 
   function* help(path: string[] = []): Iterable<string> {
     const displayName = path.join(" ") || name;
 
-    if (longDescription || description) {
-      const desc = typeof longDescription === "function"
-        ? longDescription()
-        : longDescription
-        ? longDescription
-        : typeof description === "function"
-        ? description()
-        : description + "";
+    if (long || short) {
+      const desc = typeof long === "function"
+        ? long()
+        : long
+        ? long
+        : typeof short === "function"
+        ? short()
+        : short + "";
 
       for (const line of dedent(desc)) {
         yield line;
@@ -93,31 +75,36 @@ export function command<
 
     yield colors.bold("Usage");
 
-    const hasAvailableCmds = hasCmds && !commands.every((cmd) => cmd.hidden);
+    const hasAvailableCmds = hasCmds && commands.some((cmd) => !cmd.hidden);
 
-    if (hasAvailableCmds && !meta?.usage) {
+    if (hasAvailableCmds && !use) {
       yield `  ${displayName} [command]`;
     }
 
-    if (meta?.usage) {
-      yield meta.usage.join("\n  ");
+    if (use) {
+      yield typeof use === "function" ? `  ${use()}` : `  ${use}`;
     } else if (args) {
       let argsUsage = `  ${displayName}`;
 
-      const hasOptionalArgs = args instanceof z.ZodOptional ||
-        args instanceof z.ZodDefault;
+      if (typeof args === "object" && "usage" in args && args.usage) {
+        argsUsage += ` ${args.usage}`;
+      } else {
+        const hasOptionalArgs = args instanceof z.ZodDefault ||
+          args instanceof z.ZodOptional ||
+          (args instanceof z.ZodArray && !args._def.minLength?.value);
 
-      walkArgs(args, (arg, { variadic }) => {
-        if (variadic) {
-          argsUsage += ` [${arg.name}...]`;
-        } else {
-          argsUsage += hasOptionalArgs ||
-              arg instanceof z.ZodOptional ||
-              arg instanceof z.ZodDefault
-            ? ` [${arg.name}]`
-            : ` <${arg.name}>`;
-        }
-      });
+        walkArgs(args, (arg, { variadic }) => {
+          if (variadic) {
+            argsUsage += ` [arguments...]`;
+          } else {
+            argsUsage += hasOptionalArgs ||
+                arg instanceof z.ZodOptional ||
+                arg instanceof z.ZodDefault
+              ? ` [arguments]`
+              : ` <arguments>`;
+          }
+        });
+      }
 
       yield argsUsage + ` [flags]`;
     } else {
@@ -142,7 +129,7 @@ export function command<
         const cmd = sortedCmds[i];
 
         if (!cmd.hidden) {
-          rows[i] = [cmd.name, cmd.description ?? ""];
+          rows[i] = [cmd.name, cmd.shortDescription ?? ""];
         }
       }
 
@@ -163,7 +150,7 @@ export function command<
 
     const rows: string[][] = [];
     const globalRows: string[][] = [];
-    const docFlags: { path: string; flag: Flag<any, any> }[] = [];
+    const docFlags: { path: string; flag: Flag }[] = [];
 
     walkFlags(flags, (opt, path) => {
       docFlags.push({ path, flag: opt });
@@ -188,7 +175,7 @@ export function command<
           : type instanceof z.ZodEnum
           ? typeof type._def.values[0]
           : typeAsString(opt),
-        (opt.description ?? "") +
+        (opt.shortDescription ?? "") +
         (!(type instanceof z.ZodBoolean) && defaultValue
           ? ` (default: ${defaultValue})`
           : ""),
@@ -236,25 +223,16 @@ export function command<
     flags: flags ?? {},
     hidden,
     help,
-
-    get description() {
-      return typeof description === "function" ? description() : description;
+    get usage() {
+      return typeof use === "function" ? use() : use;
     },
 
-    describe(str: string | (() => string)) {
-      description = str;
-      return this;
+    get shortDescription() {
+      return typeof short === "function" ? short() : short;
     },
 
     get longDescription() {
-      return typeof longDescription === "function"
-        ? longDescription()
-        : longDescription;
-    },
-
-    long(description: string | (() => string)) {
-      longDescription = description;
-      return this;
+      return typeof long === "function" ? long() : long;
     },
 
     preRun(action_) {
@@ -275,12 +253,12 @@ export function command<
     async execute(argv = Deno.args, ctx) {
       if (hasCmds) {
         const [cmd, ...rest] = argv;
-        const match = commands.find(
-          (c) => c.name === cmd || c.aliases.includes(cmd),
+        const subCommand = commands.find(
+          (c) => c.name === cmd || c.aliases.indexOf(cmd) !== -1,
         );
 
-        if (match) {
-          return await match.execute(rest, ctx);
+        if (subCommand) {
+          return await subCommand.execute(rest, ctx);
         }
       }
 
@@ -393,20 +371,17 @@ export function command<
       }
 
       // Parse the arguments
-      const a: Record<string, unknown> = variadicArg
-        ? { [variadicArg.name]: [] }
-        : {};
+      let a: unknown[] = [];
 
       if (hasArgs) {
-        const defaultArgs = _.length === 0 && args instanceof z.ZodOptional
-          ? undefined
-          : _.length === 0 && args instanceof z.ZodDefault
-          ? args._def.defaultValue()
-          : _;
-        let parsedArgs: unknown[] = [];
-
         try {
-          parsedArgs = (await args.parseAsync(defaultArgs)) ?? parsedArgs;
+          const defaultArgs = _.length === 0 && args instanceof z.ZodOptional
+            ? undefined
+            : _.length === 0 && args instanceof z.ZodDefault
+            ? args._def.defaultValue()
+            : _;
+
+          a = (await args.parseAsync(defaultArgs)) ?? a;
         } catch (err) {
           if (err instanceof z.ZodError) {
             const errors = err.errors.map((e) => {
@@ -453,53 +428,21 @@ export function command<
 
           throw err;
         }
-
-        walkArgs(args, (item, { position, variadic }) => {
-          const arg = parsedArgs[position];
-
-          if (!arg) {
-            return;
-          }
-
-          if (item && item.name === variadicArg?.name && !variadic) {
-            const collect = a[item.name];
-
-            if (!collect) {
-              a[item.name] = [arg];
-            } else if (Array.isArray(collect)) {
-              collect.push(arg);
-            }
-          } else if (!variadic) {
-            a[item.name] = arg;
-          } else {
-            let collect = a[variadicArg.name] as any[];
-
-            if (!collect) {
-              collect = a[variadicArg.name] = [arg];
-            } else if (Array.isArray(collect)) {
-              collect.push(arg);
-            }
-
-            for (const a of parsedArgs.slice(position + 1)) {
-              collect.push(a);
-            }
-          }
-        });
       }
 
-      const actionArgs = { ...a, ...o, "--": doubleDash };
+      const actionArgs = { args: a, flags: o, "--": doubleDash, ctx };
 
       // Run the action
       if (preAction) {
-        await handleAction(preAction, actionArgs, ctx!);
+        await handleAction(preAction, actionArgs);
       }
 
       if (action) {
-        await handleAction(action, actionArgs, ctx!);
+        await handleAction(action, actionArgs);
       }
 
       if (postAction) {
-        await handleAction(postAction, actionArgs, ctx!);
+        await handleAction(postAction, actionArgs);
       }
     },
   };
@@ -508,12 +451,11 @@ export function command<
 async function handleAction<ActionFn extends Action<any, any, any, any>>(
   action: ActionFn,
   args: unknown,
-  ctx: unknown,
 ) {
   if (isAsyncGenerator(action)) {
     const writes: Promise<number>[] = [];
     // @ts-expect-error: it's fine
-    for await (const output of action(args, ctx)) {
+    for await (const output of action(args)) {
       writes.push(Deno.stdout.write(encoder.encode((await output) + "\n")));
     }
 
@@ -521,17 +463,17 @@ async function handleAction<ActionFn extends Action<any, any, any, any>>(
   } else if (isGenerator(action)) {
     const writes: Promise<number>[] = [];
     // @ts-expect-error: it's fine
-    for (const output of action(args, ctx)) {
+    for (const output of action(args)) {
       writes.push(Deno.stdout.write(encoder.encode(output + "\n")));
     }
 
     await Promise.all(writes);
   } else if ("then" in action && typeof action.then === "function") {
     // @ts-expect-error: it's fine
-    await action(args, ctx);
+    await action(args);
   } else {
     // @ts-expect-error: it's fine
-    action(args, ctx);
+    action(args);
   }
 }
 
@@ -557,14 +499,10 @@ const encoder = new TextEncoder();
 export type Command<
   Context extends Record<string, unknown>,
   Args extends
-    | ArgsTuple<
-      Arg<string, z.ZodTypeAny>,
-      Arg<string, z.ZodTypeAny>[],
-      Arg<string, z.ZodTypeAny> | null
-    >
+    | ArgsTuple
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
-  GlobalOpts extends GlobalFlags | unknown = unknown,
+  GlobalOpts extends Flags | unknown = unknown,
 > = {
   /**
    * The name of the command
@@ -595,27 +533,15 @@ export type Command<
    */
   help(path?: string[]): Iterable<string>;
   /**
-   * A short description of the command
-   *
-   * @param description The description of the command
+   * The usage string for the command
    */
-  describe(
-    description: string | (() => string),
-  ): Command<Context, Args, Opts, GlobalOpts>;
+  usage?: string;
+  /**
+   * A short description of the command
+   */
+  shortDescription?: string;
   /**
    * A long description of the command
-   *
-   * @param description The description of the command
-   */
-  long(
-    description: string | (() => string),
-  ): Command<Context, Args, Opts, GlobalOpts>;
-  /**
-   * The short description of the command
-   */
-  description?: string;
-  /**
-   * The long description of the command
    */
   longDescription?: string;
   /**
@@ -649,11 +575,7 @@ export type Command<
 export type CommandConfig<
   Context extends Record<string, unknown>,
   Args extends
-    | ArgsTuple<
-      Arg<string, z.ZodTypeAny>,
-      Arg<string, z.ZodTypeAny>[],
-      Arg<string, z.ZodTypeAny> | null
-    >
+    | ArgsTuple
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
 > = {
@@ -670,10 +592,6 @@ export type CommandConfig<
    */
   commands?: Command<Context>[];
   /**
-   * Command metadata
-   */
-  meta?: Meta;
-  /**
    * Aliases for the command
    */
   aliases?: string[];
@@ -681,19 +599,27 @@ export type CommandConfig<
    * Hide this command from the help text
    */
   hidden?: boolean;
+  /**
+   * Command usage
+   */
+  use?: string | (() => string);
+  /**
+   * A short description of the command
+   */
+  short?: string | (() => string);
+  /**
+   * A long description of the command
+   */
+  long?: string | (() => string);
 };
 
 export type Action<
   Context extends Record<string, unknown>,
   Args extends
-    | ArgsTuple<
-      Arg<string, z.ZodTypeAny>,
-      Arg<string, z.ZodTypeAny>[],
-      Arg<string, z.ZodTypeAny> | null
-    >
+    | ArgsTuple
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
-  GlobalOpts extends GlobalFlags | unknown = unknown,
+  GlobalOpts extends Flags | unknown = unknown,
 > = {
   /**
    * The action to run when the command is invoked
@@ -701,63 +627,24 @@ export type Action<
    * @param ctx The context object
    */
   (
-    argopts: Prettify<
-      Merge<
-        ArgsMap<Args>,
-        Merge<
-          (Opts extends Flags ? inferFlags<Opts> : {}) & { "--": string[] },
-          GlobalOpts extends GlobalFlags ? inferFlags<GlobalOpts> : {}
-        >
-      >
+    opts: Prettify<
+      {
+        args: Args extends ArgsTuple ? inferArgs<Args> : unknown[];
+        flags: Merge<
+          (Opts extends {
+            __flags: true;
+            _output: any;
+          } ? inferFlags<Opts>
+            : {}),
+          GlobalOpts extends Flags ? inferFlags<GlobalOpts> : {}
+        >;
+        "--": string[];
+        ctx: Prettify<Context>;
+      }
     >,
-    ctx: Prettify<Context>,
   ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
 };
 
 export type Execute<Context> = {
   (args?: string[], ctx?: Context): Promise<void>;
-};
-
-export type ArgsMap<
-  Args extends
-    | ArgsTuple<
-      Arg<string, z.ZodTypeAny>,
-      Arg<string, z.ZodTypeAny>[],
-      Arg<string, z.ZodTypeAny> | null
-    >
-    | unknown = unknown,
-> = Args extends ArgsTuple<infer ZodType, infer ZodTypes, infer VariadicType>
-  ? Merge<
-    Args extends
-      | OptionalArgsWithoutVariadic<any, any>
-      | OptionalArgsWithVariadic<any, any, any>
-      ? Partial<ArgsTupleMap<ZodType, ZodTypes>>
-      : ArgsTupleMap<ZodType, ZodTypes>,
-    VariadicType extends Arg<string, z.ZodTypeAny> ? {
-        [k in VariadicType["name"]]: VariadicType["_output"][];
-      }
-      : {}
-  >
-  : {};
-
-export type ArgsTupleMap<
-  ZodType extends Arg<string, z.ZodTypeAny>,
-  ZodTypes extends Arg<string, z.ZodTypeAny>[],
-> =
-  & {
-    [k in ZodType["name"]]: ZodType["_output"];
-  }
-  & {
-    [
-      Index in Exclude<keyof ZodTypes, keyof any[]> as ZodTypes[Index] extends {
-        name: string;
-      } ? ZodTypes[Index]["name"]
-        : never
-    ]: ZodTypes[Index] extends Arg<string, z.ZodTypeAny>
-      ? ZodTypes[Index]["_output"]
-      : never;
-  };
-
-export type Meta = {
-  usage?: string[];
 };

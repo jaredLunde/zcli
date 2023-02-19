@@ -1,11 +1,10 @@
 import { z } from "./z.ts";
-import { flag } from "./flags.ts";
+import { flag, FlagConfig } from "./flags.ts";
 
 export const SHOW_HELP = Symbol("SHOW_HELP");
 
-export function helpSchema() {
-  return z
-    .string()
+export function helpFlag(config: FlagConfig = {}) {
+  return flag({ aliases: ["h"], ...config }).ostring()
     .refine(
       (value) => {
         return typeof value === "undefined";
@@ -16,12 +15,7 @@ export function helpSchema() {
           interrupt: SHOW_HELP,
         },
       },
-    )
-    .optional();
-}
-
-export function helpFlag() {
-  return flag(helpSchema(), { aliases: ["h"] });
+    );
 }
 
 export function showHelp() {
