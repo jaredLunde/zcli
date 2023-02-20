@@ -483,6 +483,66 @@ describe("command()", () => {
     stdoutStub.restore();
     exitStub.restore();
   });
+
+  it("should add deprecation warning to help", async () => {
+    const cli = init();
+    const cmd = cli.command("test", {
+      deprecated: 'Use "foo" instead',
+    });
+
+    const stdoutStub = stub(Deno.stdout, "write");
+    const exitStub = stub(Deno, "exit");
+
+    try {
+      await cmd.execute(["--help"]);
+    } catch (_err) {
+      // ignore
+    }
+    assertEquals(
+      decoder.decode(stdoutStub.calls[0].args[0]),
+      `${colors.bold(colors.red("Deprecated"))}\n`,
+    );
+    assertEquals(
+      decoder.decode(stdoutStub.calls[1].args[0]),
+      `  Use "foo" instead\n`,
+    );
+    stdoutStub.restore();
+    exitStub.restore();
+  });
+
+  it("should show deprecation warning when command is used", async () => {
+    const cli = init();
+    const cmd = cli.command("test", {
+      deprecated: 'Use "foo" instead',
+    });
+
+    const stderrStub = stub(Deno.stderr, "write");
+    const exitStub = stub(Deno, "exit");
+
+    try {
+      await cmd.execute([]);
+    } catch (_err) {
+      // ignore
+    }
+    assertEquals(
+      decoder.decode(stderrStub.calls[0].args[0]),
+      `${colors.yellow("Deprecation Warning")}\n`,
+    );
+    assertEquals(
+      decoder.decode(stderrStub.calls[1].args[0]),
+      `Use "foo" instead\n`,
+    );
+    stderrStub.restore();
+    exitStub.restore();
+  });
+
+  it("should be hidden if deprecated", () => {
+    const cli = init();
+    const cmd = cli.command("test", {
+      deprecated: 'Use "foo" instead',
+    });
+    assertEquals(cmd.hidden, true);
+  });
 });
 
 const decoder = new TextDecoder();

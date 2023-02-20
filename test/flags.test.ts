@@ -76,6 +76,7 @@ describe("flag()", () => {
       .string();
     assert(isFlag(zodString));
     assertEquals(zodString.deprecated, "Use something else instead");
+    assertEquals(zodString.hidden, true);
   });
 
   it("should have aliases", () => {

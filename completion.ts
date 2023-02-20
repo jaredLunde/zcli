@@ -5,8 +5,8 @@ import { flag, Flags, flags } from "./flags.ts";
 import * as bash from "./completions/bash.ts";
 import * as fish from "./completions/fish.ts";
 import * as zsh from "./completions/zsh.ts";
-import { writeHelp } from "./help.ts";
 import { CommandConfig, DefaultContext } from "./command.ts";
+import { writeIterable } from "./lib/write-iterable.ts";
 
 const shellCommandFlags = flags({
   "no-descriptions": flag({
@@ -51,15 +51,21 @@ export function completion<
           If it is not installed already, you can install it via your OS's package manager.
 
           To load completions in your current shell session:
+          \`\`\`
           $ source <(${root.name} ${name} bash)
+          \`\`\`
 
           To load completions for every new session, execute once:
           
           Linux:
-            $ ${root.name} ${name} bash > /etc/bash_completion.d/${root.name}
-            
+          \`\`\`
+          $ ${root.name} ${name} bash > /etc/bash_completion.d/${root.name}
+          \`\`\`
+
           MacOS:
-            $ ${root.name} ${name} bash > /usr/local/etc/bash_completion.d/${root.name}
+          \`\`\`
+          $ ${root.name} ${name} bash > /usr/local/etc/bash_completion.d/${root.name}
+          \`\`\`
 
           You will need to start a new shell for this setup to take effect.
         `,
@@ -74,19 +80,27 @@ export function completion<
           If shell completion is not already enabled in your environment you will need
           to enable it.  You can execute the following once:
           
+          \`\`\`
           $ echo "autoload -U compinit; compinit" >> ~/.zshrc
-          
+          \`\`\`
+
           To load completions for every new session, execute once:
 
-          # Linux:
+          Linux:
+          \`\`\`
           $ ${root.name} ${name} zsh > "\${fpath[1]}/_${root.name}"
-          
-          # macOS:
-          $ ${root.name} ${name} zsh > /usr/local/share/zsh/site-functions/_${root.name}
+          \`\`\`
 
-          # Oh My Zsh
+          macOS:
+          \`\`\`
+          $ ${root.name} ${name} zsh > /usr/local/share/zsh/site-functions/_${root.name}
+          \`\`\`
+
+          Oh My Zsh:
+          \`\`\`
           $ ${root.name} ${name} zsh > ~/.oh-my-zsh/completions/_${root.name}
-          
+          \`\`\`
+
           You will need to start a new shell for this setup to take effect.
         `,
         flags: shellCommandFlags,
@@ -105,10 +119,14 @@ export function completion<
           Generate the autocompletion script for the fish shell.
           
           To load completions in your current shell session:
+          \`\`\`
           $ ${root.name} ${name} fish | source
+          \`\`\`
 
           To load completions for every new session, execute once:
+          \`\`\`
           $ ${root.name} ${name} fish > ~/.config/fish/completions/${root.name}.fish
+          \`\`\`
 
           You will need to start a new shell for this setup to take effect.
         `,
@@ -125,7 +143,7 @@ export function completion<
     ],
   })
     .run(async ({ ctx }) => {
-      await writeHelp(command.help(ctx as any));
+      await writeIterable(command.help(ctx as any));
     });
 
   return command;

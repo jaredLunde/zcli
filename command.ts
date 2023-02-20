@@ -20,7 +20,7 @@ import {
 import { Merge, Prettify } from "./lib/types.ts";
 import { z } from "./z.ts";
 import { EnvError } from "./env.ts";
-import { isHelp, writeHelp } from "./help.ts";
+import { isHelp } from "./help.ts";
 import { dedent } from "./lib/dedent.ts";
 import { table } from "./lib/simple-table.ts";
 import { colors } from "./fmt.ts";
@@ -29,6 +29,7 @@ import { didYouMean } from "./lib/did-you-mean.ts";
 import * as flagsParser from "./flags-parser.ts";
 import { textEncoder } from "./lib/text-encoder.ts";
 import { shorten } from "./lib/shorten.ts";
+import { writeIterable } from "./lib/write-iterable.ts";
 
 /**
  * Create a CLI command. Commands can be nested to create a tree
@@ -54,6 +55,7 @@ export function command<
     short,
     long,
     aliases = [],
+    deprecated,
     hidden = false,
   }: CommandConfig<Context, Args, Opts> = { flags: flags_({}) as any },
 ): Command<Context, Args, Opts> {
@@ -76,6 +78,16 @@ export function command<
 
       for (const line of dedent(desc)) {
         yield line;
+      }
+
+      yield "";
+    }
+
+    if (deprecated) {
+      yield colors.bold(colors.red("Deprecated"));
+
+      for (const line of dedent(deprecated)) {
+        yield `  ${line}`;
       }
 
       yield "";
@@ -231,7 +243,8 @@ export function command<
     args: args,
     // @ts-expect-error: so dumb
     flags: flags ?? {},
-    hidden,
+    hidden: hidden || typeof deprecated === "string",
+    deprecated,
     help,
     usage: use,
 
@@ -345,7 +358,7 @@ export function command<
             await Deno.stderr.write(textEncoder.encode(err.message));
             Deno.exit(1);
           } else if (isHelp(err)) {
-            await writeHelp(help(ctx as any));
+            await writeIterable(help(ctx as any));
           } else if (err instanceof z.ZodError) {
             const formErrors = err.formErrors;
             const errors = err.errors.map((e) => {
@@ -455,6 +468,20 @@ export function command<
         }
       }
 
+      if (deprecated) {
+        const writes: Promise<number>[] = [];
+
+        writes.push(Deno.stderr.write(
+          textEncoder.encode(`${colors.yellow("Deprecation Warning")}\n`),
+        ));
+
+        for (const line of dedent(deprecated)) {
+          writes.push(Deno.stderr.write(textEncoder.encode(line + "\n")));
+        }
+
+        await Promise.all(writes);
+      }
+
       const actionArgs = { args: a, flags: o, "--": doubleDash, ctx };
 
       // Run the action
@@ -548,6 +575,10 @@ export type Command<
    */
   hidden: Readonly<boolean>;
   /**
+   * Whether or not the command is deprecated
+   */
+  deprecated: Readonly<string | undefined>;
+  /**
    * Returns the help text for the command
    */
   help(context: Context): Iterable<string>;
@@ -618,6 +649,11 @@ export type CommandConfig<
    * Hide this command from the help text
    */
   hidden?: boolean;
+  /**
+   * Mark this command as deprecated. This will show a warning when the command
+   * is used. It will also hide the command from the help text.
+   */
+  deprecated?: string;
   /**
    * Command usage
    */

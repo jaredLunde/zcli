@@ -15,7 +15,8 @@ export function flag(config: FlagConfig = {}) {
   const flagProps = {
     aliases: config.aliases ?? [],
     negatable: !!config.negatable,
-    hidden: config.hidden ?? false,
+    hidden: config.hidden || typeof config.deprecated === "string",
+    deprecated: config.deprecated,
     short(context: any) {
       let description: string | undefined;
 
@@ -38,7 +39,6 @@ export function flag(config: FlagConfig = {}) {
 
       return description && [...dedent(description)].join("\n");
     },
-    deprecated: config.deprecated,
     __flag: true as const,
     __global: false,
   };
@@ -247,7 +247,7 @@ export type Flag<Schema extends z.ZodTypeAny = z.ZodTypeAny> = {
    */
   long<Context extends BaseContext>(context: Context): string | undefined;
   /**
-   * If `true`, this flag is deprecated.
+   * A message to display if the flag is deprecated and the flag is used.
    */
   deprecated?: string;
   _def: Schema["_def"];

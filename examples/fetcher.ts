@@ -11,7 +11,7 @@ import {
   z,
 } from "../mod.ts";
 import { table } from "../lib/simple-table.ts";
-import { zcliDocs } from "../zcli-docs.ts";
+// import { zcliDoc } from "../zcli-doc.ts";
 
 const cli = init({
   globalFlags: flags({
@@ -173,5 +173,5 @@ const fetcher = cli
 
 if (import.meta.main) {
   await fetcher.execute();
-  await zcliDocs(cli, fetcher);
+  // await zcliDoc(cli, fetcher, { output: "examples/fetcher.md" });
 }

@@ -111,7 +111,7 @@ export async function zcliJson<
               description: flag.long(ctx) || flag.short(ctx) || "",
               summary: flag.short(ctx) || "",
               required: !(flag instanceof z.ZodOptional) &&
-                !(flag instanceof z.ZodDefault),
+                !(flag instanceof z.ZodDefault) && name !== "help",
               collects,
               negatable: flag.negatable,
               default: defaultValue,
@@ -130,6 +130,7 @@ export async function zcliJson<
             name: command.name,
             description: command.long(ctx) || command.short(ctx) || "",
             summary: command.short(ctx) ?? "",
+            deprecated: command.deprecated,
             arguments: command.args
               ? {
                 description: command.args.long(ctx) ?? "",
@@ -179,6 +180,7 @@ export type ZcliJsonCommand = {
   name: string;
   description: string;
   summary: string;
+  deprecated?: string;
   arguments: undefined | {
     description: string;
     summary: string;

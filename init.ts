@@ -7,12 +7,13 @@ import {
   DefaultContext,
 } from "./command.ts";
 import { Args as ArgsTuple, args } from "./args.ts";
-import { helpFlag, writeHelp } from "./help.ts";
+import { helpFlag } from "./help.ts";
 import { flag, Flags, flags, walkFlags } from "./flags.ts";
 import { z } from "./z.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
 import * as intl from "./intl.ts";
+import { writeIterable } from "./lib/write-iterable.ts";
 
 export function init<
   Context extends Record<string, unknown>,
@@ -68,7 +69,7 @@ export function init<
               ),
             })
               .run(async ({ flags, ctx }) => {
-                await writeHelp(
+                await writeIterable(
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
                     const sortedCmds = intl.collate(
@@ -117,7 +118,7 @@ export function init<
         })
           .run(async ({ args, ctx }) => {
             if (!args[0]) {
-              return await writeHelp(command_.help(ctx));
+              return await writeIterable(command_.help(ctx));
             }
 
             const cmd = subcommands.find(
@@ -126,7 +127,7 @@ export function init<
                 cmd.aliases.includes(args[0] as any),
             )!;
 
-            await writeHelp(
+            await writeIterable(
               cmd.help({ ...ctx, path: ctx.path.concat(cmd.name) } as any),
             );
           });
