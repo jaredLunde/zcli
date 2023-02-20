@@ -115,6 +115,7 @@ export async function zcliJson<
               collects,
               negatable: flag.negatable,
               default: defaultValue,
+              global: flag.__global,
               schema: zodToJsonSchema(
                 name === "help"
                   ? z.boolean().default(false)
@@ -206,6 +207,7 @@ export type ZcliJsonFlag = {
   required: boolean;
   collects: boolean;
   negatable: boolean;
+  global: boolean;
   default?: any;
   schema: any;
 };

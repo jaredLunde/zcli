@@ -92,6 +92,8 @@ function commandToMarkdown(
   path: string[] = [],
 ): string {
   const { name, description, summary, arguments: args, flags } = command;
+  const localFlags = flags.filter((flag) => !flag.global);
+  const globalFlags = flags.filter((flag) => flag.global);
 
   return `
 ---
@@ -112,21 +114,32 @@ ${args.items.map(argumentToMarkdown).join("\n")}
 `
   }
 ${
-    !flags.length ? "" : `
+    !localFlags.length ? "" : `
 ### Flags
 
 | Name | Type | Required? | Collects? | Default |  Description |
 | -------- | ---- | --------- | --- | --- | ------------ |
-${flags.map(flagToMarkdown).join("\n")}
+${localFlags.map(flagToMarkdown).join("\n")}
+`
+  }
+  ${
+    !globalFlags.length ? "" : `
+### Global Flags
 
+These flags are available on all commands.
+
+| Name | Type | Required? | Collects? | Default |  Description |
+| -------- | ---- | --------- | --- | --- | ------------ |
+${globalFlags.map(flagToMarkdown).join("\n")}
+`
+  }
 [**⇗ Back to top**](#available-commands)
 
 ${
-      command.commands.map((cmd) => commandToMarkdown(cmd, path.concat(name)))
-        .join("")
-    }
-`
+    command.commands.map((cmd) => commandToMarkdown(cmd, path.concat(name)))
+      .join("")
   }
+
 `;
 }
 
