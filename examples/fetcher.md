@@ -33,21 +33,21 @@ A URL to fetch.
 
 ### Flags
 
-| Name          | Type                                                        | Required? | Collects? | Default | Description                |
-| ------------- | ----------------------------------------------------------- | --------- | --------- | ------- | -------------------------- |
-| --method, -m  | `"POST" \| "GET" \| "PUT" \| "PATCH" \| "DELETE" \| "HEAD"` | No        | No        | `"GET"` | The HTTP method to use     |
-| --headers, -H | `string`                                                    | No        | Yes       |         | Add headers to the request |
-| --data, -d    | `string`                                                    | No        | No        |         | Send request data          |
+| Name          | Type                                                        | Required? | Default | Description                |
+| ------------- | ----------------------------------------------------------- | --------- | ------- | -------------------------- |
+| --method, -m  | `"POST" \| "GET" \| "PUT" \| "PATCH" \| "DELETE" \| "HEAD"` | No        | `"GET"` | The HTTP method to use     |
+| --headers, -H | `string`                                                    | No        |         | Add headers to the request |
+| --data, -d    | `string`                                                    | No        |         | Send request data          |
 
 ### Global Flags
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -62,11 +62,11 @@ See each sub-command's help for details on how to use the generated script.
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -105,11 +105,11 @@ You will need to start a new shell for this setup to take effect.
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -135,19 +135,19 @@ You will need to start a new shell for this setup to take effect.
 
 ### Flags
 
-| Name              | Type      | Required? | Collects? | Default | Description                     |
-| ----------------- | --------- | --------- | --------- | ------- | ------------------------------- |
-| --no-descriptions | `boolean` | No        | No        |         | Disable completion descriptions |
+| Name              | Type      | Required? | Default | Description                     |
+| ----------------- | --------- | --------- | ------- | ------------------------------- |
+| --no-descriptions | `boolean` | No        |         | Disable completion descriptions |
 
 ### Global Flags
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -188,19 +188,19 @@ You will need to start a new shell for this setup to take effect.
 
 ### Flags
 
-| Name              | Type      | Required? | Collects? | Default | Description                     |
-| ----------------- | --------- | --------- | --------- | ------- | ------------------------------- |
-| --no-descriptions | `boolean` | No        | No        |         | Disable completion descriptions |
+| Name              | Type      | Required? | Default | Description                     |
+| ----------------- | --------- | --------- | ------- | ------------------------------- |
+| --no-descriptions | `boolean` | No        |         | Disable completion descriptions |
 
 ### Global Flags
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -220,11 +220,11 @@ Show help for a fetcher command
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -236,19 +236,19 @@ List fetcher commands
 
 ### Flags
 
-| Name      | Type      | Required? | Collects? | Default | Description                              |
-| --------- | --------- | --------- | --------- | ------- | ---------------------------------------- |
-| --all, -a | `boolean` | No        | No        |         | Show all commands, including hidden ones |
+| Name      | Type      | Required? | Default | Description                              |
+| --------- | --------- | --------- | ------- | ---------------------------------------- |
+| --all, -a | `boolean` | No        |         | Show all commands, including hidden ones |
 
 ### Global Flags
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
 
@@ -262,10 +262,10 @@ Shows version information command, including version number and build date.
 
 These flags are available on all commands.
 
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
 
 [**⇗ Back to top**](#available-commands)
