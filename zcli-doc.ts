@@ -108,7 +108,7 @@ ${
     !localFlags.length ? "" : `
 ### Flags
 
-| Name | Type | Required? | Collects? | Default |  Description |
+| Name | Type | Required? | Default |  Description |
 | -------- | ---- | --------- | --- | --- | ------------ |
 ${localFlags.map(flagToMarkdown).join("\n")}
 `
@@ -156,15 +156,14 @@ function flagToMarkdown(flag: ZcliJsonFlag): string {
     summary,
     schema,
     required,
-    collects,
     default: defaultValue,
   } = flag;
 
   return `| ${formatFlagName(flag)} | \`${jsonSchemaToString(schema)}\` | ${
     required ? "Yes" : "No"
-  } | ${collects ? "Yes" : "No"} | ${
-    defaultValue ? `\`${JSON.stringify(defaultValue)}\`` : ""
-  } | ${(description || summary || "").replace("\n", " ")} |`;
+  } | ${defaultValue ? `\`${JSON.stringify(defaultValue)}\`` : ""} | ${
+    (description || summary || "").replace("\n", " ")
+  } |`;
 }
 
 function argumentToMarkdown(arg: ZcliJsonArgument): string {
