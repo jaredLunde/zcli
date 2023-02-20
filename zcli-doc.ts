@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Command } from "./command.ts";
 import { CommandFactory } from "./init.ts";
+import { dedent } from "./lib/dedent.ts";
 import {
   ZcliJson,
   zcliJson,
@@ -18,6 +19,14 @@ export async function zcliDoc<
   root: Command<any, any, any>,
   config: {
     /**
+     * The title of the document
+     */
+    title?: string;
+    /**
+     * The description of the document
+     */
+    description?: string;
+    /**
      * Output the markdown to a file at the given path
      */
     output?: string;
@@ -28,18 +37,25 @@ export async function zcliDoc<
   if (!config.output) {
     console.log(toMarkdown(json));
   } else {
-    await Deno.writeTextFile(config.output, toMarkdown(json));
+    await Deno.writeTextFile(config.output, toMarkdown(json, config));
   }
 }
 
-function toMarkdown(json: ZcliJson) {
-  return `## Available Commands
+function toMarkdown(
+  json: ZcliJson,
+  options: { title?: string; description?: string } = {},
+) {
+  return `${options.title ? `# ${options.title}` : ""}
+
+${options.description ? [...dedent(options.description)].join("\n") : ""}
+
+## Available Commands
 
 | Command | Description |
 | ------- | ----------- |
 ${tableOfContents(json.commands[0])} 
 
-${commandToMarkdown(json.commands[0]).trim()}`;
+${commandToMarkdown(json.commands[0]).trim()}`.trim();
 }
 
 function tableOfContents(

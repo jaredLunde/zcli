@@ -1,3 +1,7 @@
+# Fetcher
+
+A simple fetcher example.
+
 ## Available Commands
 
 | Command                                                                  | Description                                               |
@@ -40,8 +44,8 @@ A URL to fetch.
 
 ## `$ fetcher completion`
 
-Generate an autocompletion script for zcli.json in the specified shell. See each
-sub-command's help for details on how to use the generated script.
+Generate an autocompletion script for zcli.json in the specified shell.
+See each sub-command's help for details on how to use the generated script.
 
 ### Flags
 
@@ -55,8 +59,8 @@ sub-command's help for details on how to use the generated script.
 
 Generate the autocompletion script for the bash shell.
 
-This script depends on the 'bash-completion' package. If it is not installed
-already, you can install it via your OS's package manager.
+This script depends on the 'bash-completion' package.
+If it is not installed already, you can install it via your OS's package manager.
 
 To load completions in your current shell session:
 
@@ -150,8 +154,8 @@ List completion commands
 
 Generate the autocompletion script for the zsh shell.
 
-If shell completion is not already enabled in your environment you will need to
-enable it. You can execute the following once:
+If shell completion is not already enabled in your environment you will need
+to enable it. You can execute the following once:
 
 ```
 $ echo "autoload -U compinit; compinit" >> ~/.zshrc
