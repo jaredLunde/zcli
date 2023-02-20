@@ -113,7 +113,7 @@ export function init<
                 string,
                 ...string[],
               ],
-            ),
+            ).describe("The command to show help for."),
           ]).optional(),
         })
           .run(async ({ args, ctx }) => {
