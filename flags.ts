@@ -58,7 +58,9 @@ export function isFlag(schema: unknown): schema is Flag {
  *
  * @param schema - The object to check
  */
-export function isGlobalFlag(schema: unknown): schema is Flag {
+export function isGlobalFlag(
+  schema: unknown,
+): schema is Flag & { __global: true } {
   return isFlag(schema) && !!schema.__global;
 }
 
@@ -93,14 +95,16 @@ export function innerType<T>(schema: T): z.ZodTypeAny | T {
  *
  * @param schema - The schema to find the default value of
  */
-export function getDefault<T extends Flag>(
+export function getDefault<T extends z.ZodType | Flag>(
   schema: T,
-): inferFlag<T> | undefined {
+):
+  | (T extends Flag ? inferFlag<T>
+    : T extends z.ZodType ? z.infer<T>
+    : never)
+  | undefined {
   if (schema instanceof z.ZodDefault) {
     return schema._def.defaultValue();
   }
-
-  return;
 }
 
 /**
@@ -227,7 +231,7 @@ export type Flag<Schema extends z.ZodTypeAny = z.ZodTypeAny> = {
   /**
    * If `true`, this flag is deprecated.
    */
-  deprecated?: boolean;
+  deprecated?: string;
   _def: Schema["_def"];
   _output: Schema["_output"];
   __flag: true;
@@ -241,7 +245,13 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
       Shape,
       "strict"
     >,
-    "_output" | "_def" | "shape"
+    | "_output"
+    | "_def"
+    | "shape"
+    | "parseAsync"
+    | "parse"
+    | "safeParse"
+    | "safeParseAsync"
   >
   & {
     /**

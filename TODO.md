@@ -1,5 +1,0 @@
-- [x] Shell completions
-- [x] Help
-- [ ] Auto-documentation w/ JSON schema
-- [x] Commands
-  - [x] Subcommands

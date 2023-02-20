@@ -125,7 +125,7 @@ export function create<
             const cmd = options.commands!.find(
               (cmd) =>
                 cmd.name === args[0] ||
-                cmd.aliases.includes(args[0]!),
+                cmd.aliases.includes(args[0] as any),
             );
 
             if (!cmd) {

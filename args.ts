@@ -51,39 +51,52 @@ export function walkArgs(
 
   const isOptional = args instanceof z.ZodDefault ||
     args instanceof z.ZodOptional;
-  const variadic =
-    !!(args instanceof z.ZodDefault && args._def.innerType instanceof z.ZodTuple
-      ? args._def.innerType._def.rest
-      : args instanceof z.ZodArray
-      ? args
-      : false);
+
   const argsItems = isOptional && args._def.innerType instanceof z.ZodTuple
-    ? args._def.innerType.items
+    ? [...args._def.innerType.items, args._def.innerType._def.rest].filter(
+      Boolean,
+    )
     : args instanceof z.ZodTuple
-    ? args.items
+    ? [...args.items, args._def.rest].filter(Boolean)
+    : isOptional && args._def.innerType instanceof z.ZodArray
+    ? [args._def.innerType._def.type]
     : args instanceof z.ZodArray
     ? [args._def.type]
     : [];
 
   if (argsItems.length) {
     for (let i = 0; i < argsItems.length; i++) {
-      callback(argsItems[i], { position: i, variadic });
+      const item = argsItems[i];
+      const variadic =
+        !!(isOptional && args._def.innerType instanceof z.ZodTuple
+          ? args._def.innerType._def.rest === item
+          : args instanceof z.ZodTuple
+          ? args._def.rest === item
+          : isOptional && args._def.innerType instanceof z.ZodArray
+          ? args._def.innerType
+          : args instanceof z.ZodArray
+          ? args
+          : false);
+
+      callback(item, { position: i, variadic });
     }
   }
 }
 
 export type Args =
-  & (
-    | z.ZodTuple
-    | z.ZodArray<any>
-    | z.ZodDefault<z.ZodTuple | z.ZodArray<any>>
-    | z.ZodOptional<z.ZodTuple | z.ZodArray<any>>
-  )
+  & ArgsZodTypes
   & {
     shortDescription?: string;
     longDescription?: string;
     usage?: string;
+    __args: true;
   };
+
+export type ArgsZodTypes =
+  | z.ZodTuple
+  | z.ZodArray<any>
+  | z.ZodDefault<z.ZodTuple | z.ZodArray<any>>
+  | z.ZodOptional<z.ZodTuple | z.ZodArray<any>>;
 
 export type ArgsConfig = {
   short?: string | (() => string);
@@ -92,6 +105,6 @@ export type ArgsConfig = {
 };
 
 export type ArgTypes = Pick<typeof z, "tuple" | "array">;
-export type inferArgs<T extends Args> = T extends
+export type inferArgs<T extends Args | ArgsZodTypes> = T extends
   z.ZodOptional<z.ZodTuple | z.ZodArray<any>> ? [] | NonNullable<T["_output"]>
   : T["_output"];

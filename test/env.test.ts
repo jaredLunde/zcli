@@ -1,25 +1,42 @@
+import { stub } from "https://deno.land/std@0.177.0/testing/mock.ts";
 import {
   assertEquals,
   assertExists,
   assertThrows,
 } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
+  afterAll,
   afterEach,
+  beforeEach,
   describe,
   it,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import { z } from "../z.ts";
-import { env } from "../env.ts";
+import { env } from "../mod.ts";
+
+const originalEnv = Deno.env.toObject();
+
+// @ts-expect-error: it's fine
+let exitStub = stub(Deno, "exit", () => {});
+
+beforeEach(() => {
+  exitStub.restore();
+});
+
+afterEach(() => {
+  for (const [key, value] of Object.entries(originalEnv)) {
+    Deno.env.set(key, value);
+  }
+
+  // @ts-expect-error: it's fine
+  exitStub = stub(Deno, "exit", () => {});
+});
+
+afterAll(() => {
+  exitStub.restore();
+});
 
 describe("env()", () => {
-  const originalEnv = Deno.env.toObject();
-
-  afterEach(() => {
-    for (const [key, value] of Object.entries(originalEnv)) {
-      Deno.env.set(key, value);
-    }
-  });
-
   describe("env", () => {
     it("should be optional", () => {
       const e = env({

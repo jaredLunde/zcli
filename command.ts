@@ -1,5 +1,11 @@
 // deno-lint-ignore-file no-explicit-any ban-types no-explicit-any no-explicit-any
-import { Args as ArgsTuple, inferArgs, isArgs, walkArgs } from "./args.ts";
+import {
+  Args as ArgsTuple,
+  ArgsZodTypes,
+  inferArgs,
+  isArgs,
+  walkArgs,
+} from "./args.ts";
 import {
   Flag,
   Flags,
@@ -629,7 +635,8 @@ export type Action<
   (
     opts: Prettify<
       {
-        args: Args extends ArgsTuple ? inferArgs<Args> : unknown[];
+        args: Args extends ArgsTuple | ArgsZodTypes ? inferArgs<Args>
+          : unknown[];
         flags: Merge<
           (Opts extends {
             __flags: true;
