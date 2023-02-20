@@ -42,7 +42,7 @@ ${config.description ? [...dedent(config.description)].join("\n") : ""}
 | ------- | ----------- |
 ${tableOfContents(json.commands[0], [], config)} 
 
-${commandToMarkdown(json.commands[0]).trim()}`.trim();
+${commandToMarkdown(json.commands[0], [], config).trim()}`.trim();
 }
 
 function tableOfContents(
@@ -79,8 +79,8 @@ function formatMarkdownHeaderFragment(fragment: string) {
 
 function commandToMarkdown(
   command: ZcliJsonCommand,
-  path: string[] = [],
-  config: ZcliDocConfig = {},
+  path: string[],
+  config: ZcliDocConfig,
 ): string {
   const { name, description, summary, arguments: args, flags } = command;
   const localFlags = flags.filter((flag) => !flag.global);
@@ -128,7 +128,7 @@ ${globalFlags.map(flagToMarkdown).join("\n")}
 
 ${
     command.commands.filter(ignoreFilter(config, path)).map((cmd) =>
-      commandToMarkdown(cmd, path.concat(name))
+      commandToMarkdown(cmd, path.concat(name), config)
     )
       .join("")
   }
