@@ -47,7 +47,7 @@ export function completion<
         long: ({ root }) => `
           Generate the autocompletion script for the bash shell.
 
-          This script depends on the 'bash-completion' package.
+          This script depends on the \`bash-completion\` package.
           If it is not installed already, you can install it via your OS's package manager.
 
           To load completions in your current shell session:

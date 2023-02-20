@@ -65,7 +65,7 @@ function tableOfContents(
   const name = [...path, command.name].join(" ");
 
   return `
-| [\`${name}\`](#${formatMarkdownHeaderFragment(`$ ${name}`)}) | ${
+| [**\`${name}\`**](#${formatMarkdownHeaderFragment(`$ ${name}`)}) | ${
     (command.summary || command.description).replace("\n", " ")
   } |
 ${

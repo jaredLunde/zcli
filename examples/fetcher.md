@@ -6,16 +6,16 @@ A simple fetcher example.
 
 | Command | Description |
 | ------- | ----------- |
-| [`fetcher`](#-fetcher) | Fetch a resource from the internet |
-| [`fetcher completion`](#-fetcher-completion) | Generate an autocompletion script for the specified shell |
-| [`fetcher completion bash`](#-fetcher-completion-bash) | Generate an autocompletion script for the bash shell |
-| [`fetcher completion fish`](#-fetcher-completion-fish) | Generate an autocompletion script for the fish shell |
-| [`fetcher completion help`](#-fetcher-completion-help) | Show help for a completion command |
-| [`fetcher completion help commands`](#-fetcher-completion-help-commands) | List completion commands |
-| [`fetcher completion zsh`](#-fetcher-completion-zsh) | Generate an autocompletion script for the zsh shell |
-| [`fetcher help`](#-fetcher-help) | Show help for a fetcher command |
-| [`fetcher help commands`](#-fetcher-help-commands) | List fetcher commands |
-| [`fetcher version`](#-fetcher-version) | Show version information | 
+| [**`fetcher`**](#-fetcher) | Fetch a resource from the internet |
+| [**`fetcher completion`**](#-fetcher-completion) | Generate an autocompletion script for the specified shell |
+| [**`fetcher completion bash`**](#-fetcher-completion-bash) | Generate an autocompletion script for the bash shell |
+| [**`fetcher completion fish`**](#-fetcher-completion-fish) | Generate an autocompletion script for the fish shell |
+| [**`fetcher completion help`**](#-fetcher-completion-help) | Show help for a completion command |
+| [**`fetcher completion help commands`**](#-fetcher-completion-help-commands) | List completion commands |
+| [**`fetcher completion zsh`**](#-fetcher-completion-zsh) | Generate an autocompletion script for the zsh shell |
+| [**`fetcher help`**](#-fetcher-help) | Show help for a fetcher command |
+| [**`fetcher help commands`**](#-fetcher-help-commands) | List fetcher commands |
+| [**`fetcher version`**](#-fetcher-version) | Show version information | 
 
 ---
 
@@ -75,7 +75,7 @@ See each sub-command's help for details on how to use the generated script.
 
 Generate the autocompletion script for the bash shell.
 
-This script depends on the 'bash-completion' package.
+This script depends on the `bash-completion` package.
 If it is not installed already, you can install it via your OS's package manager.
 
 To load completions in your current shell session:
