@@ -119,7 +119,7 @@ ${localFlags.map(flagToMarkdown).join("\n")}
 
 These flags are available on all commands.
 
-| Name | Type | Required? | Collects? | Default |  Description |
+| Name | Type | Required? | Default |  Description |
 | -------- | ---- | --------- | --- | --- | ------------ |
 ${globalFlags.map(flagToMarkdown).join("\n")}
 `
