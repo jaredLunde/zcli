@@ -49,9 +49,9 @@ export function init<
       GlobalOpts
     > {
       options = { ...options };
-      const subcommands = options.commands ? [...options.commands] : undefined;
+      const subCommands = options.commands ? [...options.commands] : undefined;
 
-      if (subcommands?.length) {
+      if (subCommands?.length) {
         const helpCommand = command("help", {
           short: `Show help for a ${name} command`,
           flags: gOpts,
@@ -107,7 +107,7 @@ export function init<
 
           args: args().tuple([
             z.enum(
-              subcommands.flatMap((c) => [c.name, ...c.aliases]).concat(
+              subCommands.flatMap((c) => [c.name, ...c.aliases]).concat(
                 "help",
               ) as [
                 string,
@@ -121,7 +121,7 @@ export function init<
               return await writeIterable(command_.help(ctx));
             }
 
-            const cmd = subcommands.find(
+            const cmd = subCommands.find(
               (cmd) =>
                 cmd.name === args[0] ||
                 cmd.aliases.includes(args[0] as any),
@@ -132,12 +132,12 @@ export function init<
             );
           });
         // @ts-expect-error: all good
-        subcommands.push(executeWithContext(helpCommand, config));
+        subCommands.push(executeWithContext(helpCommand, config));
       }
 
       // @ts-expect-error: blah blah
       options.flags = options.flags ? options.flags.merge(gOpts) : gOpts;
-      options.commands = subcommands;
+      options.commands = subCommands;
       const command_ = executeWithContext(
         command(name, options),
         config,

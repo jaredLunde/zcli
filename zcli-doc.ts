@@ -17,25 +17,12 @@ export async function zcliDoc<
 >(
   commandFactory: CommandFactory<Context, any>,
   root: Command<any, any, any>,
-  config: {
-    /**
-     * The title of the document
-     */
-    title?: string;
-    /**
-     * The description of the document
-     */
-    description?: string;
-    /**
-     * Output the markdown to a file at the given path
-     */
-    output?: string;
-  } = {},
+  config: ZcliDocConfig = {},
 ) {
   const json = await zcliJson(commandFactory, root);
 
   if (!config.output) {
-    console.log(toMarkdown(json));
+    console.log(toMarkdown(json, config));
   } else {
     await Deno.writeTextFile(config.output, toMarkdown(json, config));
   }
@@ -43,24 +30,25 @@ export async function zcliDoc<
 
 function toMarkdown(
   json: ZcliJson,
-  options: { title?: string; description?: string } = {},
+  config: ZcliDocConfig,
 ) {
-  return `${options.title ? `# ${options.title}` : ""}
+  return `${config.title ? `# ${config.title}` : ""}
 
-${options.description ? [...dedent(options.description)].join("\n") : ""}
+${config.description ? [...dedent(config.description)].join("\n") : ""}
 
 ## Available Commands
 
 | Command | Description |
 | ------- | ----------- |
-${tableOfContents(json.commands[0])} 
+${tableOfContents(json.commands[0], [], config)} 
 
 ${commandToMarkdown(json.commands[0]).trim()}`.trim();
 }
 
 function tableOfContents(
   command: ZcliJsonCommand,
-  path: string[] = [],
+  path: string[],
+  config: ZcliDocConfig,
 ): string {
   const name = [...path, command.name].join(" ");
 
@@ -69,7 +57,9 @@ function tableOfContents(
     (command.summary || command.description).replace("\n", " ")
   } |
 ${
-    command.commands.map((cmd) => tableOfContents(cmd, [...path, command.name]))
+    command.commands.filter(ignoreFilter(config, path)).map((cmd) =>
+      tableOfContents(cmd, [...path, command.name], config)
+    )
       .join("\n")
   }
 `.trim();
@@ -90,6 +80,7 @@ function formatMarkdownHeaderFragment(fragment: string) {
 function commandToMarkdown(
   command: ZcliJsonCommand,
   path: string[] = [],
+  config: ZcliDocConfig = {},
 ): string {
   const { name, description, summary, arguments: args, flags } = command;
   const localFlags = flags.filter((flag) => !flag.global);
@@ -136,11 +127,23 @@ ${globalFlags.map(flagToMarkdown).join("\n")}
 [**⇗ Back to top**](#available-commands)
 
 ${
-    command.commands.map((cmd) => commandToMarkdown(cmd, path.concat(name)))
+    command.commands.filter(ignoreFilter(config, path)).map((cmd) =>
+      commandToMarkdown(cmd, path.concat(name))
+    )
       .join("")
   }
 
 `;
+}
+
+function ignoreFilter(
+  config: ZcliDocConfig,
+  path: string[] = [],
+) {
+  return (cmd: ZcliJsonCommand) => {
+    const name = [...path, cmd.name].join(" ");
+    return !config.ignoreCommands?.includes(name);
+  };
 }
 
 function flagToMarkdown(flag: ZcliJsonFlag): string {
@@ -184,3 +187,22 @@ function jsonSchemaToString(schema: any): string {
     return schema.type + (schema.format ? `(${schema.format})` : "");
   }
 }
+
+export type ZcliDocConfig = {
+  /**
+   * The title of the document
+   */
+  title?: string;
+  /**
+   * The description of the document
+   */
+  description?: string;
+  /**
+   * Output the markdown to a file at the given path
+   */
+  output?: string;
+  /**
+   * Ignore these commands
+   */
+  ignoreCommands?: string[];
+};
