@@ -2,46 +2,78 @@ import { walkArgs } from "../args.ts";
 import { innerType, typeAsString, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
+import { DefaultContext } from "../command.ts";
+import { shorten } from "../lib/shorten.ts";
 
-export function complete(command: GenericCommand) {
-  return [
-    `#compdef _${command.name} ${[command.name, ...command.aliases].join(" ")}`,
-    completeCommand(command),
-  ].join("\n".repeat(2));
+export function* complete(
+  command: GenericCommand,
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): Iterable<string> {
+  yield `#compdef _${command.name} ${
+    [command.name, ...command.aliases].join(" ")
+  }`;
+
+  for (const completion of completeCommand(command, [], options)) {
+    yield completion;
+  }
 }
 
-function completeCommand(command: GenericCommand, path: string[] = []): string {
+function* completeCommand(
+  command: GenericCommand,
+  path: string[] = [],
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): Iterable<string> {
   const name = `_${[...path, escapeString(command.name)].join("_")}`;
-  let functionBody = "";
+
+  yield `\nfunction ${name} {`;
 
   if (command.commands.length && !command.args) {
-    functionBody = completeCommands(command, [
-      ...path,
-      escapeString(command.name),
-    ]);
+    for (
+      const line of completeCommands(command, [
+        ...path,
+        escapeString(command.name),
+      ], options)
+    ) {
+      yield `  ${line}`;
+    }
   } else {
-    functionBody = completeArgsAndFlags(command);
+    for (const line of completeArgsAndFlags(command, options)) {
+      yield `  ${line}`;
+    }
   }
 
   const subCommands = command.commands
     .map((subCommand) =>
-      completeCommand(subCommand, [...path, escapeString(command.name)])
-    )
-    .join("\n\n");
+      completeCommand(
+        subCommand,
+        [...path, escapeString(command.name)],
+        options,
+      )
+    );
 
-  return `
-function ${name} {
-  ${functionBody}
+  yield `}`;
+
+  for (const completion of subCommands) {
+    for (const line of completion) {
+      yield line;
+    }
+  }
 }
 
-${subCommands}
-`.trim();
-}
-
-function completeCommands<T extends GenericCommand>(
+function* completeCommands<T extends GenericCommand>(
   command: T,
   path: string[] = [],
-) {
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): Iterable<string> {
   const indent = " ".repeat(10);
   const subCommands = command.commands
     .filter((subCommand) => !subCommand.hidden)
@@ -56,23 +88,28 @@ function completeCommands<T extends GenericCommand>(
     })
     .join(`\n`);
 
-  return `
-  local line state
-  local -a commands
-
-  _arguments -s -C \\
+  yield `local line state`;
+  yield `local -a commands\n`;
+  yield `_arguments -s -C \\
     "1: :->command" \\
-    "*::arg:->args" \\
-    ${completeFlags(command).join(" \\\n" + " ".repeat(4))}
+    "*::arg:->args" \\`;
 
-  case $state in
+  for (const flag of completeFlags(command, options)) {
+    yield `  ${flag}`;
+  }
+
+  yield "";
+  yield `case $state in
     command)
       commands=(
         ${
     command.commands
       .map((command) => {
         const name = escapeString(command.name);
-        const description = (command.description ?? "").replace(":", " ");
+        const description = options.disableDescriptions
+          ? ""
+          : (command.short(options.ctx) ||
+            shorten(command.long(options.ctx) ?? "")).replace(":", " ");
         return `"${name}:${description}"`;
       })
       .join(`\n${" ".repeat(8)}`)
@@ -90,29 +127,42 @@ ${subCommands}
 `.trim();
 }
 
-function completeArgsAndFlags(command: GenericCommand) {
-  const args = completeArgs(command);
-  const flags = completeFlags(command);
+function* completeArgsAndFlags(
+  command: GenericCommand,
+  options: { ctx: DefaultContext; disableDescriptions?: boolean },
+): Iterable<string> {
+  const args = completeArgs(command, options);
+  const flags = completeFlags(command, options);
 
   if (args.length > 0 || flags.length > 0) {
-    const indent = " ".repeat(4);
+    yield `_arguments -s \\`;
 
-    return [
-      `_arguments -s \\\n${indent}`,
-      [...args, ...flags].join(` \\\n${indent}`),
-    ].join("");
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      yield `  ${arg}` + (i === args.length - 1 ? "" : " \\");
+    }
+
+    for (let i = 0; i < flags.length; i++) {
+      const flag = flags[i];
+      yield `  ${flag}` + (i === flags.length - 1 ? "" : " \\");
+    }
   }
-
-  return "";
 }
 
-function completeArgs(command: GenericCommand): string[] {
+function completeArgs(
+  command: GenericCommand,
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): string[] {
   const args: string[] = [];
   const hasOptionalArgs = command.args instanceof z.ZodOptional ||
     command.args instanceof z.ZodDefault;
 
   walkArgs(command.args, (arg, { position, variadic }) => {
-    const message = (arg.description ?? arg.name).replace(":", " ");
+    const message = ((options.disableDescriptions ? "" : arg.description) || "")
+      .replace(":", " ");
     let action = ``;
     // A zsh variadic argument
     const variadicPrefix = variadic ? "*" : " ";
@@ -141,7 +191,13 @@ function completeArgs(command: GenericCommand): string[] {
   return args;
 }
 
-function completeFlags(command: GenericCommand): string[] {
+function completeFlags(
+  command: GenericCommand,
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): string[] {
   const args: string[] = [];
 
   walkFlags(command.flags, (flag, name) => {
@@ -159,7 +215,9 @@ function completeFlags(command: GenericCommand): string[] {
     };
 
     if (flag.aliases.length) {
-      optname.short = `-${flag.aliases.join(" -")}`;
+      optname.short = `-${
+        flag.aliases.filter((a) => a.length === 1).join(" -")
+      }`;
     }
 
     if (flag.negatable) {
@@ -199,7 +257,14 @@ function completeFlags(command: GenericCommand): string[] {
       }
     }
 
-    const explanation = `[${(flag.description ?? "").replace(":", " ")}]`;
+    const explanation = `[${
+      (options.disableDescriptions ? "" : (flag.short(options.ctx) ||
+        shorten(flag.long(options.ctx) ?? "")))
+        .replace(
+          ":",
+          " ",
+        )
+    }]`;
     const message = `${name}`;
     let action = ``;
 

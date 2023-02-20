@@ -5,26 +5,18 @@
 ## Getting started
 
 ```ts
-import {
-  create,
-  globalFlags,
-  flags,
-  args,
-  flag,
-  arg,
-  env,
-  z,
-} from "https://deno.land/x/zcli/mod.ts";
+import * as zcli from "https://deno.land/x/zcli/mod.ts";
+import { z } from "https://deno.land/x/zcli/z.ts";
 
-const zcli = create({
-  globalFlags: globalFlags({
-    verbose: flag(z.boolean().default(false), { aliases: ["v"] }),
-    json: flag(z.boolean().default(false), { aliases: ["j"] }),
+const cli = zcli.create({
+  globalFlags: zcli.flags({
+    verbose: zcli.flag({ aliases: ["v"] }).oboolean(),
+    raw: zcli.flag({ aliases: ["r"] }).oboolean(),
   }),
 
   ctx: {
-    env: env({
-      DEBUG: env.bool().default("false"),
+    env: zcli.env({
+      DEBUG: zcli.env.bool().default("false"),
     }),
 
     meta: {
@@ -36,36 +28,38 @@ const zcli = create({
   },
 });
 
-const cli = zcli
-  .command("fetch", {
-    args: args([arg("url", z.string().url().describe("The URL to fetch"))]),
+const fetcher = cli
+  .command("fetcher", {
+    args: zcli
+      .args({
+        short: "The URL to fetch",
+      })
+      .tuple([z.string().url()]),
 
-    flags: flags({
-      method: flag(
-        z
-          .enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
-          .default("GET")
-          .describe("The HTTP method to use"),
-        {
-          aliases: ["m"],
-        }
-      ),
-      headers: flag(
-        z.array(z.string()).optional().describe("Add headers to the request"),
-        { aliases: ["H"] }
-      ),
-      data: flag(z.string().optional().describe("Send request data"), {
-        aliases: ["d"],
-      }),
+    flags: zcli.flags({
+      method: zcli
+        .flag({ short: "The HTTP method to use", aliases: ["m"] })
+        .enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
+        .default("GET"),
+      headers: zcli
+        .flag({ short: "Add headers to the request", aliases: ["H"] })
+        .array(z.string())
+        .optional(),
+      data: zcli
+        .flag({
+          short: "Send request data",
+          aliases: ["d"],
+        })
+        .ostring(),
     }),
   })
   .describe("Fetch a resource from the internet")
-  .preRun((flags, { env }) => {
-    if (env.get("DEBUG")) {
+  .preRun(({ flags, ctx }) => {
+    if (ctx.env.get("DEBUG")) {
       console.log("Fetching:", flags.url);
     }
   })
-  .run(async (flags, ctx) => {
+  .run(async ({ flags, ctx }) => {
     if (ctx.env.get("DEBUG")) {
       console.log("Fetching:", flags.url);
     }
@@ -73,7 +67,7 @@ const cli = zcli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
       ),
       body: flags.data,
     });
@@ -86,6 +80,6 @@ const cli = zcli
   });
 
 if (import.meta.main) {
-  await cli.execute();
+  await fetcher.execute();
 }
 ```

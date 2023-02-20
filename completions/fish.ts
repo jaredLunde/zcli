@@ -3,8 +3,15 @@ import { escapeString, GenericCommand } from "./shared.ts";
 import { shorten } from "../lib/shorten.ts";
 import { z } from "../z.ts";
 import { walkArgs } from "../args.ts";
+import { DefaultContext } from "../command.ts";
 
-export function complete(command: GenericCommand) {
+export function* complete(
+  command: GenericCommand,
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
+): Iterable<string> {
   const name = escapeString(command.name);
   const fnNames: string[] = [];
   const stack: [GenericCommand, string[]][] = [[command, []]];
@@ -16,8 +23,8 @@ export function complete(command: GenericCommand) {
     stack.push(...cmd.commands.map((c) => [c, [...path, cmd.name]]));
   }
 
-  return `#!/usr/bin/env fish
-
+  yield `#!/usr/bin/env fish`;
+  yield `
 function __fish_${name}_using_command
   set -l cmds ${fnNames.join(" ")}
   set -l words (commandline -opc)
@@ -42,12 +49,18 @@ function __fish_${name}_using_command
   
   return 1
 end
+`.trimEnd();
 
-${completeCommand(command, [])}
-`;
+  for (const line of completeCommand(command, [], options)) {
+    yield line;
+  }
 }
 
-function completeCommand(command: GenericCommand, path: string[]) {
+function* completeCommand(
+  command: GenericCommand,
+  path: string[],
+  options: { ctx: DefaultContext; disableDescriptions?: boolean },
+): Iterable<string> {
   const name = escapeString(command.name);
   path = [...path, name];
   const fnName = `__${path.join("_")}`;
@@ -61,7 +74,8 @@ function completeCommand(command: GenericCommand, path: string[]) {
         path[0]
       }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${
         (
-          command.description ?? shorten(command.longDescription ?? "")
+          options.disableDescriptions ? "" : (command.short(options.ctx) ||
+            shorten(command.long(options.ctx) ?? ""))
         ).replace(/'/g, "\\'")
       }'`,
     );
@@ -83,10 +97,12 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     completion.push("-k -f -a");
 
-    if (arg.description || arg.longDescription) {
+    if (
+      !options.disableDescriptions && (arg.description)
+    ) {
       completion.push(
         `-d '${
-          (arg.description ?? shorten(arg.longDescription ?? "")).replace(
+          (arg.description ?? "").replace(
             /'/g,
             "\\'",
           )
@@ -98,17 +114,13 @@ function completeCommand(command: GenericCommand, path: string[]) {
   });
 
   walkFlags(command.flags, (flag, name) => {
-    if (flag.hidden) {
-      return;
-    }
-
     const type = typeAsString(flag);
     const completion: string[] = [
       `complete -c ${path[0]} -n '__fish_${path[0]}_using_command ${fnName}'`,
     ];
 
     if (flag.aliases.length > 0) {
-      completion.push(`-s ${flag.aliases[0]}`);
+      completion.push(`-s ${flag.aliases.filter((a) => a.length === 1)[0]}`);
     }
 
     completion.push(`-l ${name}`);
@@ -123,11 +135,15 @@ function completeCommand(command: GenericCommand, path: string[]) {
 
     completion.push("-k -f");
 
-    if (flag.description || flag.longDescription) {
+    if (
+      !options.disableDescriptions &&
+      (flag.short(options.ctx) || flag.long(options.ctx))
+    ) {
       completion.push(
         `-d '${
           (
-            flag.description ?? shorten(flag.longDescription ?? "")
+            flag.short(options.ctx) ??
+              shorten(flag.long(options.ctx) ?? "")
           ).replace(/'/g, "\\'")
         }'`,
       );
@@ -136,11 +152,17 @@ function completeCommand(command: GenericCommand, path: string[]) {
     completions.push(completion.join(" "));
   });
 
-  for (const cmd of command.commands) {
-    if (!cmd.hidden) {
-      completions.push("\n" + completeCommand(cmd, path));
-    }
+  yield `\n# ${path.join(" ")}`;
+
+  for (const completion of completions) {
+    yield completion;
   }
 
-  return `# ${path.join(" ")} \n${completions.join("\n")}`;
+  for (const cmd of command.commands) {
+    if (!cmd.hidden) {
+      for (const line of completeCommand(cmd, path, options)) {
+        yield line;
+      }
+    }
+  }
 }

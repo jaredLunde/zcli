@@ -1,4 +1,4 @@
-import { parse } from "../src/flags-parser.ts";
+import { parse } from "../flags-parser.ts";
 
 if (import.meta.main) {
   const args = parse(Deno.args, {

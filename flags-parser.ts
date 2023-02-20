@@ -2,7 +2,8 @@
 // This has been modified to suit the needs of this project.
 import { Prettify } from "./lib/types.ts";
 
-/** Take a set of command line arguments, optionally with a set of options, and
+/**
+ * Take a set of command line arguments, optionally with a set of options, and
  * return an object representing the flags found in the passed arguments.
  *
  * By default, any arguments starting with `-` or `--` are considered boolean
@@ -170,7 +171,7 @@ export type Args<TDoubleDash extends boolean | undefined = undefined> =
     Record<string, unknown> & {
       /** Contains all the arguments that didn't have an option associated with
        * them. */
-      _: Array<string | number>;
+      _: Array<string>;
 
       /** Contains all the arguments that appear after the double dash: "--". */
       _doubleDash?: Array<string>;

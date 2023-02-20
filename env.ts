@@ -1,7 +1,8 @@
-import { z } from "../src/z.ts";
-import { colors } from "../src/fmt.ts";
-import { table } from "../src/lib/simple-table.ts";
-import { Prettify } from "../src/lib/types.ts";
+import { z } from "./z.ts";
+import { colors } from "./fmt.ts";
+import { table } from "./lib/simple-table.ts";
+import { Prettify } from "./lib/types.ts";
+import { textEncoder } from "./lib/text-encoder.ts";
 
 /**
  * Add type-safe environment variables to your CLI context.
@@ -19,7 +20,14 @@ export function env<EnvSchema extends z.ZodRawShape>(
         return envSchema.parse(Deno.env.toObject());
       } catch (err) {
         if (err instanceof z.ZodError) {
-          throw new EnvError(err);
+          const envErr = new EnvError(err);
+
+          Deno.stderr.write(textEncoder.encode(envErr.message))
+            .then(
+              () => {
+                Deno.exit(1);
+              },
+            );
         }
 
         throw err;

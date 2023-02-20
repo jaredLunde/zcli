@@ -1,11 +1,10 @@
 import { z } from "./z.ts";
-import { flag } from "./flags.ts";
+import { flag, FlagConfig } from "./flags.ts";
 
 export const SHOW_HELP = Symbol("SHOW_HELP");
 
-export function help() {
-  return z
-    .string()
+export function helpFlag(config: FlagConfig = {}) {
+  return flag({ aliases: ["h"], ...config }).ostring()
     .refine(
       (value) => {
         return typeof value === "undefined";
@@ -16,12 +15,7 @@ export function help() {
           interrupt: SHOW_HELP,
         },
       },
-    )
-    .optional();
-}
-
-export function helpOpt() {
-  return flag(help(), { aliases: ["h"] });
+    );
 }
 
 export function showHelp() {
@@ -53,16 +47,4 @@ export function isHelp(err: unknown): boolean {
   }
 
   return false;
-}
-
-export async function writeHelp(help: Iterable<string>): Promise<void> {
-  const writes: Promise<number>[] = [];
-  const text = new TextEncoder();
-
-  for (const line of help) {
-    writes.push(Deno.stdout.write(text.encode(line + "\n")));
-  }
-
-  await Promise.all(writes);
-  Deno.exit(0);
 }
