@@ -20,11 +20,7 @@ export async function zcliDocs<
 
 function toMarkdown(json: ZcliJson) {
   const markdown = `
-# ${json.info.name}
-
-|     |      |
-| --- |  --- |
-| Version | ${json.info.version} |
+# ${json.info.name} v${json.info.version}
 
 ${commandToMarkdown(json.commands[0])}
 `;
@@ -33,8 +29,7 @@ ${commandToMarkdown(json.commands[0])}
 }
 
 function commandToMarkdown(command: ZcliJsonCommand) {
-  const { name, description, summary, arguments: args, flags, commands } =
-    command;
+  const { name, description, summary, arguments: args, flags } = command;
 
   return `
 ## \`$ ${name}\`
@@ -42,12 +37,14 @@ function commandToMarkdown(command: ZcliJsonCommand) {
 ${description || summary}
 
 ${
-    args.length && `
+    !!args?.items.length && `
 ### Arguments
 
-| Position | Type | Variadic? |  Description |
-| -------- | ---- | --------- | ------------ |
-${args.map(argumentToMarkdown).join("\n")}
+${args.description || args.summary}
+
+| Type | Variadic? |  Description |
+| ---- | --------- | ------------ |
+${args.items.map(argumentToMarkdown).join("\n")}
 `
   }
 ${
@@ -72,20 +69,19 @@ function flagToMarkdown(flag: ZcliJsonFlag) {
     required,
     collects,
     default: defaultValue,
-    negatable,
   } = flag;
 
   return `| --${
     name + (aliases ? `, -${aliases.join(", -")}` : "")
   } | \`${schema.type}\` | ${required ? "Yes" : "No"} | ${
     collects ? "Yes" : "No"
-  } | ${defaultValue ?? ""} | ${
+  } | ${defaultValue ? `\`${JSON.stringify(defaultValue)}\`` : ""} | ${
     (description || summary || "").replace("\n", " ")
   } |`;
 }
 
 function argumentToMarkdown(arg: ZcliJsonArgument) {
-  return `| ${arg.position} | \`${arg.schema.type}\` | ${arg.variadic} | ${
+  return `| \`${arg.schema.type}\` | ${arg.variadic ? "Yes" : "No"} | ${
     arg.summary.replace("\n", " ")
   } |`;
 }

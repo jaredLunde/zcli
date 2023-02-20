@@ -130,7 +130,13 @@ export async function zcliJson<
             name: command.name,
             description: command.long(ctx) || command.short(ctx) || "",
             summary: command.short(ctx) ?? "",
-            arguments: a,
+            arguments: command.args
+              ? {
+                description: command.args.long(ctx) ?? "",
+                summary: command.args.short(ctx) ?? "",
+                items: a,
+              }
+              : undefined,
             flags: commandFlags,
             commands: commands,
           };
@@ -173,7 +179,11 @@ export type ZcliJsonCommand = {
   name: string;
   description: string;
   summary: string;
-  arguments: ZcliJsonArgument[];
+  arguments: undefined | {
+    description: string;
+    summary: string;
+    items: ZcliJsonArgument[];
+  };
   flags: ZcliJsonFlag[];
   commands: ZcliJsonCommand[];
 };

@@ -43,7 +43,7 @@ const fetcher = cli
   .command("fetcher", {
     args: args({
       short: "A URL to fetch.",
-    }).tuple([z.string().url()]),
+    }).tuple([z.string().url().describe("The URL")]),
 
     flags: flags({
       method: flag({
