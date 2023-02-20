@@ -13,6 +13,7 @@ import {
   getDefault,
   inferFlags,
   innerType,
+  isFlags,
   typeAsString,
   walkFlags,
 } from "./flags.ts";
@@ -27,6 +28,7 @@ import * as intl from "./intl.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import * as flagsParser from "./flags-parser.ts";
 import { textEncoder } from "./lib/text-encoder.ts";
+import { shorten } from "./lib/shorten.ts";
 
 /**
  * Create a CLI command. Commands can be nested to create a tree
@@ -58,7 +60,6 @@ export function command<
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
-  const hasArgs = isArgs(args);
   const hasCmds = !!commands?.length;
 
   function* help(context: Context): Iterable<string> {
@@ -84,45 +85,52 @@ export function command<
 
     const hasAvailableCmds = hasCmds && commands.some((cmd) => !cmd.hidden);
 
-    if (hasAvailableCmds && !use) {
-      yield `  ${displayName} [command]`;
-    }
-
     if (use) {
       yield `  ${use}`;
-    } else if (args) {
-      let argsUsage = `  ${displayName}`;
-
-      if (typeof args === "object" && "usage" in args && args.usage) {
-        argsUsage += ` ${args.usage}`;
-      } else {
-        const hasOptionalArgs = args instanceof z.ZodDefault ||
-          args instanceof z.ZodOptional ||
-          (args instanceof z.ZodArray && !args._def.minLength?.value);
-
-        walkArgs(args, (arg, { variadic }) => {
-          if (variadic) {
-            argsUsage += ` [arguments...]`;
-          } else {
-            argsUsage += hasOptionalArgs ||
-                arg instanceof z.ZodOptional ||
-                arg instanceof z.ZodDefault
-              ? ` [arguments]`
-              : ` <arguments>`;
-          }
-        });
+    } else {
+      if (hasAvailableCmds) {
+        yield `  ${displayName} [command]`;
       }
 
-      yield argsUsage + ` [flags]`;
-    } else {
-      yield `  ${displayName} [flags]`;
+      if (args) {
+        let argsUsage = `  ${displayName}`;
+
+        if (typeof args === "object" && "usage" in args && args.usage) {
+          argsUsage += ` ${args.usage}`;
+        } else {
+          const hasOptionalArgs = args instanceof z.ZodDefault ||
+            args instanceof z.ZodOptional ||
+            (args instanceof z.ZodArray && !args._def.minLength?.value);
+
+          walkArgs(args, (arg, { variadic }) => {
+            if (variadic) {
+              argsUsage += ` [arguments...]`;
+            } else {
+              argsUsage += hasOptionalArgs ||
+                  arg instanceof z.ZodOptional ||
+                  arg instanceof z.ZodDefault
+                ? ` [arguments]`
+                : ` <arguments>`;
+            }
+          });
+        }
+
+        yield argsUsage + ` [flags]`;
+      } else {
+        yield `  ${displayName} [flags]`;
+      }
+    }
+
+    if (aliases.length) {
+      yield colors.bold("\nAliases");
+      yield `  ${name}, ${aliases.join(", ")}`;
     }
 
     if (hasAvailableCmds) {
-      yield colors.bold("\nAvailable commands");
+      yield colors.bold("\nAvailable Commands");
 
       const sortedCmds = intl.collate(
-        commands!.filter((cmd) => !cmd.hidden),
+        commands.filter((cmd) => !cmd.hidden),
         {
           get(item) {
             return item.name;
@@ -148,11 +156,6 @@ export function command<
       ) {
         yield line;
       }
-    }
-
-    if (aliases.length) {
-      yield colors.bold("\nAliases");
-      yield `  ${name}, ${aliases.join(", ")}`;
     }
 
     const rows: string[][] = [];
@@ -182,7 +185,7 @@ export function command<
           : type instanceof z.ZodEnum
           ? typeof type._def.values[0]
           : typeAsString(opt),
-        (opt.short(context) ?? "") +
+        (opt.short(context) || shorten(opt.long(context) ?? "")) +
         (!(type instanceof z.ZodBoolean) && defaultValue
           ? ` (default: ${defaultValue})`
           : ""),
@@ -208,7 +211,7 @@ export function command<
       for (
         const line of table(globalRows, {
           indent: 2,
-          cellPadding: [1, 2],
+          cellPadding: [1, 1, 2],
         })
       ) {
         yield line;
@@ -334,67 +337,68 @@ export function command<
       // Parse the options
       let o: Record<string, unknown> = {};
 
-      try {
-        // @ts-expect-error: balh blah
-        o = await flags!.parseAsync(parsed);
-      } catch (err) {
-        if (err instanceof EnvError) {
-          await Deno.stderr.write(textEncoder.encode(err.message));
-          Deno.exit(1);
-        } else if (isHelp(err)) {
-          await writeHelp(help(ctx as any));
-        } else if (err instanceof z.ZodError) {
-          const formErrors = err.formErrors;
-          const errors = err.errors.map((e) => {
-            if (e.code === z.ZodIssueCode.unrecognized_keys) {
-              return (
-                `${
-                  intl.plural(e.keys.length, "Unknown flag", {
-                    hideCount: true,
-                  })
-                }: ${e.keys.join(", ")}\n` +
-                didYouMean(e.keys[0], optionNames)
-              );
-            } else if (e.code === z.ZodIssueCode.invalid_type) {
-              return `Invalid type for flag "${
-                e.path.join(".")
-              }". Expected ${e.expected}, but received ${e.received}.`;
-            } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
-              return `Invalid value for flag "${
-                e.path.join(
-                  ".",
-                )
-              }". Expected ${
-                intl.list(
-                  e.options.map((o) => "" + o),
-                  {
-                    type: "disjunction",
-                  },
-                )
-              }. Received ${e.received}.`;
-            }
+      if (isFlags(flags)) {
+        try {
+          o = await flags.parseAsync(parsed);
+        } catch (err) {
+          if (err instanceof EnvError) {
+            await Deno.stderr.write(textEncoder.encode(err.message));
+            Deno.exit(1);
+          } else if (isHelp(err)) {
+            await writeHelp(help(ctx as any));
+          } else if (err instanceof z.ZodError) {
+            const formErrors = err.formErrors;
+            const errors = err.errors.map((e) => {
+              if (e.code === z.ZodIssueCode.unrecognized_keys) {
+                return (
+                  `${
+                    intl.plural(e.keys.length, "Unknown flag", {
+                      hideCount: true,
+                    })
+                  }: ${e.keys.join(", ")}\n` +
+                  didYouMean(e.keys[0], optionNames)
+                );
+              } else if (e.code === z.ZodIssueCode.invalid_type) {
+                return `Invalid type for flag "${
+                  e.path.join(".")
+                }". Expected ${e.expected}, but received ${e.received}.`;
+              } else if (e.code === z.ZodIssueCode.invalid_enum_value) {
+                return `Invalid value for flag "${
+                  e.path.join(
+                    ".",
+                  )
+                }". Expected ${
+                  intl.list(
+                    e.options.map((o) => "" + o),
+                    {
+                      type: "disjunction",
+                    },
+                  )
+                }. Received ${e.received}.`;
+              }
 
-            return `Invalid value for flag "${e.path.join(".")}". ${
-              formErrors.fieldErrors[e.path[0]]
-            }`;
-          });
+              return `Invalid value for flag "${e.path.join(".")}". ${
+                formErrors.fieldErrors[e.path[0]]
+              }`;
+            });
 
-          await Deno.stderr.write(
-            textEncoder.encode(
-              errors[0] + `\n⚘ See --help for more information.\n`,
-            ),
-          );
+            await Deno.stderr.write(
+              textEncoder.encode(
+                errors[0] + `\n⚘ See --help for more information.\n`,
+              ),
+            );
 
-          Deno.exit(1);
+            Deno.exit(1);
+          }
+
+          throw err;
         }
-
-        throw err;
       }
 
       // Parse the arguments
       let a: unknown[] = [];
 
-      if (hasArgs) {
+      if (isArgs(args)) {
         try {
           const defaultArgs = _.length === 0 && args instanceof z.ZodOptional
             ? undefined

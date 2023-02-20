@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 import { getDefault, innerType, walkFlags } from "./flags.ts";
-import { Command } from "./command.ts";
+import { BaseContext, Command } from "./command.ts";
 import * as intl from "./intl.ts";
 import { z } from "./z.ts";
-import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.2";
+import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.4";
 import { dedent } from "./lib/dedent.ts";
 import { walkArgs } from "./args.ts";
 import { textEncoder } from "./lib/text-encoder.ts";
@@ -13,7 +13,7 @@ export async function zcliJson<
     meta: { version: string; date?: string; commit?: string };
   },
 >(
-  command: Command<Context, any, any>,
+  command: Command<Context & BaseContext, any, any>,
   config: { all?: boolean } = {},
 ) {
   function generateCommand(command: Command<any, any, any>) {

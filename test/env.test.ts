@@ -1,4 +1,4 @@
-import { stub } from "https://deno.land/std@0.177.0/testing/mock.ts";
+import { Stub, stub } from "https://deno.land/std@0.177.0/testing/mock.ts";
 import {
   assertEquals,
   assertExists,
@@ -7,7 +7,7 @@ import {
 import {
   afterAll,
   afterEach,
-  beforeEach,
+  beforeAll,
   describe,
   it,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
@@ -17,19 +17,17 @@ import { env } from "../mod.ts";
 const originalEnv = Deno.env.toObject();
 
 // @ts-expect-error: it's fine
-let exitStub = stub(Deno, "exit", () => {});
+let exitStub: Stub<typeof Deno, "exit">;
 
-beforeEach(() => {
-  exitStub.restore();
+beforeAll(() => {
+  // @ts-expect-error: it's fine
+  exitStub = stub(Deno, "exit");
 });
 
 afterEach(() => {
   for (const [key, value] of Object.entries(originalEnv)) {
     Deno.env.set(key, value);
   }
-
-  // @ts-expect-error: it's fine
-  exitStub = stub(Deno, "exit", () => {});
 });
 
 afterAll(() => {
