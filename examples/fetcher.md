@@ -153,54 +153,6 @@ These flags are available on all commands.
 
 ---
 
-## `$ fetcher completion help`
-
-Show help for a completion command
-
-### Arguments
-
-| Type                                  | Variadic? | Description                   |
-| ------------------------------------- | --------- | ----------------------------- |
-| `"bash" \| "zsh" \| "fish" \| "help"` | No        | The command to show help for. |
-
-### Global Flags
-
-These flags are available on all commands.
-
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
-
-[**⇗ Back to top**](#available-commands)
-
----
-
-## `$ fetcher completion help commands`
-
-List completion commands
-
-### Flags
-
-| Name      | Type      | Required? | Collects? | Default | Description                              |
-| --------- | --------- | --------- | --------- | ------- | ---------------------------------------- |
-| --all, -a | `boolean` | No        | No        |         | Show all commands, including hidden ones |
-
-### Global Flags
-
-These flags are available on all commands.
-
-| Name          | Type      | Required? | Collects? | Default | Description                 |
-| ------------- | --------- | --------- | --------- | ------- | --------------------------- |
-| --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
-| --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
-| --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
-
-[**⇗ Back to top**](#available-commands)
-
----
-
 ## `$ fetcher completion zsh`
 
 Generate the autocompletion script for the zsh shell.
