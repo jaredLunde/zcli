@@ -29,13 +29,17 @@ export function version<
   })
     .run(function* ({ ctx: { meta, path } }) {
       const bin = path[0];
+
       const metaStr = [
         meta.date &&
         `build date: ${
-          intl.date(new Date(meta.date), {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })
+          intl.date(
+            new Date(meta.date),
+            {
+              dateStyle: "medium",
+              timeStyle: "short",
+            },
+          )
         }`,
         meta.commit && `commit: ${meta.commit}`,
       ].filter(Boolean).join("; ");

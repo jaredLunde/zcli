@@ -19,7 +19,14 @@ export { kv } from "./kv.ts";
 export { locale } from "./locale.ts";
 export { version } from "./version.ts";
 
-export type { Action, Command, CommandConfig, Execute } from "./command.ts";
+export type {
+  Action,
+  BaseContext,
+  Command,
+  CommandConfig,
+  DefaultContext,
+  Execute,
+} from "./command.ts";
 export type { Args, ArgsConfig, ArgTypes } from "./args.ts";
 export type {
   Flag,
