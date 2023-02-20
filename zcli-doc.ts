@@ -94,7 +94,7 @@ function commandToMarkdown(
   const { name, description, summary, arguments: args, flags } = command;
 
   return `
---
+---
 
 ## \`$ ${[...path, name].join(" ")}\`
 
