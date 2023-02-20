@@ -4,18 +4,16 @@ A simple fetcher example.
 
 ## Available Commands
 
-| Command                                                                      | Description                                               |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [**`fetcher`**](#-fetcher)                                                   | Fetch a resource from the internet                        |
-| [**`fetcher completion`**](#-fetcher-completion)                             | Generate an autocompletion script for the specified shell |
-| [**`fetcher completion bash`**](#-fetcher-completion-bash)                   | Generate an autocompletion script for the bash shell      |
-| [**`fetcher completion fish`**](#-fetcher-completion-fish)                   | Generate an autocompletion script for the fish shell      |
-| [**`fetcher completion help`**](#-fetcher-completion-help)                   | Show help for a completion command                        |
-| [**`fetcher completion help commands`**](#-fetcher-completion-help-commands) | List completion commands                                  |
-| [**`fetcher completion zsh`**](#-fetcher-completion-zsh)                     | Generate an autocompletion script for the zsh shell       |
-| [**`fetcher help`**](#-fetcher-help)                                         | Show help for a fetcher command                           |
-| [**`fetcher help commands`**](#-fetcher-help-commands)                       | List fetcher commands                                     |
-| [**`fetcher version`**](#-fetcher-version)                                   | Show version information                                  |
+| Command                                                    | Description                                               |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| [**`fetcher`**](#-fetcher)                                 | Fetch a resource from the internet                        |
+| [**`fetcher completion`**](#-fetcher-completion)           | Generate an autocompletion script for the specified shell |
+| [**`fetcher completion bash`**](#-fetcher-completion-bash) | Generate an autocompletion script for the bash shell      |
+| [**`fetcher completion fish`**](#-fetcher-completion-fish) | Generate an autocompletion script for the fish shell      |
+| [**`fetcher completion zsh`**](#-fetcher-completion-zsh)   | Generate an autocompletion script for the zsh shell       |
+| [**`fetcher help`**](#-fetcher-help)                       | Show help for a fetcher command                           |
+| [**`fetcher help commands`**](#-fetcher-help-commands)     | List fetcher commands                                     |
+| [**`fetcher version`**](#-fetcher-version)                 | Show version information                                  |
 
 ---
 

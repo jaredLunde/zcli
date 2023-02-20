@@ -141,6 +141,10 @@ function ignoreFilter(
   path: string[] = [],
 ) {
   return (cmd: ZcliJsonCommand) => {
+    if (typeof config.ignoreCommands === "function") {
+      return !config.ignoreCommands(cmd, [...path, cmd.name]);
+    }
+
     const name = [...path, cmd.name].join(" ");
     return !config.ignoreCommands?.includes(name);
   };
@@ -204,5 +208,7 @@ export type ZcliDocConfig = {
   /**
    * Ignore these commands
    */
-  ignoreCommands?: string[];
+  ignoreCommands?:
+    | string[]
+    | ((command: ZcliJsonCommand, path: string[]) => boolean);
 };
