@@ -94,6 +94,8 @@ function commandToMarkdown(
   const { name, description, summary, arguments: args, flags } = command;
 
   return `
+--
+
 ## \`$ ${[...path, name].join(" ")}\`
 
 ${description || summary}
@@ -116,6 +118,9 @@ ${
 | Name | Type | Required? | Collects? | Default |  Description |
 | -------- | ---- | --------- | --- | --- | ------------ |
 ${flags.map(flagToMarkdown).join("\n")}
+
+[**⇗ Back to top**](#available-commands)
+
 ${
       command.commands.map((cmd) => commandToMarkdown(cmd, path.concat(name)))
         .join("")

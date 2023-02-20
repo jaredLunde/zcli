@@ -17,6 +17,8 @@ A simple fetcher example.
 | [`fetcher help commands`](#-fetcher-help-commands)                       | List fetcher commands                                     |
 | [`fetcher version`](#-fetcher-version)                                   | Show version information                                  |
 
+--
+
 ## `$ fetcher`
 
 Fetch a resource from the internet
@@ -42,6 +44,10 @@ A URL to fetch.
 | --raw, -r     | `boolean`                                                   | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean`                                                   | No        | No        |         | Show help for a command     |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher completion`
 
 Generate an autocompletion script for zcli.json in the specified shell.
@@ -54,6 +60,10 @@ See each sub-command's help for details on how to use the generated script.
 | --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+
+[**⇗ Back to top**](#available-commands)
+
+--
 
 ## `$ fetcher completion bash`
 
@@ -92,6 +102,10 @@ You will need to start a new shell for this setup to take effect.
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher completion fish`
 
 Generate the autocompletion script for the fish shell.
@@ -119,6 +133,10 @@ You will need to start a new shell for this setup to take effect.
 | --raw, -r         | `boolean` | No        | No        |         | Print a raw response output     |
 | --help, -h        | `boolean` | No        | No        |         | Show help for a command         |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher completion help`
 
 Show help for a completion command
@@ -137,6 +155,10 @@ Show help for a completion command
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher completion help commands`
 
 List completion commands
@@ -149,6 +171,10 @@ List completion commands
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output              |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command                  |
 | --all, -a     | `boolean` | No        | No        |         | Show all commands, including hidden ones |
+
+[**⇗ Back to top**](#available-commands)
+
+--
 
 ## `$ fetcher completion zsh`
 
@@ -192,6 +218,10 @@ You will need to start a new shell for this setup to take effect.
 | --raw, -r         | `boolean` | No        | No        |         | Print a raw response output     |
 | --help, -h        | `boolean` | No        | No        |         | Show help for a command         |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher help`
 
 Show help for a fetcher command
@@ -210,6 +240,10 @@ Show help for a fetcher command
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher help commands`
 
 List fetcher commands
@@ -223,6 +257,10 @@ List fetcher commands
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command                  |
 | --all, -a     | `boolean` | No        | No        |         | Show all commands, including hidden ones |
 
+[**⇗ Back to top**](#available-commands)
+
+--
+
 ## `$ fetcher version`
 
 Shows version information command, including version number and build date.
@@ -234,3 +272,5 @@ Shows version information command, including version number and build date.
 | --verbose, -v | `boolean` | No        | No        |         | Enable verbose logging      |
 | --raw, -r     | `boolean` | No        | No        |         | Print a raw response output |
 | --help, -h    | `boolean` | No        | No        |         | Show help for a command     |
+
+[**⇗ Back to top**](#available-commands)
