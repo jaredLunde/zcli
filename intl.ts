@@ -33,7 +33,7 @@ export function list(
 }
 
 export function collate<T>(
-  items: T[],
+  items: T[] | ReadonlyArray<T>,
   options: Intl.CollatorOptions & {
     locale?: string;
     get?: (item: T) => string;

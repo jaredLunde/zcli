@@ -1,34 +1,47 @@
 {
   "zcli": "1.0.0",
   "info": {
-    "name": "fetch",
+    "name": "fetcher",
     "version": "1.3.2",
     "commit": "development",
-    "buildDate": "2023-02-18T21:30:31.598Z",
+    "buildDate": "2023-02-20T18:38:07.265Z",
     "description": "Fetch a resource from the internet\n\nThis command will fetch a resource from the internet and print the response.",
     "summary": "Fetch a resource from the internet"
   },
   "commands": [
     {
-      "name": "fetch",
+      "name": "fetcher",
       "description": "Fetch a resource from the internet\n\nThis command will fetch a resource from the internet and print the response.",
       "summary": "Fetch a resource from the internet",
       "arguments": [
         {
-          "name": "url",
-          "description": "The URL to fetch",
-          "summary": "The URL to fetch",
+          "position": 0,
+          "summary": "",
           "required": true,
           "variadic": false,
           "schema": {
             "type": "string",
             "format": "uri",
-            "description": "The URL to fetch",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
         }
       ],
       "flags": [
+        {
+          "name": "method",
+          "aliases": ["m"],
+          "description": "The HTTP method to use",
+          "summary": "The HTTP method to use",
+          "required": false,
+          "collects": false,
+          "negatable": false,
+          "default": "GET",
+          "schema": {
+            "type": "string",
+            "enum": ["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
         {
           "name": "headers",
           "aliases": ["H"],
@@ -54,27 +67,149 @@
             "type": "string",
             "$schema": "http://json-schema.org/draft-07/schema#"
           }
+        },
+        {
+          "name": "verbose",
+          "aliases": ["v"],
+          "description": "Enable verbose logging",
+          "summary": "Enable verbose logging",
+          "required": false,
+          "collects": false,
+          "negatable": false,
+          "schema": {
+            "type": "boolean",
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "raw",
+          "aliases": ["r"],
+          "description": "Print a raw response output",
+          "summary": "Print a raw response output",
+          "required": false,
+          "collects": false,
+          "negatable": false,
+          "schema": {
+            "type": "boolean",
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "help",
+          "aliases": ["h"],
+          "description": "Show help for a command",
+          "summary": "Show help for a command",
+          "required": true,
+          "collects": false,
+          "negatable": false,
+          "schema": {
+            "type": "boolean",
+            "default": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
         }
       ],
       "commands": [
         {
           "name": "completion",
-          "description": "Generate an autocompletion script for fetch in the specified shell.\nSee each sub-command's help for details on how to use the generated script.",
+          "description": "Generate an autocompletion script for fetcher in the specified shell.\nSee each sub-command's help for details on how to use the generated script.",
           "summary": "Generate an autocompletion script for the specified shell",
           "arguments": [],
-          "flags": [],
+          "flags": [
+            {
+              "name": "verbose",
+              "aliases": ["v"],
+              "description": "Enable verbose logging",
+              "summary": "Enable verbose logging",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "raw",
+              "aliases": ["r"],
+              "description": "Print a raw response output",
+              "summary": "Print a raw response output",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "help",
+              "aliases": ["h"],
+              "description": "Show help for a command",
+              "summary": "Show help for a command",
+              "required": true,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "default": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          ],
           "commands": [
             {
               "name": "bash",
-              "description": "Generate the autocompletion script for the bash shell.\n\nThis script depends on the 'bash-completion' package.\nIf it is not installed already, you can install it via your OS's package manager.\n\nTo load completions in your current shell session:\n$ source <(fetch completion bash)\n\nTo load completions for every new session, execute once:\n\nLinux:\n  $ fetch completion bash > /etc/bash_completion.d/fetch\n  \nMacOS:\n  $ fetch completion bash > /usr/local/etc/bash_completion.d/fetch\n\nYou will need to start a new shell for this setup to take effect.",
+              "description": "Generate the autocompletion script for the bash shell.\n\nThis script depends on the 'bash-completion' package.\nIf it is not installed already, you can install it via your OS's package manager.\n\nTo load completions in your current shell session:\n$ source <(fetcher completion bash)\n\nTo load completions for every new session, execute once:\n\nLinux:\n  $ fetcher completion bash > /etc/bash_completion.d/fetcher\n  \nMacOS:\n  $ fetcher completion bash > /usr/local/etc/bash_completion.d/fetcher\n\nYou will need to start a new shell for this setup to take effect.",
               "summary": "Generate an autocompletion script for the bash shell",
               "arguments": [],
-              "flags": [],
+              "flags": [
+                {
+                  "name": "verbose",
+                  "aliases": ["v"],
+                  "description": "Enable verbose logging",
+                  "summary": "Enable verbose logging",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "raw",
+                  "aliases": ["r"],
+                  "description": "Print a raw response output",
+                  "summary": "Print a raw response output",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "help",
+                  "aliases": ["h"],
+                  "description": "Show help for a command",
+                  "summary": "Show help for a command",
+                  "required": true,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "default": false,
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
               "commands": []
             },
             {
               "name": "fish",
-              "description": "Generate the autocompletion script for the fish shell.\n\nTo load completions in your current shell session:\n$ fetch completion fish | source\n\nTo load completions for every new session, execute once:\n$ fetch completion fish > ~/.config/fish/completions/fetch.fish\n\nYou will need to start a new shell for this setup to take effect.",
+              "description": "Generate the autocompletion script for the fish shell.\n\nTo load completions in your current shell session:\n$ fetcher completion fish | source\n\nTo load completions for every new session, execute once:\n$ fetcher completion fish > ~/.config/fish/completions/fetcher.fish\n\nYou will need to start a new shell for this setup to take effect.",
               "summary": "Generate an autocompletion script for the fish shell",
               "arguments": [],
               "flags": [
@@ -86,8 +221,49 @@
                   "required": false,
                   "collects": false,
                   "negatable": false,
+                  "default": false,
                   "schema": {
                     "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "verbose",
+                  "aliases": ["v"],
+                  "description": "Enable verbose logging",
+                  "summary": "Enable verbose logging",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "raw",
+                  "aliases": ["r"],
+                  "description": "Print a raw response output",
+                  "summary": "Print a raw response output",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "help",
+                  "aliases": ["h"],
+                  "description": "Show help for a command",
+                  "summary": "Show help for a command",
+                  "required": true,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "default": false,
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 }
@@ -100,20 +276,59 @@
               "summary": "Show help for a completion command",
               "arguments": [
                 {
-                  "name": "command",
-                  "description": "The command to read help for",
-                  "summary": "The command to read help for",
+                  "position": 0,
+                  "summary": "",
                   "required": true,
                   "variadic": false,
                   "schema": {
                     "type": "string",
                     "enum": ["bash", "zsh", "fish", "help"],
-                    "description": "The command to read help for",
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 }
               ],
-              "flags": [],
+              "flags": [
+                {
+                  "name": "verbose",
+                  "aliases": ["v"],
+                  "description": "Enable verbose logging",
+                  "summary": "Enable verbose logging",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "raw",
+                  "aliases": ["r"],
+                  "description": "Print a raw response output",
+                  "summary": "Print a raw response output",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "help",
+                  "aliases": ["h"],
+                  "description": "Show help for a command",
+                  "summary": "Show help for a command",
+                  "required": true,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "default": false,
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                }
+              ],
               "commands": [
                 {
                   "name": "commands",
@@ -122,6 +337,46 @@
                   "arguments": [],
                   "flags": [
                     {
+                      "name": "verbose",
+                      "aliases": ["v"],
+                      "description": "Enable verbose logging",
+                      "summary": "Enable verbose logging",
+                      "required": false,
+                      "collects": false,
+                      "negatable": false,
+                      "schema": {
+                        "type": "boolean",
+                        "$schema": "http://json-schema.org/draft-07/schema#"
+                      }
+                    },
+                    {
+                      "name": "raw",
+                      "aliases": ["r"],
+                      "description": "Print a raw response output",
+                      "summary": "Print a raw response output",
+                      "required": false,
+                      "collects": false,
+                      "negatable": false,
+                      "schema": {
+                        "type": "boolean",
+                        "$schema": "http://json-schema.org/draft-07/schema#"
+                      }
+                    },
+                    {
+                      "name": "help",
+                      "aliases": ["h"],
+                      "description": "Show help for a command",
+                      "summary": "Show help for a command",
+                      "required": true,
+                      "collects": false,
+                      "negatable": false,
+                      "schema": {
+                        "type": "boolean",
+                        "default": false,
+                        "$schema": "http://json-schema.org/draft-07/schema#"
+                      }
+                    },
+                    {
                       "name": "all",
                       "aliases": ["a"],
                       "description": "Show all commands, including hidden ones",
@@ -129,6 +384,7 @@
                       "required": false,
                       "collects": false,
                       "negatable": false,
+                      "default": false,
                       "schema": {
                         "type": "boolean",
                         "$schema": "http://json-schema.org/draft-07/schema#"
@@ -141,7 +397,7 @@
             },
             {
               "name": "zsh",
-              "description": "Generate the autocompletion script for the zsh shell.\n\nIf shell completion is not already enabled in your environment you will need\nto enable it.  You can execute the following once:\n\n$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc\n\nTo load completions for every new session, execute once:\n\n# Linux:\n$ fetch completion zsh > \"${fpath[1]}/_fetch\"\n\n# macOS:\n$ fetch completion zsh > /usr/local/share/zsh/site-functions/_fetch\n\n# Oh My Zsh\n$ fetch completion zsh > ~/.oh-my-zsh/completions/_fetch\n\nYou will need to start a new shell for this setup to take effect.",
+              "description": "Generate the autocompletion script for the zsh shell.\n\nIf shell completion is not already enabled in your environment you will need\nto enable it.  You can execute the following once:\n\n$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc\n\nTo load completions for every new session, execute once:\n\n# Linux:\n$ fetcher completion zsh > \"${fpath[1]}/_fetcher\"\n\n# macOS:\n$ fetcher completion zsh > /usr/local/share/zsh/site-functions/_fetcher\n\n# Oh My Zsh\n$ fetcher completion zsh > ~/.oh-my-zsh/completions/_fetcher\n\nYou will need to start a new shell for this setup to take effect.",
               "summary": "Generate an autocompletion script for the zsh shell",
               "arguments": [],
               "flags": [
@@ -153,8 +409,49 @@
                   "required": false,
                   "collects": false,
                   "negatable": false,
+                  "default": false,
                   "schema": {
                     "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "verbose",
+                  "aliases": ["v"],
+                  "description": "Enable verbose logging",
+                  "summary": "Enable verbose logging",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "raw",
+                  "aliases": ["r"],
+                  "description": "Print a raw response output",
+                  "summary": "Print a raw response output",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "help",
+                  "aliases": ["h"],
+                  "description": "Show help for a command",
+                  "summary": "Show help for a command",
+                  "required": true,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "default": false,
                     "$schema": "http://json-schema.org/draft-07/schema#"
                   }
                 }
@@ -165,31 +462,110 @@
         },
         {
           "name": "help",
-          "description": "Show help for a fetch command",
-          "summary": "Show help for a fetch command",
+          "description": "Show help for a fetcher command",
+          "summary": "Show help for a fetcher command",
           "arguments": [
             {
-              "name": "command",
-              "description": "The command to read help for",
-              "summary": "The command to read help for",
+              "position": 0,
+              "summary": "",
               "required": true,
               "variadic": false,
               "schema": {
                 "type": "string",
                 "enum": ["version", "completion", "zcli.json", "help"],
-                "description": "The command to read help for",
                 "$schema": "http://json-schema.org/draft-07/schema#"
               }
             }
           ],
-          "flags": [],
+          "flags": [
+            {
+              "name": "verbose",
+              "aliases": ["v"],
+              "description": "Enable verbose logging",
+              "summary": "Enable verbose logging",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "raw",
+              "aliases": ["r"],
+              "description": "Print a raw response output",
+              "summary": "Print a raw response output",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "help",
+              "aliases": ["h"],
+              "description": "Show help for a command",
+              "summary": "Show help for a command",
+              "required": true,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "default": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          ],
           "commands": [
             {
               "name": "commands",
-              "description": "List fetch commands",
-              "summary": "List fetch commands",
+              "description": "List fetcher commands",
+              "summary": "List fetcher commands",
               "arguments": [],
               "flags": [
+                {
+                  "name": "verbose",
+                  "aliases": ["v"],
+                  "description": "Enable verbose logging",
+                  "summary": "Enable verbose logging",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "raw",
+                  "aliases": ["r"],
+                  "description": "Print a raw response output",
+                  "summary": "Print a raw response output",
+                  "required": false,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
+                {
+                  "name": "help",
+                  "aliases": ["h"],
+                  "description": "Show help for a command",
+                  "summary": "Show help for a command",
+                  "required": true,
+                  "collects": false,
+                  "negatable": false,
+                  "schema": {
+                    "type": "boolean",
+                    "default": false,
+                    "$schema": "http://json-schema.org/draft-07/schema#"
+                  }
+                },
                 {
                   "name": "all",
                   "aliases": ["a"],
@@ -198,6 +574,7 @@
                   "required": false,
                   "collects": false,
                   "negatable": false,
+                  "default": false,
                   "schema": {
                     "type": "boolean",
                     "$schema": "http://json-schema.org/draft-07/schema#"
@@ -213,38 +590,51 @@
           "description": "Shows version information command, including version number and build date.",
           "summary": "Show version information",
           "arguments": [],
-          "flags": [],
+          "flags": [
+            {
+              "name": "verbose",
+              "aliases": ["v"],
+              "description": "Enable verbose logging",
+              "summary": "Enable verbose logging",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "raw",
+              "aliases": ["r"],
+              "description": "Print a raw response output",
+              "summary": "Print a raw response output",
+              "required": false,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            },
+            {
+              "name": "help",
+              "aliases": ["h"],
+              "description": "Show help for a command",
+              "summary": "Show help for a command",
+              "required": true,
+              "collects": false,
+              "negatable": false,
+              "schema": {
+                "type": "boolean",
+                "default": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          ],
           "commands": []
         }
       ]
-    }
-  ],
-  "globalFlags": [
-    {
-      "name": "verbose",
-      "aliases": ["v"],
-      "description": "Return verbose output",
-      "summary": "Return verbose output",
-      "required": false,
-      "collects": false,
-      "negatable": false,
-      "schema": {
-        "type": "boolean",
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      }
-    },
-    {
-      "name": "raw",
-      "aliases": ["r"],
-      "description": "Log the raw body of responses",
-      "summary": "Log the raw body of responses",
-      "required": false,
-      "collects": false,
-      "negatable": false,
-      "schema": {
-        "type": "boolean",
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      }
     }
   ]
 }
