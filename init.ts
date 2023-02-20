@@ -1,35 +1,34 @@
 // deno-lint-ignore-file no-explicit-any
-import { Command, command, CommandConfig } from "./command.ts";
+import {
+  BaseContext,
+  Command,
+  command,
+  CommandConfig,
+  DefaultContext,
+} from "./command.ts";
 import { Args as ArgsTuple, args } from "./args.ts";
 import { helpFlag, writeHelp } from "./help.ts";
 import { flag, Flags, flags, walkFlags } from "./flags.ts";
 import { z } from "./z.ts";
-import { didYouMean } from "./lib/did-you-mean.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
 import * as intl from "./intl.ts";
 
-export function create<
+export function init<
   Context extends Record<string, unknown>,
   GlobalOpts extends Flags,
 >(
-  config: CreateConfig<Context, GlobalOpts>,
+  config: InitConfig<Context, GlobalOpts> = {},
 ): CommandFactory<Context, GlobalOpts> {
   const gOpts = config.globalFlags
     ? config.globalFlags.merge(helpOpts)
     : helpOpts;
-  let bin: Command<Context, any, any, GlobalOpts>;
 
   walkFlags(gOpts, (flag) => {
     flag.__global = true;
   });
 
   return {
-    ctx: config.ctx,
-    get bin() {
-      return bin;
-    },
-    globalFlags: config.globalFlags,
     command<
       Args extends
         | ArgsTuple
@@ -48,11 +47,11 @@ export function create<
       Opts,
       GlobalOpts
     > {
-      // @ts-expect-error: blah blah
-      options.flags = options.flags ? options.flags.merge(gOpts) : gOpts;
+      options = { ...options };
+      const subcommands = options.commands ? [...options.commands] : undefined;
 
-      if (options.commands?.length) {
-        const helpCmd = command("help", {
+      if (subcommands?.length) {
+        const helpCommand = command("help", {
           short: `Show help for a ${name} command`,
           flags: gOpts,
           commands: [
@@ -68,7 +67,7 @@ export function create<
                 }),
               ),
             })
-              .run(async ({ flags }) => {
+              .run(async ({ flags, ctx }) => {
                 await writeHelp(
                   (function* listCommands() {
                     yield colors.bold(`${name} commands`);
@@ -87,7 +86,7 @@ export function create<
 
                     for (let i = 0; i < sortedCmds!.length; i++) {
                       const cmd = sortedCmds![i];
-                      rows[i] = [cmd.name, cmd.shortDescription ?? ""];
+                      rows[i] = [cmd.name, cmd.short(ctx as any) ?? ""];
                     }
 
                     for (
@@ -107,7 +106,7 @@ export function create<
 
           args: args().tuple([
             z.enum(
-              options.commands.flatMap((c) => [c.name, ...c.aliases]).concat(
+              subcommands.flatMap((c) => [c.name, ...c.aliases]).concat(
                 "help",
               ) as [
                 string,
@@ -118,101 +117,70 @@ export function create<
         })
           .run(async ({ args, ctx }) => {
             if (!args[0]) {
-              // @ts-expect-error: it's fine ffs
-              await writeHelp(command_.help(ctx.path));
+              return await writeHelp(command_.help(ctx));
             }
 
-            const cmd = options.commands!.find(
+            const cmd = subcommands.find(
               (cmd) =>
                 cmd.name === args[0] ||
                 cmd.aliases.includes(args[0] as any),
-            );
-
-            if (!cmd) {
-              await Promise.all([
-                Deno.stderr.write(
-                  new TextEncoder().encode(
-                    `Unknown help topic: "${args[0]}"\n`,
-                  ),
-                ),
-                Deno.stderr.write(
-                  new TextEncoder().encode(
-                    didYouMean(
-                      args[0] + "",
-                      options
-                        .commands!.flatMap((cmd) => [cmd.name, ...cmd.aliases])
-                        .concat("commands"),
-                    ) + "\n",
-                  ),
-                ),
-              ]);
-
-              Deno.exit(1);
-            }
+            )!;
 
             await writeHelp(
-              cmd.help(((ctx.path as any) ?? []).concat(cmd.name)),
+              cmd.help({ ...ctx, path: ctx.path.concat(cmd.name) } as any),
             );
           });
-
-        const execute = helpCmd.execute;
-        // @ts-expect-error: ugh
-        helpCmd.execute = (
-          args: string[],
-          ctx?: Context & BaseContext,
-        ) => {
-          bin = bin ?? ctx?.bin ?? command_;
-
-          return execute(args, {
-            ...(ctx ?? config.ctx),
-            bin,
-            path: args.includes("--help") || args.includes("-h")
-              ? [...(ctx?.path ?? []), "help"]
-              : ctx?.path,
-          });
-        };
-        // @ts-expect-error: it's fine ffs
-        options.commands = [...options.commands, helpCmd];
+        // @ts-expect-error: all good
+        subcommands.push(executeWithContext(helpCommand, config));
       }
 
-      const command_ = command<
-        Context & BaseContext,
-        Args,
-        Opts
-      >(
-        name,
-        options,
+      // @ts-expect-error: blah blah
+      options.flags = options.flags ? options.flags.merge(gOpts) : gOpts;
+      options.commands = subcommands;
+      const command_ = executeWithContext(
+        command(name, options),
+        config,
       );
-      const execute = command_.execute;
-      const execOverride = {
-        execute: (
-          args: string[],
-          ctx?: Context & BaseContext,
-        ) => {
-          bin = bin ?? ctx?.bin ?? command_;
 
-          return execute(
-            args,
-            // @ts-expect-error: it's cool
-            {
-              ...(ctx ?? config.ctx),
-              bin,
-              path: [...(ctx?.path ?? []), name],
-            },
-          );
-        },
-      };
-      // @ts-expect-error: it's fine ffs
-      return Object.assign(command_, execOverride);
+      // @ts-expect-error: all good
+      return command_;
     },
   };
 }
+
+function executeWithContext(
+  command: Command<any, any, any>,
+  config: InitConfig<any, any>,
+) {
+  return {
+    ...command,
+    execute(
+      args: string[],
+      ctx?: any,
+    ) {
+      const execute = command.execute.bind(this);
+      const path = ctx?.path ?? emptyArray;
+      const root = ctx?.root ?? this;
+
+      return execute(
+        args,
+        {
+          ...(ctx ?? config.ctx),
+          root,
+          path: [...path, command.name],
+        },
+      );
+    },
+  };
+}
+
+const emptyArray: string[] = [];
 
 const helpOpts = flags({
   help: helpFlag({ short: "Show help for a command" }),
 });
 
-export type CreateConfig<
+export type InitConfig<
   Context extends Record<string, unknown>,
   GlobalOpts extends Flags,
 > = {
@@ -226,30 +194,10 @@ export type CreateConfig<
   globalFlags?: GlobalOpts;
 };
 
-export type BaseContext = {
-  /**
-   * The path of the command that is currently being parsed.
-   */
-  path: string[];
-  /**
-   * The root command that is being executed.
-   */
-  bin: Command<any, any, any, any>;
-};
-
 export type CommandFactory<
   Context extends Record<string, unknown>,
   GlobalOpts extends Flags,
 > = {
-  /**
-   * Meta information about the CLI.
-   */
-  ctx?: Context;
-  /**
-   * The main/root command that is being executed. This will
-   * be `undefined` if accessed outside of an execution environment.
-   */
-  bin?: Command<Context, any, any, GlobalOpts>;
   /**
    * Create a CLI command. Commands can be nested to create a tree
    * of commands. Each command can have its own set of flags and
@@ -266,31 +214,17 @@ export type CommandFactory<
   >(
     name: string,
     config?: CommandConfig<
-      Context & BaseContext,
+      Context & DefaultContext,
       Args,
       Opts
     >,
   ): Command<
-    Context & BaseContext,
+    Context & DefaultContext,
     Args,
     Opts,
     GlobalOpts
   >;
-  /**
-   * Global flags that are passed to each command.
-   */
-  globalFlags?: GlobalOpts;
 };
-
-export type Meta = {
-  /**
-   * The version of the CLI.
-   * @default "0.0.0"
-   */
-  version?: string;
-} & Record<string, unknown>;
-
-export type DefaultContext = BaseContext & Record<string, unknown>;
 
 export type inferContext<Cmd extends CommandFactory<any, any>> = Cmd extends
   CommandFactory<

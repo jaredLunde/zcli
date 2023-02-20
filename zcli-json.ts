@@ -6,6 +6,7 @@ import { z } from "./z.ts";
 import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.2";
 import { dedent } from "./lib/dedent.ts";
 import { walkArgs } from "./args.ts";
+import { textEncoder } from "./lib/text-encoder.ts";
 
 export async function zcliJson<
   Context extends {
@@ -105,9 +106,7 @@ export async function zcliJson<
     };
   }
 
-  const text = new TextEncoder();
-
-  await Deno.stdout.write(text.encode(
+  await Deno.stdout.write(textEncoder.encode(
     JSON.stringify(
       {
         "zcli": "1.0.0",

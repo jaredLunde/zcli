@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { CommandConfig } from "./command.ts";
-import { CommandFactory } from "./create.ts";
+import { CommandConfig, DefaultContext } from "./command.ts";
+import { CommandFactory } from "./init.ts";
 import * as intl from "./intl.ts";
 
 export function version<
@@ -16,7 +16,7 @@ export function version<
     name?: string;
   }
   & Pick<
-    CommandConfig<Context, any, any>,
+    CommandConfig<Context & DefaultContext, any, any>,
     "aliases" | "short" | "long" | "use" | "hidden"
   > = {}) {
   const { name = "version", ...config } = options;

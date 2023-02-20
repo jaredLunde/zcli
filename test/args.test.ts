@@ -16,35 +16,29 @@ describe("args()", () => {
   it("should have a short description", () => {
     const argv = args({ short: "hello" }).array(z.string());
     assert(isArgs(argv));
-    assertEquals(argv.shortDescription, "hello");
+    assertEquals(argv.short({} as any), "hello");
   });
 
   it("should have a short description 2", () => {
     const argv = args({ short: () => "hello" }).array(z.string());
     assert(isArgs(argv));
-    assertEquals(argv.shortDescription, "hello");
+    assertEquals(argv.short({} as any), "hello");
   });
 
   it("should have a long description", () => {
     const argv = args({ long: "hello" }).array(z.string());
     assert(isArgs(argv));
-    assertEquals(argv.longDescription, "hello");
+    assertEquals(argv.long({} as any), "hello");
   });
 
   it("should have a long description 2", () => {
     const argv = args({ long: () => "hello" }).array(z.string());
     assert(isArgs(argv));
-    assertEquals(argv.longDescription, "hello");
+    assertEquals(argv.long({} as any), "hello");
   });
 
   it("should have a usage string", () => {
     const argv = args({ use: "hello" }).array(z.string());
-    assert(isArgs(argv));
-    assertEquals(argv.usage, "hello");
-  });
-
-  it("should have a usage string 2", () => {
-    const argv = args({ use: () => "hello" }).array(z.string());
     assert(isArgs(argv));
     assertEquals(argv.usage, "hello");
   });

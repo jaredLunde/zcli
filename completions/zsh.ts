@@ -2,10 +2,15 @@ import { walkArgs } from "../args.ts";
 import { innerType, typeAsString, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
+import { DefaultContext } from "../command.ts";
+import { shorten } from "../lib/shorten.ts";
 
 export function* complete(
   command: GenericCommand,
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): Iterable<string> {
   yield `#compdef _${command.name} ${
     [command.name, ...command.aliases].join(" ")
@@ -19,7 +24,10 @@ export function* complete(
 function* completeCommand(
   command: GenericCommand,
   path: string[] = [],
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): Iterable<string> {
   const name = `_${[...path, escapeString(command.name)].join("_")}`;
 
@@ -61,7 +69,10 @@ function* completeCommand(
 function* completeCommands<T extends GenericCommand>(
   command: T,
   path: string[] = [],
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): Iterable<string> {
   const indent = " ".repeat(10);
   const subCommands = command.commands
@@ -97,7 +108,8 @@ function* completeCommands<T extends GenericCommand>(
         const name = escapeString(command.name);
         const description = options.disableDescriptions
           ? ""
-          : (command.shortDescription ?? "").replace(":", " ");
+          : (command.short(options.ctx) ||
+            shorten(command.long(options.ctx) ?? "")).replace(":", " ");
         return `"${name}:${description}"`;
       })
       .join(`\n${" ".repeat(8)}`)
@@ -117,7 +129,7 @@ ${subCommands}
 
 function* completeArgsAndFlags(
   command: GenericCommand,
-  options: { disableDescriptions?: boolean } = {},
+  options: { ctx: DefaultContext; disableDescriptions?: boolean },
 ): Iterable<string> {
   const args = completeArgs(command, options);
   const flags = completeFlags(command, options);
@@ -139,7 +151,10 @@ function* completeArgsAndFlags(
 
 function completeArgs(
   command: GenericCommand,
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): string[] {
   const args: string[] = [];
   const hasOptionalArgs = command.args instanceof z.ZodOptional ||
@@ -178,7 +193,10 @@ function completeArgs(
 
 function completeFlags(
   command: GenericCommand,
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): string[] {
   const args: string[] = [];
 
@@ -240,7 +258,8 @@ function completeFlags(
     }
 
     const explanation = `[${
-      ((options.disableDescriptions ? "" : flag.shortDescription) ?? "")
+      (options.disableDescriptions ? "" : (flag.short(options.ctx) ||
+        shorten(flag.long(options.ctx) ?? "")))
         .replace(
           ":",
           " ",

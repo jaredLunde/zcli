@@ -3,10 +3,14 @@ import { escapeString, GenericCommand } from "./shared.ts";
 import { shorten } from "../lib/shorten.ts";
 import { z } from "../z.ts";
 import { walkArgs } from "../args.ts";
+import { DefaultContext } from "../command.ts";
 
 export function* complete(
   command: GenericCommand,
-  options: { disableDescriptions?: boolean } = {},
+  options: {
+    ctx: DefaultContext;
+    disableDescriptions?: boolean;
+  },
 ): Iterable<string> {
   const name = escapeString(command.name);
   const fnNames: string[] = [];
@@ -55,7 +59,7 @@ end
 function* completeCommand(
   command: GenericCommand,
   path: string[],
-  options: { disableDescriptions?: boolean } = {},
+  options: { ctx: DefaultContext; disableDescriptions?: boolean },
 ): Iterable<string> {
   const name = escapeString(command.name);
   path = [...path, name];
@@ -70,8 +74,8 @@ function* completeCommand(
         path[0]
       }_not_in_command ${fnName}' -k -f -a ${command.name} -d '${
         (
-          options.disableDescriptions ? "" : (command.shortDescription ??
-            shorten(command.longDescription ?? ""))
+          options.disableDescriptions ? "" : (command.short(options.ctx) ||
+            shorten(command.long(options.ctx) ?? ""))
         ).replace(/'/g, "\\'")
       }'`,
     );
@@ -133,12 +137,13 @@ function* completeCommand(
 
     if (
       !options.disableDescriptions &&
-      (flag.shortDescription || flag.longDescription)
+      (flag.short(options.ctx) || flag.long(options.ctx))
     ) {
       completion.push(
         `-d '${
           (
-            flag.shortDescription ?? shorten(flag.longDescription ?? "")
+            flag.short(options.ctx) ??
+              shorten(flag.long(options.ctx) ?? "")
           ).replace(/'/g, "\\'")
         }'`,
       );

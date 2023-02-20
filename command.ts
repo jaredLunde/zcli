@@ -9,7 +9,7 @@ import {
 import {
   Flag,
   Flags,
-  flags as opts_,
+  flags as flags_,
   getDefault,
   inferFlags,
   innerType,
@@ -26,6 +26,7 @@ import { colors } from "./fmt.ts";
 import * as intl from "./intl.ts";
 import { didYouMean } from "./lib/did-you-mean.ts";
 import * as flagsParser from "./flags-parser.ts";
+import { textEncoder } from "./lib/text-encoder.ts";
 
 /**
  * Create a CLI command. Commands can be nested to create a tree
@@ -36,7 +37,7 @@ import * as flagsParser from "./flags-parser.ts";
  * @param param1 - The command configuration
  */
 export function command<
-  Context extends Record<string, unknown>,
+  Context extends DefaultContext,
   Args extends
     | ArgsTuple
     | unknown = unknown,
@@ -52,7 +53,7 @@ export function command<
     long,
     aliases = [],
     hidden = false,
-  }: CommandConfig<Context, Args, Opts> = { flags: opts_({}) as any },
+  }: CommandConfig<Context, Args, Opts> = { flags: flags_({}) as any },
 ): Command<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
@@ -60,16 +61,16 @@ export function command<
   const hasArgs = isArgs(args);
   const hasCmds = !!commands?.length;
 
-  function* help(path: string[] = []): Iterable<string> {
-    const displayName = path.join(" ") || name;
+  function* help(context: Context): Iterable<string> {
+    const displayName = context.path.join(" ") || name;
 
     if (long || short) {
       const desc = typeof long === "function"
-        ? long()
+        ? long(context)
         : long
         ? long
         : typeof short === "function"
-        ? short()
+        ? short(context)
         : short + "";
 
       for (const line of dedent(desc)) {
@@ -88,7 +89,7 @@ export function command<
     }
 
     if (use) {
-      yield typeof use === "function" ? `  ${use()}` : `  ${use}`;
+      yield `  ${use}`;
     } else if (args) {
       let argsUsage = `  ${displayName}`;
 
@@ -135,7 +136,7 @@ export function command<
         const cmd = sortedCmds[i];
 
         if (!cmd.hidden) {
-          rows[i] = [cmd.name, cmd.shortDescription ?? ""];
+          rows[i] = [cmd.name, cmd.short(context) ?? ""];
         }
       }
 
@@ -181,7 +182,7 @@ export function command<
           : type instanceof z.ZodEnum
           ? typeof type._def.values[0]
           : typeAsString(opt),
-        (opt.shortDescription ?? "") +
+        (opt.short(context) ?? "") +
         (!(type instanceof z.ZodBoolean) && defaultValue
           ? ` (default: ${defaultValue})`
           : ""),
@@ -229,16 +230,30 @@ export function command<
     flags: flags ?? {},
     hidden,
     help,
-    get usage() {
-      return typeof use === "function" ? use() : use;
+    usage: use,
+
+    short(context) {
+      let description: string | undefined;
+
+      if (typeof short === "function") {
+        description = short(context);
+      } else {
+        description = short;
+      }
+
+      return description && [...dedent(description)].join(" ");
     },
 
-    get shortDescription() {
-      return typeof short === "function" ? short() : short;
-    },
+    long(context) {
+      let description: string | undefined;
 
-    get longDescription() {
-      return typeof long === "function" ? long() : long;
+      if (typeof long === "function") {
+        description = long(context);
+      } else {
+        description = long;
+      }
+
+      return description && [...dedent(description)].join("\n");
     },
 
     preRun(action_) {
@@ -324,10 +339,10 @@ export function command<
         o = await flags!.parseAsync(parsed);
       } catch (err) {
         if (err instanceof EnvError) {
-          await Deno.stderr.write(encoder.encode(err.message));
+          await Deno.stderr.write(textEncoder.encode(err.message));
           Deno.exit(1);
         } else if (isHelp(err)) {
-          await writeHelp(help((ctx as any).path ?? []));
+          await writeHelp(help(ctx as any));
         } else if (err instanceof z.ZodError) {
           const formErrors = err.formErrors;
           const errors = err.errors.map((e) => {
@@ -365,7 +380,7 @@ export function command<
           });
 
           await Deno.stderr.write(
-            encoder.encode(
+            textEncoder.encode(
               errors[0] + `\n⚘ See --help for more information.\n`,
             ),
           );
@@ -422,7 +437,7 @@ export function command<
             });
 
             await Deno.stderr.write(
-              encoder.encode(
+              textEncoder.encode(
                 `Invalid arguments: ${
                   errors[0]
                 }.\n⚘ See --help for more information.\n`,
@@ -439,30 +454,26 @@ export function command<
       const actionArgs = { args: a, flags: o, "--": doubleDash, ctx };
 
       // Run the action
-      if (preAction) {
-        await handleAction(preAction, actionArgs);
-      }
-
-      if (action) {
-        await handleAction(action, actionArgs);
-      }
-
-      if (postAction) {
-        await handleAction(postAction, actionArgs);
-      }
+      await handleAction(preAction, actionArgs);
+      await handleAction(action, actionArgs);
+      await handleAction(postAction, actionArgs);
     },
   };
 }
 
 async function handleAction<ActionFn extends Action<any, any, any, any>>(
-  action: ActionFn,
+  action: ActionFn | undefined,
   args: unknown,
 ) {
+  if (!action) {
+    return;
+  }
+
   if (isAsyncGenerator(action)) {
     const writes: Promise<number>[] = [];
     // @ts-expect-error: it's fine
     for await (const output of action(args)) {
-      writes.push(Deno.stdout.write(encoder.encode((await output) + "\n")));
+      writes.push(Deno.stdout.write(textEncoder.encode((await output) + "\n")));
     }
 
     await Promise.all(writes);
@@ -470,7 +481,7 @@ async function handleAction<ActionFn extends Action<any, any, any, any>>(
     const writes: Promise<number>[] = [];
     // @ts-expect-error: it's fine
     for (const output of action(args)) {
-      writes.push(Deno.stdout.write(encoder.encode(output + "\n")));
+      writes.push(Deno.stdout.write(textEncoder.encode(output + "\n")));
     }
 
     await Promise.all(writes);
@@ -500,10 +511,8 @@ function isGenerator<Fn extends (...args: any[]) => any>(
 async function* _asyncGenerator() {}
 function* _generator() {}
 
-const encoder = new TextEncoder();
-
 export type Command<
-  Context extends Record<string, unknown>,
+  Context extends DefaultContext,
   Args extends
     | ArgsTuple
     | unknown = unknown,
@@ -513,43 +522,43 @@ export type Command<
   /**
    * The name of the command
    */
-  name: string;
+  name: Readonly<string>;
   /**
    * The aliases of the command
    */
-  aliases: string[];
+  aliases: ReadonlyArray<string>;
   /**
    * Subcommands for this command
    */
-  commands: Command<Context, any, any, GlobalOpts>[];
+  commands: ReadonlyArray<Command<Context, any, any, GlobalOpts>>;
   /**
    * Command arguments
    */
-  args: Args;
+  args: Readonly<Args>;
   /**
    * Command flags
    */
-  flags: Opts;
+  flags: Readonly<Opts>;
   /**
    * Whether or not the command is hidden
    */
-  hidden: boolean;
+  hidden: Readonly<boolean>;
   /**
    * Returns the help text for the command
    */
-  help(path?: string[]): Iterable<string>;
+  help(context: Context): Iterable<string>;
   /**
    * The usage string for the command
    */
-  usage?: string;
+  usage?: Readonly<string>;
   /**
    * A short description of the command
    */
-  shortDescription?: string;
+  short(context: Context): string | undefined;
   /**
    * A long description of the command
    */
-  longDescription?: string;
+  long(context: Context): string | undefined;
   /**
    * Run this action before the "run" command
    * @param action The action to run before the "run" command
@@ -579,7 +588,7 @@ export type Command<
 };
 
 export type CommandConfig<
-  Context extends Record<string, unknown>,
+  Context extends DefaultContext,
   Args extends
     | ArgsTuple
     | unknown = unknown,
@@ -608,19 +617,19 @@ export type CommandConfig<
   /**
    * Command usage
    */
-  use?: string | (() => string);
+  use?: string;
   /**
    * A short description of the command
    */
-  short?: string | (() => string);
+  short?: string | ((context: Context) => string);
   /**
    * A long description of the command
    */
-  long?: string | (() => string);
+  long?: string | ((context: Context) => string);
 };
 
 export type Action<
-  Context extends Record<string, unknown>,
+  Context extends DefaultContext,
   Args extends
     | ArgsTuple
     | unknown = unknown,
@@ -655,3 +664,16 @@ export type Action<
 export type Execute<Context> = {
   (args?: string[], ctx?: Context): Promise<void>;
 };
+
+export type BaseContext = {
+  /**
+   * The path of the command that is currently being parsed.
+   */
+  path: string[];
+  /**
+   * The root command that is being executed.
+   */
+  root: Command<any, any, any, any>;
+};
+
+export type DefaultContext = BaseContext & Record<string, unknown>;

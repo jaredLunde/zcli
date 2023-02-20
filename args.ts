@@ -1,4 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
+import { BaseContext } from "./command.ts";
+import { dedent } from "./lib/dedent.ts";
 import { Prettify } from "./lib/types.ts";
 import { z } from "./z.ts";
 import { zodProxy } from "./zod-proxy.ts";
@@ -12,15 +14,30 @@ export function args(
   config: ArgsConfig = {},
 ) {
   const argsProps = {
-    get shortDescription() {
-      return typeof config.short === "function" ? config.short() : config.short;
+    short(context: any) {
+      let description: string | undefined;
+
+      if (typeof config.short === "function") {
+        description = config.short(context);
+      } else {
+        description = config.short;
+      }
+
+      return description && [...dedent(description)].join(" ");
     },
-    get longDescription() {
-      return typeof config.long === "function" ? config.long() : config.long;
+
+    long(context: any) {
+      let description: string | undefined;
+
+      if (typeof config.long === "function") {
+        description = config.long(context);
+      } else {
+        description = config.long;
+      }
+
+      return description && [...dedent(description)].join("\n");
     },
-    get usage() {
-      return typeof config.use === "function" ? config.use() : config.use;
-    },
+    usage: config.use,
     __args: true,
   };
 
@@ -86,8 +103,17 @@ export function walkArgs(
 export type Args =
   & ArgsZodTypes
   & {
-    shortDescription?: string;
-    longDescription?: string;
+    /**
+     * A short description of the args.
+     */
+    short<Context extends BaseContext>(context: Context): string | undefined;
+    /**
+     * A long description of the args.
+     */
+    long<Context extends BaseContext>(context: Context): string | undefined;
+    /**
+     * A usage string for the arguments.
+     */
     usage?: string;
     __args: true;
   };
@@ -99,9 +125,18 @@ export type ArgsZodTypes =
   | z.ZodOptional<z.ZodTuple | z.ZodArray<any>>;
 
 export type ArgsConfig = {
-  short?: string | (() => string);
-  long?: string | (() => string);
-  use?: string | (() => string);
+  /**
+   * A short description of the args.
+   */
+  short?: string | (<Context extends BaseContext>(context: Context) => string);
+  /**
+   * A long description of the args.
+   */
+  long?: string | (<Context extends BaseContext>(context: Context) => string);
+  /**
+   * A usage string for the arguments.
+   */
+  use?: string;
 };
 
 export type ArgTypes = Pick<typeof z, "tuple" | "array">;

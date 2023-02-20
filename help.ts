@@ -1,5 +1,6 @@
 import { z } from "./z.ts";
 import { flag, FlagConfig } from "./flags.ts";
+import { textEncoder } from "./lib/text-encoder.ts";
 
 export const SHOW_HELP = Symbol("SHOW_HELP");
 
@@ -51,10 +52,9 @@ export function isHelp(err: unknown): boolean {
 
 export async function writeHelp(help: Iterable<string>): Promise<void> {
   const writes: Promise<number>[] = [];
-  const text = new TextEncoder();
 
   for (const line of help) {
-    writes.push(Deno.stdout.write(text.encode(line + "\n")));
+    writes.push(Deno.stdout.write(textEncoder.encode(line + "\n")));
   }
 
   await Promise.all(writes);

@@ -2,7 +2,9 @@ import { innerType, walkFlags } from "../flags.ts";
 import { escapeString, GenericCommand } from "./shared.ts";
 import { z } from "../z.ts";
 
-export function* complete(command: GenericCommand): Iterable<string> {
+export function* complete(
+  command: GenericCommand,
+): Iterable<string> {
   const name = escapeString(command.name);
   yield `#!/usr/bin/env bash`;
 

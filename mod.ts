@@ -13,7 +13,7 @@ export * as fmt from "./fmt.ts";
 export * as intl from "./intl.ts";
 export { showHelp } from "./help.ts";
 export { completion } from "./completion.ts";
-export { create } from "./create.ts";
+export { init } from "./init.ts";
 export { config, configUtil } from "./config.ts";
 export { kv } from "./kv.ts";
 export { locale } from "./locale.ts";

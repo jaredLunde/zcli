@@ -2,17 +2,17 @@ import * as ansi from "https://deno.land/x/ansi@1.0.1/mod.ts";
 import {
   args,
   completion,
-  create,
   env,
   flag,
   flags,
   fmt,
+  init,
   version,
   z,
 } from "../mod.ts";
 import { table } from "../lib/simple-table.ts";
 
-const cli = create({
+const cli = init({
   globalFlags: flags({
     verbose: flag({
       short: "Enable verbose logging",

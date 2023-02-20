@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import {
   assert,
@@ -44,7 +45,7 @@ describe("flag()", () => {
       return value;
     });
     assert(isFlag(zodString));
-    assertEquals(zodString.shortDescription, "hello");
+    assertEquals(zodString.short({} as any), "hello");
   });
 
   it("should have a short description 2", () => {
@@ -55,19 +56,19 @@ describe("flag()", () => {
       },
     );
     assert(isFlag(zodString));
-    assertEquals(zodString.shortDescription, "hello");
+    assertEquals(zodString.short({} as any), "hello");
   });
 
   it("should have a long description", () => {
     const zodString = flag({ long: "hello" }).string();
     assert(isFlag(zodString));
-    assertEquals(zodString.longDescription, "hello");
+    assertEquals(zodString.long({} as any), "hello");
   });
 
   it("should have a long description 2", () => {
     const zodString = flag({ long: () => "hello" }).string();
     assert(isFlag(zodString));
-    assertEquals(zodString.longDescription, "hello");
+    assertEquals(zodString.long({} as any), "hello");
   });
 
   it("should be deprecated", () => {

@@ -1,4 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
+import { BaseContext } from "./command.ts";
+import { dedent } from "./lib/dedent.ts";
 import { Prettify } from "./lib/types.ts";
 import { z } from "./z.ts";
 import { zodProxy } from "./zod-proxy.ts";
@@ -14,11 +16,27 @@ export function flag(config: FlagConfig = {}) {
     aliases: config.aliases ?? [],
     negatable: !!config.negatable,
     hidden: config.hidden ?? false,
-    get shortDescription() {
-      return typeof config.short === "function" ? config.short() : config.short;
+    short(context: any) {
+      let description: string | undefined;
+
+      if (typeof config.short === "function") {
+        description = config.short(context);
+      } else {
+        description = config.short;
+      }
+
+      return description && [...dedent(description)].join(" ");
     },
-    get longDescription() {
-      return typeof config.long === "function" ? config.long() : config.long;
+    long(context: any) {
+      let description: string | undefined;
+
+      if (typeof config.long === "function") {
+        description = config.long(context);
+      } else {
+        description = config.long;
+      }
+
+      return description && [...dedent(description)].join("\n");
     },
     deprecated: config.deprecated,
     __flag: true as const,
@@ -214,20 +232,20 @@ export type Flag<Schema extends z.ZodTypeAny = z.ZodTypeAny> = {
    * The flag is negatable. This means that the flag can be prefixed with
    * `--no-` to negate it.
    */
-  negatable: boolean;
+  negatable: FlagConfig["negatable"];
   /**
    * The flag as hidden. This will prevent it from being shown in the help
    * text or in the generated completion script.
    */
-  hidden: boolean;
+  hidden: FlagConfig["hidden"];
   /**
    * The short description of the flag.
    */
-  shortDescription: string | undefined;
+  short<Context extends BaseContext>(context: Context): string | undefined;
   /**
    * The long description of the flag.
    */
-  longDescription: string | undefined;
+  long<Context extends BaseContext>(context: Context): string | undefined;
   /**
    * If `true`, this flag is deprecated.
    */
@@ -305,11 +323,11 @@ export type FlagConfig = {
   /**
    * A short description of the flag.
    */
-  short?: string | (() => string);
+  short?: string | (<Context extends BaseContext>(context: Context) => string);
   /**
    * A long description of the flag.
    */
-  long?: string | (() => string);
+  long?: string | (<Context extends BaseContext>(context: Context) => string);
   /**
    * Add short aliases for the flag.
    * @example

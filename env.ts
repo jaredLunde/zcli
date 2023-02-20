@@ -2,6 +2,7 @@ import { z } from "./z.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
 import { Prettify } from "./lib/types.ts";
+import { textEncoder } from "./lib/text-encoder.ts";
 
 /**
  * Add type-safe environment variables to your CLI context.
@@ -21,7 +22,7 @@ export function env<EnvSchema extends z.ZodRawShape>(
         if (err instanceof z.ZodError) {
           const envErr = new EnvError(err);
 
-          Deno.stderr.write(new TextEncoder().encode(envErr.message))
+          Deno.stderr.write(textEncoder.encode(envErr.message))
             .then(
               () => {
                 Deno.exit(1);
