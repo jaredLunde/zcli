@@ -8,7 +8,7 @@ import {
 } from "./command.ts";
 import { Args as ArgsTuple, args } from "./args.ts";
 import { helpFlag } from "./help.ts";
-import { flag, Flags, flags, walkFlags } from "./flags.ts";
+import { flag, Flags, flags, isFlags, walkFlags } from "./flags.ts";
 import { z } from "./z.ts";
 import { colors } from "./fmt.ts";
 import { table } from "./lib/simple-table.ts";
@@ -17,11 +17,11 @@ import { writeIterable } from "./lib/write-iterable.ts";
 
 export function init<
   Context extends Record<string, unknown>,
-  GlobalOpts extends Flags,
+  GlobalOpts extends Flags | unknown = unknown,
 >(
   config: InitConfig<Context, GlobalOpts> = {},
 ): CommandFactory<Context, GlobalOpts> {
-  const gOpts = config.globalFlags
+  const gOpts = isFlags(config.globalFlags)
     ? config.globalFlags.merge(helpOpts)
     : helpOpts;
 
@@ -185,7 +185,7 @@ const helpOpts = flags({
 
 export type InitConfig<
   Context extends Record<string, unknown>,
-  GlobalOpts extends Flags,
+  GlobalOpts extends Flags | unknown = unknown,
 > = {
   /**
    * The context that will be passed to each command.
@@ -199,7 +199,7 @@ export type InitConfig<
 
 export type CommandFactory<
   Context extends Record<string, unknown>,
-  GlobalOpts extends Flags,
+  GlobalOpts extends Flags | unknown = unknown,
 > = {
   /**
    * Create a CLI command. Commands can be nested to create a tree
