@@ -5,18 +5,18 @@
 ## Getting started
 
 ```ts
-import * as zcli from "https://deno.land/x/zcli/mod.ts";
+import * as zc from "https://deno.land/x/zcli/mod.ts";
 import { z } from "https://deno.land/x/zcli/z.ts";
 
-const cli = zcli.create({
-  globalFlags: zcli.flags({
-    verbose: zcli.flag({ aliases: ["v"] }).oboolean(),
-    raw: zcli.flag({ aliases: ["r"] }).oboolean(),
+const cli = zc.init({
+  globalFlags: zc.flags({
+    verbose: zc.flag({ aliases: ["v"] }).oboolean(),
+    raw: zc.flag({ aliases: ["r"] }).oboolean(),
   }),
 
   ctx: {
-    env: zcli.env({
-      DEBUG: zcli.env.bool().default("false"),
+    env: zc.env({
+      DEBUG: zc.env.bool().default("false"),
     }),
 
     meta: {
@@ -30,22 +30,22 @@ const cli = zcli.create({
 
 const fetcher = cli
   .command("fetcher", {
-    args: zcli
+    args: zc
       .args({
         short: "The URL to fetch",
       })
       .tuple([z.string().url()]),
 
-    flags: zcli.flags({
-      method: zcli
+    flags: zc.flags({
+      method: zc
         .flag({ short: "The HTTP method to use", aliases: ["m"] })
         .enum(["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD"])
         .default("GET"),
-      headers: zcli
+      headers: zc
         .flag({ short: "Add headers to the request", aliases: ["H"] })
         .array(z.string())
         .optional(),
-      data: zcli
+      data: zc
         .flag({
           short: "Send request data",
           aliases: ["d"],
@@ -67,7 +67,7 @@ const fetcher = cli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
       ),
       body: flags.data,
     });
