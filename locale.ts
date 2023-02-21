@@ -11,3 +11,5 @@ export const locale = (
   .split(":")[0]
   .split(".")[0]
   .replace("_", "-");
+
+console.error("locale:", locale);
