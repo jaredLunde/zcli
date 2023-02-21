@@ -7,6 +7,8 @@ on:
       - next
 
 concurrency: release-${{ github.head_ref }}
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -23,3 +25,5 @@ jobs:
       
       - name: Release
         run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
