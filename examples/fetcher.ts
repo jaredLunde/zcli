@@ -172,7 +172,11 @@ const fetcher = cli
   });
 
 if (import.meta.main) {
-  await fetcher.execute();
+  try {
+    await fetcher.execute();
+  } catch (err) {
+    console.error("Caught", err);
+  }
   // await zcliDoc(cli, fetcher, {
   //   output: "examples/fetcher.md",
   //   title: "Fetcher",
