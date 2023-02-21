@@ -411,9 +411,8 @@ describe("command()", () => {
       await cmd.execute(["--help"]);
     } catch (_err) {
       // ignore
-      console.error(_err);
     }
-    console.log("wtf", stdoutStub.calls);
+
     assertEquals(
       decoder.decode(stdoutStub.calls[2].args[0]),
       `${colors.bold("\nFlags")}\n`,
