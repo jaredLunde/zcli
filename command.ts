@@ -516,12 +516,9 @@ async function handleAction<ActionFn extends Action<any, any, any, any>>(
     }
 
     await Promise.all(writes);
-  } else if ("then" in action && typeof action.then === "function") {
-    // @ts-expect-error: it's fine
-    await action(args);
   } else {
     // @ts-expect-error: it's fine
-    action(args);
+    await action(args);
   }
 }
 
