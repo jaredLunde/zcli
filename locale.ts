@@ -2,7 +2,7 @@
  * A default locale to use for Internationalization (I18n) when
  * formatting messages.
  */
-export const locale = (
+let envLocale = (
   Deno.env.get("LANGUAGE") ||
   Deno.env.get("LANG") ||
   Deno.env.get("LC_ALL") ||
@@ -12,4 +12,10 @@ export const locale = (
   .split(".")[0]
   .replace("_", "-");
 
-console.error("locale:", locale);
+try {
+  envLocale = new Intl.Locale(envLocale) + "";
+} catch (_err) {
+  envLocale = "en-US";
+}
+
+export const locale = envLocale;
