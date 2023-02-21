@@ -623,7 +623,7 @@ export type Command<
 };
 
 export type CommandConfig<
-  Context extends DefaultContext,
+  Context extends BaseContext = DefaultContext,
   Args extends
     | ArgsTuple
     | unknown = unknown,
