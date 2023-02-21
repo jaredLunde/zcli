@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+concurrency: pr-${{ github.head_ref }}
+
 jobs:
   build:
     name: Build
