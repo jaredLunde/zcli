@@ -128,7 +128,9 @@ export function init<
             )!;
 
             await writeIterable(
-              cmd.help({ ...ctx, path: ctx.path.concat(cmd.name) } as any),
+              cmd.help(
+                { ...ctx, path: ctx.path.slice(0, -1).concat(cmd.name) } as any,
+              ),
             );
           });
         // @ts-expect-error: all good
