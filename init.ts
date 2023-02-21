@@ -1,11 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import {
-  BaseContext,
-  Command,
-  command,
-  CommandConfig,
-  DefaultContext,
-} from "./command.ts";
+import { BaseContext, Command, command, CommandConfig } from "./command.ts";
 import { Args as ArgsTuple, args } from "./args.ts";
 import { helpFlag } from "./help.ts";
 import { flag, Flags, flags, isFlags, walkFlags } from "./flags.ts";
@@ -217,12 +211,12 @@ export type CommandFactory<
   >(
     name: string,
     config?: CommandConfig<
-      Context & DefaultContext,
+      Context & BaseContext,
       Args,
       Opts
     >,
   ): Command<
-    Context & DefaultContext,
+    Context & BaseContext,
     Args,
     Opts,
     GlobalOpts
