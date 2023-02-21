@@ -1,4 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
+import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
 import { Command } from "./command.ts";
 import { CommandFactory } from "./init.ts";
 import { dedent } from "./lib/dedent.ts";
@@ -24,6 +25,14 @@ export async function zcliDoc<
   if (!config.output) {
     console.log(toMarkdown(json, config));
   } else {
+    const outputDir = path.dirname(config.output);
+
+    try {
+      Deno.statSync(outputDir);
+    } catch (_err) {
+      await Deno.mkdir(outputDir, { recursive: true });
+    }
+
     await Deno.writeTextFile(config.output, toMarkdown(json, config));
   }
 }
