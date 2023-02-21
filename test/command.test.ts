@@ -1,25 +1,41 @@
-import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  it,
+} from "https://deno.land/std@0.177.0/testing/bdd.ts";
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
   assertSpyCall,
   assertSpyCalls,
   spy,
+  Stub,
   stub,
 } from "https://deno.land/std@0.177.0/testing/mock.ts";
-import { init } from "../mod.ts";
-import { flag, flags } from "../flags.ts";
-import { z } from "../z.ts";
-import { args } from "../args.ts";
+import { args, flag, flags, init, z } from "../mod.ts";
 import { colors } from "../fmt.ts";
 
 describe("command()", () => {
+  let stdoutStub: Stub;
+  let stderrStub: Stub;
+  let exitStub: Stub;
+
+  beforeEach(() => {
+    stdoutStub = stub(Deno.stdout, "write");
+    stderrStub = stub(Deno.stderr, "write");
+    exitStub = stub(Deno, "exit");
+  });
+
+  afterEach(() => {
+    stdoutStub.restore();
+    stderrStub.restore();
+    exitStub.restore();
+  });
+
   it("should add custom usage", async () => {
     const cli = init();
 
     const cmd = cli.command("test", { use: "test <arg>" });
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
-
     try {
       await cmd.execute(["--help"]);
     } catch (_err) {
@@ -27,9 +43,6 @@ describe("command()", () => {
     }
 
     assertEquals(decoder.decode(stdoutStub.calls[1].args[0]), "  test <arg>\n");
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should call subcommand", async () => {
@@ -86,7 +99,6 @@ describe("command()", () => {
 
   it("should write strings to stdout in run with a generator", async () => {
     const cli = init();
-    const stdoutWrite = stub(Deno.stdout, "write");
     const cmd = cli.command("test").run(function* () {
       yield "foo";
       yield "bar";
@@ -94,15 +106,12 @@ describe("command()", () => {
 
     await cmd.execute([]);
 
-    assertEquals(decoder.decode(stdoutWrite.calls[0].args[0]), "foo\n");
-    assertEquals(decoder.decode(stdoutWrite.calls[1].args[0]), "bar\n");
-
-    stdoutWrite.restore();
+    assertEquals(decoder.decode(stdoutStub.calls[0].args[0]), "foo\n");
+    assertEquals(decoder.decode(stdoutStub.calls[1].args[0]), "bar\n");
   });
 
   it("should write strings to stdout in run with async generator", async () => {
     const cli = init();
-    const stdoutWrite = stub(Deno.stdout, "write");
     const cmd = cli.command("test").run(async function* () {
       yield "foo";
       yield "bar";
@@ -110,10 +119,8 @@ describe("command()", () => {
 
     await cmd.execute([]);
 
-    assertEquals(decoder.decode(stdoutWrite.calls[0].args[0]), "foo\n");
-    assertEquals(decoder.decode(stdoutWrite.calls[1].args[0]), "bar\n");
-
-    stdoutWrite.restore();
+    assertEquals(decoder.decode(stdoutStub.calls[0].args[0]), "foo\n");
+    assertEquals(decoder.decode(stdoutStub.calls[1].args[0]), "bar\n");
   });
 
   it("should forward --", async () => {
@@ -141,8 +148,6 @@ describe("command()", () => {
 
   it("should throw for invalid arguments", async () => {
     const cli = init();
-    const stderrWrite = stub(Deno.stderr, "write");
-    const exit = stub(Deno, "exit");
 
     const cmd = cli.command("test", {
       args: args().array(z.number()),
@@ -155,13 +160,10 @@ describe("command()", () => {
     }
 
     assertEquals(
-      decoder.decode(stderrWrite.calls[0].args[0]),
+      decoder.decode(stderrStub.calls[0].args[0]),
       "Invalid arguments: expected number, but received string.\n⚘ See --help for more information.\n",
     );
-    assertSpyCall(exit, 0, { args: [1] });
-
-    stderrWrite.restore();
-    exit.restore();
+    assertSpyCall(exitStub, 0, { args: [1] });
   });
 
   it("should parse flags", async () => {
@@ -186,8 +188,6 @@ describe("command()", () => {
 
   it("should throw for invalid flags", async () => {
     const cli = init();
-    const stderrWrite = stub(Deno.stderr, "write");
-    const exit = stub(Deno, "exit");
     const cmd = cli.command("test", {
       flags: flags({
         foo: flag().oboolean(),
@@ -203,13 +203,10 @@ describe("command()", () => {
     }
 
     assertEquals(
-      decoder.decode(stderrWrite.calls[0].args[0]),
+      decoder.decode(stderrStub.calls[0].args[0]),
       `Invalid type for flag "baz". Expected string, but received undefined.\n⚘ See --help for more information.\n`,
     );
-    assertSpyCall(exit, 0, { args: [1] });
-
-    stderrWrite.restore();
-    exit.restore();
+    assertSpyCall(exitStub, 0, { args: [1] });
   });
 
   it("should collect array flags", async () => {
@@ -251,9 +248,6 @@ describe("command()", () => {
       short: "Test command",
     });
 
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
-
     try {
       await cmd.execute(["--help"]);
     } catch (_err) {
@@ -264,9 +258,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[0].args[0]),
       `This is a test command\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should fall back to short description in help", async () => {
@@ -274,9 +265,6 @@ describe("command()", () => {
     const cmd = cli.command("test", {
       short: "Test command",
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -288,9 +276,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[0].args[0]),
       `Test command\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add arguments usage to help", async () => {
@@ -298,9 +283,6 @@ describe("command()", () => {
     const cmd = cli.command("test", {
       args: args().array(z.string()),
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -312,9 +294,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[1].args[0]),
       `  test [arguments...] [flags]\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add arguments usage to help 2", async () => {
@@ -322,9 +301,6 @@ describe("command()", () => {
     const cmd = cli.command("test", {
       args: args().tuple([z.string()]),
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -336,17 +312,11 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[1].args[0]),
       `  test <arguments> [flags]\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add flags usage to help without arguments", async () => {
     const cli = init();
     const cmd = cli.command("test");
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -358,9 +328,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[1].args[0]),
       `  test [flags]\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add command usage to help", async () => {
@@ -371,9 +338,6 @@ describe("command()", () => {
         cli.command("hidden", { hidden: true }),
       ],
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -403,9 +367,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[8].args[0]),
       `\nUse "test [command] --help" for more information about a command.\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add command aliases to help", async () => {
@@ -416,9 +377,6 @@ describe("command()", () => {
         cli.command("get", { short: "Hello" }),
       ],
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -435,9 +393,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[4].args[0]),
       `  test, t\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add flags and global flags to help", async () => {
@@ -451,9 +406,6 @@ describe("command()", () => {
         foo: flag({ aliases: ["f"], long: "Foo" }).string(),
       }),
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -479,9 +431,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[5].args[0]),
       `  -b, --bar  string  Bar (default: bar)\n`,
     );
-
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should add deprecation warning to help", async () => {
@@ -489,9 +438,6 @@ describe("command()", () => {
     const cmd = cli.command("test", {
       deprecated: 'Use "foo" instead',
     });
-
-    const stdoutStub = stub(Deno.stdout, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute(["--help"]);
@@ -506,8 +452,6 @@ describe("command()", () => {
       decoder.decode(stdoutStub.calls[1].args[0]),
       `  Use "foo" instead\n`,
     );
-    stdoutStub.restore();
-    exitStub.restore();
   });
 
   it("should show deprecation warning when command is used", async () => {
@@ -515,9 +459,6 @@ describe("command()", () => {
     const cmd = cli.command("test", {
       deprecated: 'Use "foo" instead',
     });
-
-    const stderrStub = stub(Deno.stderr, "write");
-    const exitStub = stub(Deno, "exit");
 
     try {
       await cmd.execute([]);
@@ -532,8 +473,6 @@ describe("command()", () => {
       decoder.decode(stderrStub.calls[1].args[0]),
       `Use "foo" instead\n`,
     );
-    stderrStub.restore();
-    exitStub.restore();
   });
 
   it("should be hidden if deprecated", () => {
