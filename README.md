@@ -1,4 +1,4 @@
-# zcli
+# zCLI
 
 > A framework for building type-safe commandline tools powered by Zod
 
@@ -67,7 +67,7 @@ const fetcher = cli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
       ),
       body: flags.data,
     });
