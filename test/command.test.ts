@@ -12,10 +12,7 @@ import {
   Stub,
   stub,
 } from "https://deno.land/std@0.177.0/testing/mock.ts";
-import { init } from "../mod.ts";
-import { flag, flags } from "../flags.ts";
-import { z } from "../z.ts";
-import { args } from "../args.ts";
+import { args, flag, flags, init, z } from "../mod.ts";
 import { colors } from "../fmt.ts";
 
 describe("command()", () => {
@@ -414,8 +411,9 @@ describe("command()", () => {
       await cmd.execute(["--help"]);
     } catch (_err) {
       // ignore
+      console.error(_err);
     }
-
+    console.log("wtf", stdoutStub.calls);
     assertEquals(
       decoder.decode(stdoutStub.calls[2].args[0]),
       `${colors.bold("\nFlags")}\n`,
