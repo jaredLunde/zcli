@@ -151,7 +151,7 @@ function executeWithContext(
 ) {
   return {
     ...command,
-    execute(
+    async execute(
       args: string[],
       ctx?: any,
     ) {
@@ -159,7 +159,7 @@ function executeWithContext(
       const path = ctx?.path ?? emptyArray;
       const root = ctx?.root ?? this;
 
-      return execute(
+      return await execute(
         args,
         {
           ...(ctx ?? config.ctx),
