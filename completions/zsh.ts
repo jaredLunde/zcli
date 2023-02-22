@@ -94,8 +94,10 @@ function* completeCommands<T extends GenericCommand>(
     "1: :->command" \\
     "*::arg:->args" \\`;
 
-  for (const flag of completeFlags(command, options)) {
-    yield `  ${flag}`;
+  const flags = [...completeFlags(command, options)];
+  for (let i = 0; i < flags.length; i++) {
+    const flag = flags[i];
+    yield `  ${flag}` + (i === flags.length - 1 ? "" : " \\");
   }
 
   yield "";
@@ -178,13 +180,13 @@ function completeArgs(
 
     args.push(
       `"${variadicPrefix ? "*" : ""}${
-        !variadicPrefix ||
+        variadicPrefix ||
           hasOptionalArgs ||
           arg instanceof z.ZodOptional ||
           arg instanceof z.ZodDefault
           ? ":"
           : position + 1
-      }:${message}:${action}"`,
+      }:${message}:${action}" \\`,
     );
   });
 
