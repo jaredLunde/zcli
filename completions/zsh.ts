@@ -169,9 +169,9 @@ function completeArgs(
     const type = innerType(arg);
 
     if (type instanceof z.ZodEnum || type instanceof z.ZodNativeEnum) {
-      action = `(${type._def.values.map((v: unknown) => `"${v}"`).join(" ")})`;
+      action = `(${type._def.values.map((v: unknown) => `'${v}'`).join(" ")})`;
     } else if (type instanceof z.ZodLiteral) {
-      action = `(${JSON.stringify(type._def.value)})`;
+      action = `(${JSON.stringify(type._def.value).replace(/"/g, "")})`;
     } else if (!hasOptionalArgs) {
       action = `( )`;
     }

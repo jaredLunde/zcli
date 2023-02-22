@@ -55,7 +55,7 @@ These flags are available on all commands.
 
 ## `$ fetcher completion`
 
-Generate an autocompletion script for zcli.json in the specified shell. See each
+Generate an autocompletion script for fetcher in the specified shell. See each
 sub-command's help for details on how to use the generated script.
 
 ### Global Flags
@@ -82,7 +82,7 @@ already, you can install it via your OS's package manager.
 To load completions in your current shell session:
 
 ```
-$ source <(zcli.json completion bash)
+$ source <(fetcher completion bash)
 ```
 
 To load completions for every new session, execute once:
@@ -90,13 +90,13 @@ To load completions for every new session, execute once:
 Linux:
 
 ```
-$ zcli.json completion bash > /etc/bash_completion.d/zcli.json
+$ fetcher completion bash > /etc/bash_completion.d/fetcher
 ```
 
 MacOS:
 
 ```
-$ zcli.json completion bash > /usr/local/etc/bash_completion.d/zcli.json
+$ fetcher completion bash > /usr/local/etc/bash_completion.d/fetcher
 ```
 
 You will need to start a new shell for this setup to take effect.
@@ -122,13 +122,13 @@ Generate the autocompletion script for the fish shell.
 To load completions in your current shell session:
 
 ```
-$ zcli.json completion fish | source
+$ fetcher completion fish | source
 ```
 
 To load completions for every new session, execute once:
 
 ```
-$ zcli.json completion fish > ~/.config/fish/completions/zcli.json.fish
+$ fetcher completion fish > ~/.config/fish/completions/fetcher.fish
 ```
 
 You will need to start a new shell for this setup to take effect.
@@ -169,19 +169,19 @@ To load completions for every new session, execute once:
 Linux:
 
 ```
-$ zcli.json completion zsh > "${fpath[1]}/_zcli.json"
+$ fetcher completion zsh > "${fpath[1]}/_fetcher"
 ```
 
 macOS:
 
 ```
-$ zcli.json completion zsh > /usr/local/share/zsh/site-functions/_zcli.json
+$ fetcher completion zsh > /usr/local/share/zsh/site-functions/_fetcher
 ```
 
 Oh My Zsh:
 
 ```
-$ zcli.json completion zsh > ~/.oh-my-zsh/completions/_zcli.json
+$ fetcher completion zsh > ~/.oh-my-zsh/completions/_fetcher
 ```
 
 You will need to start a new shell for this setup to take effect.
