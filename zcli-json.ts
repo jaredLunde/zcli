@@ -61,6 +61,9 @@ export async function zcliJson<
       }),
     })
       .run(function ({ args, flags, ctx }) {
+        // @ts-expect-error: it's fine
+        ctx.root = root;
+
         function generateCommand(
           command: Command<any, any, any>,
         ): ZcliJsonCommand {
