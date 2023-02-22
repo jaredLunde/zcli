@@ -138,15 +138,11 @@ function* completeArgsAndFlags(
 
   if (args.length > 0 || flags.length > 0) {
     yield `_arguments -s \\`;
+    const argsAndFlags = [...args, ...flags];
 
-    for (let i = 0; i < args.length; i++) {
-      const arg = args[i];
-      yield `  ${arg}` + (i === args.length - 1 ? "" : " \\");
-    }
-
-    for (let i = 0; i < flags.length; i++) {
-      const flag = flags[i];
-      yield `  ${flag}` + (i === flags.length - 1 ? "" : " \\");
+    for (let i = 0; i < argsAndFlags.length; i++) {
+      const arg = argsAndFlags[i];
+      yield `  ${arg}` + (i === argsAndFlags.length - 1 ? "" : " \\");
     }
   }
 }
@@ -167,7 +163,6 @@ function completeArgs(
       .replace(":", " ");
     let action = ``;
     // A zsh variadic argument
-    const variadicPrefix = variadic ? "*" : " ";
     const type = innerType(arg);
 
     if (type instanceof z.ZodEnum || type instanceof z.ZodNativeEnum) {
@@ -179,14 +174,9 @@ function completeArgs(
     }
 
     args.push(
-      `"${variadicPrefix ? "*" : ""}${
-        variadicPrefix ||
-          hasOptionalArgs ||
-          arg instanceof z.ZodOptional ||
-          arg instanceof z.ZodDefault
-          ? ":"
-          : position + 1
-      }:${message}:${action}" \\`,
+      `"${variadic ? "*" : ""}${
+        variadic ? ":" : `${position + 1}:`
+      }:${message}:${action}"`,
     );
   });
 
