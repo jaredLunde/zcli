@@ -1,13 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
-import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
+import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
 import {
   assert,
   assertEquals,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+} from "https://deno.land/std@0.178.0/testing/asserts.ts";
 import {
   assertSpyCall,
   stub,
-} from "https://deno.land/std@0.177.0/testing/mock.ts";
+} from "https://deno.land/std@0.178.0/testing/mock.ts";
 import { init } from "../mod.ts";
 import { flag, flags } from "../flags.ts";
 import { z } from "../z.ts";

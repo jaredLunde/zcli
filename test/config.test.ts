@@ -4,10 +4,10 @@ import {
   assertSpyCalls,
   returnsNext,
   stub,
-} from "https://deno.land/std@0.177.0/testing/mock.ts";
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
-import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
+} from "https://deno.land/std@0.178.0/testing/mock.ts";
+import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
+import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
+import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
 import { config } from "../mod.ts";
 import { z } from "../z.ts";
 

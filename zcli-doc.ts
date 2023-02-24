@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
 import { Command } from "./command.ts";
 import { CommandFactory } from "./init.ts";
 import { dedent } from "./lib/dedent.ts";

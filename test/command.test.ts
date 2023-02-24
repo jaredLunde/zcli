@@ -3,15 +3,15 @@ import {
   beforeEach,
   describe,
   it,
-} from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
+} from "https://deno.land/std@0.178.0/testing/bdd.ts";
+import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
 import {
   assertSpyCall,
   assertSpyCalls,
   spy,
   Stub,
   stub,
-} from "https://deno.land/std@0.177.0/testing/mock.ts";
+} from "https://deno.land/std@0.178.0/testing/mock.ts";
 import { args, flag, flags, init, z } from "../mod.ts";
 import { colors } from "../fmt.ts";
 
