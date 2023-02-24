@@ -1,16 +1,16 @@
-import { Stub, stub } from "https://deno.land/std@0.177.0/testing/mock.ts";
+import { Stub, stub } from "https://deno.land/std@0.178.0/testing/mock.ts";
 import {
   assertEquals,
   assertExists,
   assertThrows,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+} from "https://deno.land/std@0.178.0/testing/asserts.ts";
 import {
   afterAll,
   afterEach,
   beforeAll,
   describe,
   it,
-} from "https://deno.land/std@0.177.0/testing/bdd.ts";
+} from "https://deno.land/std@0.178.0/testing/bdd.ts";
 import { z } from "../z.ts";
 import { env } from "../mod.ts";
 

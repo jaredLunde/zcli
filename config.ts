@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
-import * as YAML from "https://deno.land/std@0.177.0/encoding/yaml.ts";
-import * as TOML from "https://deno.land/std@0.177.0/encoding/toml.ts";
-import * as JSONc from "https://deno.land/std@0.177.0/encoding/jsonc.ts";
+import * as YAML from "https://deno.land/std@0.178.0/encoding/yaml.ts";
+import * as TOML from "https://deno.land/std@0.178.0/encoding/toml.ts";
+import * as JSONc from "https://deno.land/std@0.178.0/encoding/jsonc.ts";
 import * as INI from "https://deno.land/x/ini@v2.1.0/mod.ts";
-import * as path from "https://deno.land/std@0.177.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
 

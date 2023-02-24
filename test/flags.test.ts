@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
-import { describe, it } from "https://deno.land/std@0.177.0/testing/bdd.ts";
+import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
 import {
   assert,
   assertEquals,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+} from "https://deno.land/std@0.178.0/testing/asserts.ts";
 
 import {
   flag,
