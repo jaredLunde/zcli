@@ -306,7 +306,7 @@ export function command<
     },
 
     async execute(argv = Deno.args, ctx) {
-      if (hasCmds && argv[0]?.[0] !== "-") {
+      if (hasCmds && argv[0] !== undefined && argv[0][0] !== "-") {
         const [cmd, ...rest] = argv;
         const subCommand = commands.find(
           (c) => c.name === cmd || c.aliases.indexOf(cmd) !== -1,
