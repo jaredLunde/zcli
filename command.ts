@@ -62,12 +62,12 @@ export function command<
 ): Command<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
   let persistentPreAction:
-    | PersistentAction<Context, any, any, any>
+    | PersistentAction<Context, any>
     | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
   let persistentPostAction:
-    | PersistentAction<Context, any, any, any>
+    | PersistentAction<Context, any>
     | undefined;
   const hasCmds = !!commands?.length;
 
@@ -543,7 +543,7 @@ export function command<
 async function handleAction<
   ActionFn extends
     | Action<any, any, any, any>
-    | PersistentAction<any, any, any, any>,
+    | PersistentAction<any, any>,
 >(
   action: ActionFn | undefined,
   args: unknown,
@@ -657,8 +657,6 @@ export type Command<
   persistentPreRun(
     action: PersistentAction<
       Context,
-      Args,
-      Record<string, unknown>,
       GlobalOpts
     >,
   ): Command<Context, Args, Opts, GlobalOpts>;
@@ -686,8 +684,6 @@ export type Command<
   persistentPostRun(
     action: PersistentAction<
       Context,
-      Args,
-      Record<string, unknown>,
       GlobalOpts
     >,
   ): Command<Context, Args, Opts, GlobalOpts>;
@@ -757,10 +753,6 @@ export type CommandConfig<
 
 export type PersistentAction<
   Context extends DefaultContext,
-  Args extends
-    | ArgsTuple
-    | unknown = unknown,
-  Opts extends Flags | unknown = unknown,
   GlobalOpts extends Flags | unknown = unknown,
 > = {
   /**
@@ -773,19 +765,12 @@ export type PersistentAction<
       /**
        * A parsed arguments array or tuple
        */
-      args: Args extends ArgsTuple | ArgsZodTypes ? inferArgs<Args>
-        : unknown[];
+      args: unknown[];
       /**
        * A parsed flags object
        */
-      flags: Merge<
-        (Opts extends {
-          __flags: true;
-          _output: any;
-        } ? inferFlags<Opts>
-          : {}),
-        GlobalOpts extends Flags ? inferFlags<GlobalOpts> : {}
-      >;
+      flags: GlobalOpts extends Flags ? inferFlags<GlobalOpts>
+        : Record<string, unknown>;
       /**
        * Unparsed arguments that were passed to this command after
        * the `--` separator.
