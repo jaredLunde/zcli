@@ -9,6 +9,11 @@ import { table } from "./lib/simple-table.ts";
 import * as intl from "./intl.ts";
 import { writeIterable } from "./lib/write-iterable.ts";
 
+/**
+ * Initialize a command factory.
+ *
+ * @param config - The configuration for the command factory
+ */
 export function init<
   Context extends Record<string, unknown>,
   GlobalOpts extends Flags | unknown = unknown,
@@ -112,7 +117,7 @@ export function init<
         })
           .run(async ({ args, ctx }) => {
             if (!args[0]) {
-              return await writeIterable(command_.help(ctx));
+              return writeIterable(command_.help(ctx));
             }
 
             const cmd = subCommands.find(

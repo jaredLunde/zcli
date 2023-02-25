@@ -73,7 +73,7 @@ export function kv<Schema extends z.ZodRawShape>(
 
       if (key && cachedValue && !isExpired(cachedValue as any)) {
         try {
-          return await schema[key].parseAsync(cachedValue.value);
+          return schema[key].parseAsync(cachedValue.value);
         } catch (_err) {
           return undefined;
         }
@@ -98,11 +98,11 @@ export function kv<Schema extends z.ZodRawShape>(
     }
 
     if (cached) {
-      return await _get(cached, key);
+      return _get(cached, key);
     }
 
     const kv = await read();
-    return await _get(kv, key);
+    return _get(kv, key);
   }
 
   return {

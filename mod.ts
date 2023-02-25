@@ -18,7 +18,10 @@ export { config, configUtil } from "./config.ts";
 export { kv } from "./kv.ts";
 export { locale } from "./locale.ts";
 export { version } from "./version.ts";
+export { didYouMean } from "./lib/did-you-mean.ts";
+export { dedent } from "./lib/dedent.ts";
 
+export type { CommandFactory, inferContext, InitConfig } from "./init.ts";
 export type {
   Action,
   BaseContext,
