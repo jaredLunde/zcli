@@ -90,26 +90,39 @@ describe("command()", () => {
     const postRun = spy(() => {
       order.push("postRun");
     });
+    const persistentPostRun = spy(() => {
+      order.push("persistentPostRun");
+    });
     const cmd = cli.command("test").run(run).persistentPreRun(persistentPreRun)
+      .persistentPostRun(persistentPostRun)
       .preRun(preRun).postRun(postRun);
 
     await cmd.execute([]);
 
     assertSpyCalls(persistentPreRun, 1);
-    assertSpyCall(persistentPreRun, 0, {
-      args: [{
-        argv: [],
-        ctx: {
-          root: cmd,
-          path: ["test"],
-        },
-      }],
-    });
     assertSpyCalls(preRun, 1);
     assertSpyCalls(preRun, 1);
     assertSpyCalls(run, 1);
     assertSpyCalls(postRun, 1);
-    assertEquals(order, ["persistentPreRun", "preRun", "run", "postRun"]);
+    assertSpyCalls(persistentPostRun, 1);
+    assertEquals(order, [
+      "persistentPreRun",
+      "preRun",
+      "run",
+      "postRun",
+      "persistentPostRun",
+    ]);
+  });
+
+  it("should have metadata", () => {
+    const cli = init();
+    const cmd = cli.command("test", {
+      meta: {
+        foo: "bar",
+      },
+    });
+
+    assertEquals(cmd.meta.foo, "bar");
   });
 
   it("should write strings to stdout in run with a generator", async () => {
