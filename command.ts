@@ -60,6 +60,7 @@ export function command<
   }: CommandConfig<Context, Args, Opts> = { flags: flags_({}) as any },
 ): Command<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
+  let persistentPreAction: PersistentAction<Context> | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
   const hasCmds = !!commands?.length;
@@ -272,6 +273,11 @@ export function command<
       return description && [...dedent(description)].join("\n");
     },
 
+    persistentPreRun(action_) {
+      persistentPreAction = action_;
+      return this;
+    },
+
     preRun(action_) {
       preAction = action_;
       return this;
@@ -288,6 +294,8 @@ export function command<
     },
 
     async execute(argv = Deno.args, ctx) {
+      await handleAction(persistentPreAction, { argv, ctx });
+
       if (hasCmds) {
         const [cmd, ...rest] = argv;
         const subCommand = commands.find(
@@ -295,7 +303,7 @@ export function command<
         );
 
         if (subCommand) {
-          return await subCommand.execute(rest, ctx);
+          return subCommand.execute(rest, ctx);
         }
       }
 
@@ -492,7 +500,9 @@ export function command<
   };
 }
 
-async function handleAction<ActionFn extends Action<any, any, any, any>>(
+async function handleAction<
+  ActionFn extends Action<any, any, any, any> | PersistentAction<any>,
+>(
   action: ActionFn | undefined,
   args: unknown,
 ) {
@@ -592,6 +602,15 @@ export type Command<
    */
   long(context: Context): string | undefined;
   /**
+   * Run this action before the "run" command. This will also run before any
+   * subcommands.
+   *
+   * @param action - The action to run before the "run" command
+   */
+  persistentPreRun(
+    action: PersistentAction<Context>,
+  ): Command<Context, Args, Opts, GlobalOpts>;
+  /**
    * Run this action before the "run" command
    * @param action The action to run before the "run" command
    */
@@ -665,6 +684,21 @@ export type CommandConfig<
   long?: string | ((context: Context) => string);
 };
 
+export type PersistentAction<Context extends DefaultContext> = {
+  (
+    opts: {
+      /**
+       * The unparsed arguments passed to this specific command.
+       */
+      argv: string[];
+      /**
+       * The context object
+       */
+      ctx: Context;
+    },
+  ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
+};
+
 export type Action<
   Context extends DefaultContext,
   Args extends
@@ -679,22 +713,33 @@ export type Action<
    * @param ctx The context object
    */
   (
-    opts: Prettify<
-      {
-        args: Args extends ArgsTuple | ArgsZodTypes ? inferArgs<Args>
-          : unknown[];
-        flags: Merge<
-          (Opts extends {
-            __flags: true;
-            _output: any;
-          } ? inferFlags<Opts>
-            : {}),
-          GlobalOpts extends Flags ? inferFlags<GlobalOpts> : {}
-        >;
-        "--": string[];
-        ctx: Prettify<Context>;
-      }
-    >,
+    opts: {
+      /**
+       * A parsed arguments array or tuple
+       */
+      args: Args extends ArgsTuple | ArgsZodTypes ? inferArgs<Args>
+        : unknown[];
+      /**
+       * A parsed flags object
+       */
+      flags: Merge<
+        (Opts extends {
+          __flags: true;
+          _output: any;
+        } ? inferFlags<Opts>
+          : {}),
+        GlobalOpts extends Flags ? inferFlags<GlobalOpts> : {}
+      >;
+      /**
+       * Unparsed arguments that were passed to this command after
+       * the `--` separator.
+       */
+      "--": string[];
+      /**
+       * The context object
+       */
+      ctx: Prettify<Context>;
+    },
   ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
 };
 

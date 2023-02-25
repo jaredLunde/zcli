@@ -89,7 +89,7 @@ export function config<Schema extends z.ZodRawShape>(
       try {
         Deno.statSync(configPath);
       } catch (_err) {
-        return await schemaObject.parseAsync(defaultConfig);
+        return schemaObject.parseAsync(defaultConfig);
       }
 
       try {

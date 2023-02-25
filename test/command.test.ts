@@ -75,9 +75,12 @@ describe("command()", () => {
     assertEquals(fn.calls[0].args[0].args, []);
   });
 
-  it("should call preRun, run, postRun in order", async () => {
+  it("should call persistentPreRun, preRun, run, postRun in order", async () => {
     const cli = init();
     const order: string[] = [];
+    const persistentPreRun = spy(() => {
+      order.push("persistentPreRun");
+    });
     const preRun = spy(() => {
       order.push("preRun");
     });
@@ -87,14 +90,26 @@ describe("command()", () => {
     const postRun = spy(() => {
       order.push("postRun");
     });
-    const cmd = cli.command("test").run(run).preRun(preRun).postRun(postRun);
+    const cmd = cli.command("test").run(run).persistentPreRun(persistentPreRun)
+      .preRun(preRun).postRun(postRun);
 
     await cmd.execute([]);
 
+    assertSpyCalls(persistentPreRun, 1);
+    assertSpyCall(persistentPreRun, 0, {
+      args: [{
+        argv: [],
+        ctx: {
+          root: cmd,
+          path: ["test"],
+        },
+      }],
+    });
+    assertSpyCalls(preRun, 1);
     assertSpyCalls(preRun, 1);
     assertSpyCalls(run, 1);
     assertSpyCalls(postRun, 1);
-    assertEquals(order, ["preRun", "run", "postRun"]);
+    assertEquals(order, ["persistentPreRun", "preRun", "run", "postRun"]);
   });
 
   it("should write strings to stdout in run with a generator", async () => {
