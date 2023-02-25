@@ -527,8 +527,10 @@ export function command<
         args: a,
         flags: o,
         "--": doubleDash,
-        ctx,
-        cmd: this,
+        ctx: {
+          ...ctx,
+          cmd: this,
+        },
       };
       // Run the action
       await handleAction(persistentPreAction, persistentActionArgs);
@@ -777,13 +779,16 @@ export type PersistentAction<
        */
       "--": string[];
       /**
-       * The command that was invoked
-       */
-      cmd: Command<Context, any, any, GlobalOpts>;
-      /**
        * The context object
        */
-      ctx: Prettify<Context>;
+      ctx: Prettify<
+        Context & {
+          /**
+           * The command that was invoked
+           */
+          cmd: Command<any, any, any, GlobalOpts>;
+        }
+      >;
     },
   ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
 };
