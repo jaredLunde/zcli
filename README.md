@@ -18,7 +18,7 @@
 - [x] Global flags
 - [x] Automated README generation
 - [x] Command and flag aliases
-- [x] `persistentPreRun`, `preRun` and `postRun` hooks
+- [x] `persistentPreRun`, `preRun`, `postRun`, `persistentPostRun` hooks
 
 ## Getting started
 

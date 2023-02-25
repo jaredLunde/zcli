@@ -57,12 +57,18 @@ export function command<
     aliases = [],
     deprecated,
     hidden = false,
+    meta = {},
   }: CommandConfig<Context, Args, Opts> = { flags: flags_({}) as any },
 ): Command<Context, Args, Opts> {
   let action: Action<Context, Args, Opts> | undefined;
-  let persistentPreAction: PersistentAction<Context> | undefined;
+  let persistentPreAction:
+    | PersistentAction<Context, any>
+    | undefined;
   let preAction: Action<Context, Args, Opts> | undefined;
   let postAction: Action<Context, Args, Opts> | undefined;
+  let persistentPostAction:
+    | PersistentAction<Context, any>
+    | undefined;
   const hasCmds = !!commands?.length;
 
   function* help(context: Context): Iterable<string> {
@@ -248,6 +254,7 @@ export function command<
     deprecated,
     help,
     usage: use,
+    meta,
 
     short(context) {
       let description: string | undefined;
@@ -288,22 +295,47 @@ export function command<
       return this;
     },
 
+    persistentPostRun(action_) {
+      persistentPostAction = action_;
+      return this;
+    },
+
     postRun(action_) {
       postAction = action_;
       return this;
     },
 
     async execute(argv = Deno.args, ctx) {
-      await handleAction(persistentPreAction, { argv, ctx });
-
-      if (hasCmds) {
+      if (hasCmds && argv[0]?.[0] !== "-") {
         const [cmd, ...rest] = argv;
         const subCommand = commands.find(
           (c) => c.name === cmd || c.aliases.indexOf(cmd) !== -1,
         );
 
         if (subCommand) {
+          // Attach persistent pre/post run hooks to the subcommand.
+          if (persistentPreAction) {
+            subCommand.persistentPreRun(persistentPreAction);
+          }
+
+          if (persistentPostAction) {
+            subCommand.persistentPostRun(persistentPostAction);
+          }
+
           return subCommand.execute(rest, ctx);
+        }
+
+        // If the command is not found, we check if the command also receives
+        // arguments. If it does, we assume that the user is trying to run a
+        // command with arguments. Otherwise, we show a helpful error message.
+        if (!args) {
+          const message = `Unknown command "${cmd}" for "${
+            ctx!.path.join(" ")
+          }"\n${
+            didYouMean(cmd, commands.flatMap((c) => [c.name, ...c.aliases]))
+          }\n`;
+          await Deno.stderr.write(textEncoder.encode(message));
+          Deno.exit(1);
         }
       }
 
@@ -491,17 +523,29 @@ export function command<
       }
 
       const actionArgs = { args: a, flags: o, "--": doubleDash, ctx };
-
+      const persistentActionArgs = {
+        args: a,
+        flags: o,
+        "--": doubleDash,
+        ctx: {
+          ...ctx,
+          cmd: this,
+        },
+      };
       // Run the action
+      await handleAction(persistentPreAction, persistentActionArgs);
       await handleAction(preAction, actionArgs);
       await handleAction(action, actionArgs);
       await handleAction(postAction, actionArgs);
+      await handleAction(persistentPostAction, persistentActionArgs);
     },
   };
 }
 
 async function handleAction<
-  ActionFn extends Action<any, any, any, any> | PersistentAction<any>,
+  ActionFn extends
+    | Action<any, any, any, any>
+    | PersistentAction<any, any>,
 >(
   action: ActionFn | undefined,
   args: unknown,
@@ -590,6 +634,10 @@ export type Command<
    */
   help(context: Context): Iterable<string>;
   /**
+   * The metadata for the command
+   */
+  meta: Readonly<Record<string, unknown>>;
+  /**
    * The usage string for the command
    */
   usage?: Readonly<string>;
@@ -603,12 +651,16 @@ export type Command<
   long(context: Context): string | undefined;
   /**
    * Run this action before the "run" command. This will also run before any
+   * subcommands. It will override any defined `persistentPreRun` actions on
    * subcommands.
    *
    * @param action - The action to run before the "run" command
    */
   persistentPreRun(
-    action: PersistentAction<Context>,
+    action: PersistentAction<
+      Context,
+      GlobalOpts
+    >,
   ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * Run this action before the "run" command
@@ -623,6 +675,19 @@ export type Command<
    */
   run(
     action: Action<Context, Args, Opts, GlobalOpts>,
+  ): Command<Context, Args, Opts, GlobalOpts>;
+  /**
+   * Run this action before the "run" command. This will also run before any
+   * subcommands. It will override any defined `persistentPreRun` actions on
+   * subcommands.
+   *
+   * @param action - The action to run before the "run" command
+   */
+  persistentPostRun(
+    action: PersistentAction<
+      Context,
+      GlobalOpts
+    >,
   ): Command<Context, Args, Opts, GlobalOpts>;
   /**
    * Run this action after the "run" command
@@ -682,19 +747,48 @@ export type CommandConfig<
    * A long description of the command
    */
   long?: string | ((context: Context) => string);
+  /**
+   * Add metadata to the command
+   */
+  meta?: Record<string, unknown>;
 };
 
-export type PersistentAction<Context extends DefaultContext> = {
+export type PersistentAction<
+  Context extends DefaultContext,
+  GlobalOpts extends Flags | unknown = unknown,
+> = {
+  /**
+   * The action to run when the command is invoked
+   * @param argopts The parsed arguments and options
+   * @param ctx The context object
+   */
   (
     opts: {
       /**
-       * The unparsed arguments passed to this specific command.
+       * A parsed arguments array or tuple
        */
-      argv: string[];
+      args: unknown[];
+      /**
+       * A parsed flags object
+       */
+      flags: GlobalOpts extends Flags ? inferFlags<GlobalOpts>
+        : Record<string, unknown>;
+      /**
+       * Unparsed arguments that were passed to this command after
+       * the `--` separator.
+       */
+      "--": string[];
       /**
        * The context object
        */
-      ctx: Context;
+      ctx: Prettify<
+        Context & {
+          /**
+           * The command that was invoked
+           */
+          cmd: Command<any, any, any, GlobalOpts>;
+        }
+      >;
     },
   ): Promise<void> | AsyncGenerator<string> | Generator<string> | void;
 };
