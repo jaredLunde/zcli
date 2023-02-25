@@ -13,7 +13,8 @@
 - [x] Type-safe, persistent configuration
 - [x] Type-safe, persistent key-value cache
 - [x] Type-safe environment variables
-- [x] Built-in internationalization using the user's locale and Deno's `Intl` API
+- [x] Built-in internationalization using the user's locale and Deno's `Intl`
+      API
 - [x] Global flags
 - [x] Automated README generation
 - [x] Command and flag aliases
@@ -21,7 +22,8 @@
 
 ## Getting started
 
-The easiest way to get started is to use the [`zCLI CLI`](https://github.com/jaredLunde/zcli-cli) to generate a new project.
+The easiest way to get started is to use the
+[`zCLI CLI`](https://github.com/jaredLunde/zcli-cli) to generate a new project.
 
 ```sh
 # Install the zCLI CLI
@@ -37,7 +39,7 @@ zcli add my-command
 ## Example usage
 
 ```ts
-import { args, init, flags, flag, env } from "https://deno.land/x/zcli/mod.ts";
+import { args, env, flag, flags, init } from "https://deno.land/x/zcli/mod.ts";
 import { z } from "https://deno.land/x/zcli/z.ts";
 
 const cli = init({
@@ -93,7 +95,7 @@ const fetcher = cli
     const response = await fetch(flags.url, {
       method: flags.method,
       headers: new Headers(
-        flags.headers?.map((h) => h.split(":").map((s) => s.trim()))
+        flags.headers?.map((h) => h.split(":").map((s) => s.trim())),
       ),
       body: flags.data,
     });
@@ -122,8 +124,9 @@ Command-line tools written in Node and Deno suffer from a few major issues:
 ## The solution
 
 This framework aims to solve these issues by providing a declarative, simple API
-for building type-safe commandline tools using Zod and Deno. It is largely inspired
-by what [tRPC](https://trpc.io) did for RPC APIs, hence the nod to the name.
+for building type-safe commandline tools using Zod and Deno. It is largely
+inspired by what [tRPC](https://trpc.io) did for RPC APIs, hence the nod to the
+name.
 
 Deno was chosen as the runtime because it is fast, secure, and has a great
 standard library. It also has a great testing story and is easy to distribute,
@@ -131,9 +134,9 @@ as you can use `deno compile` to create a single binary. In the future, we may
 also support compiling with `bun` to create a single binary.
 
 Inherent boot performance is achieved by limiting the amount of code that is
-bundled into the binary. The flags parser is also about 7x faster than the
-Deno standard library's parser, though this amounts to a small fraction of the
-total boot/execution time.
+bundled into the binary. The flags parser is also about 7x faster than the Deno
+standard library's parser, though this amounts to a small fraction of the total
+boot/execution time.
 
 ```
 benchmark          time (avg)             (min … max)       p75       p99      p995
