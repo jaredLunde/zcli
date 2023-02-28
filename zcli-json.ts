@@ -61,12 +61,22 @@ export async function zcliJson<
       }),
     })
       .run(function ({ args, flags, ctx }) {
+        ctx = { ...ctx };
         // @ts-expect-error: it's fine
         ctx.root = root;
+        // @ts-expect-error: it's fine
+        ctx.path = [root.name];
 
         function generateCommand(
           command: Command<any, any, any>,
         ): ZcliJsonCommand {
+          ctx = { ...ctx };
+
+          if (command !== root) {
+            // @ts-expect-error: all good
+            ctx.path = [...ctx.path, command.name];
+          }
+
           const commands: ZcliJsonCommand[] = [];
 
           for (
