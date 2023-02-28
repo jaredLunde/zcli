@@ -10,6 +10,7 @@ import {
   ZcliJsonCommand,
   ZcliJsonFlag,
 } from "./zcli-json.ts";
+import { colors } from "./fmt.ts";
 
 export async function zcliDoc<
   Context extends {
@@ -63,7 +64,10 @@ function tableOfContents(
 
   return `
 | [**\`${name}\`**](#${formatMarkdownHeaderFragment(`$ ${name}`)}) | ${
-    (command.summary || command.description).replace("\n", " ")
+    (colors.stripColor(command.summary || command.description)).replace(
+      "\n",
+      " ",
+    )
   } |
 ${
     command.commands.filter(ignoreFilter(config, path)).map((cmd) =>
@@ -100,13 +104,13 @@ function commandToMarkdown(
 
 ## \`$ ${[...path, name].join(" ")}\`
 
-${description || summary}
+${colors.stripColor(description || summary)}
 
 ${
     !args?.items.length ? "" : `
 ### Arguments
 
-${args.description || args.summary || ""}
+${colors.stripColor(args.description || args.summary || "")}
 
 | Type | Variadic? |  Description |
 | ---- | --------- | ------------ |
@@ -171,14 +175,14 @@ function flagToMarkdown(flag: ZcliJsonFlag): string {
   return `| ${formatFlagName(flag)} | \`${jsonSchemaToString(schema)}\` | ${
     required ? "Yes" : "No"
   } | ${defaultValue ? `\`${JSON.stringify(defaultValue)}\`` : ""} | ${
-    (description || summary || "").replace("\n", " ")
+    colors.stripColor(description || summary || "").replace("\n", " ")
   } |`;
 }
 
 function argumentToMarkdown(arg: ZcliJsonArgument): string {
   return `| \`${jsonSchemaToString(arg.schema)}\` | ${
     arg.variadic ? "Yes" : "No"
-  } | ${arg.summary.replace("\n", " ")} |`;
+  } | ${colors.stripColor(arg.summary).replace("\n", " ")} |`;
 }
 
 function formatFlagName(flag: ZcliJsonFlag): string {
