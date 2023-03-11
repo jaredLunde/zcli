@@ -4,16 +4,18 @@ A simple fetcher example.
 
 ## Available Commands
 
-| Command                                                    | Description                                               |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| [**`fetcher`**](#-fetcher)                                 | Fetch a resource from the internet                        |
-| [**`fetcher completion`**](#-fetcher-completion)           | Generate an autocompletion script for the specified shell |
-| [**`fetcher completion bash`**](#-fetcher-completion-bash) | Generate an autocompletion script for the bash shell      |
-| [**`fetcher completion fish`**](#-fetcher-completion-fish) | Generate an autocompletion script for the fish shell      |
-| [**`fetcher completion zsh`**](#-fetcher-completion-zsh)   | Generate an autocompletion script for the zsh shell       |
-| [**`fetcher help`**](#-fetcher-help)                       | Show help for a fetcher command                           |
-| [**`fetcher help commands`**](#-fetcher-help-commands)     | List fetcher commands                                     |
-| [**`fetcher version`**](#-fetcher-version)                 | Show version information                                  |
+| Command                                                                      | Description                                               |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [**`fetcher`**](#-fetcher)                                                   | Fetch a resource from the internet                        |
+| [**`fetcher completion`**](#-fetcher-completion)                             | Generate an autocompletion script for the specified shell |
+| [**`fetcher completion bash`**](#-fetcher-completion-bash)                   | Generate an autocompletion script for the bash shell      |
+| [**`fetcher completion fish`**](#-fetcher-completion-fish)                   | Generate an autocompletion script for the fish shell      |
+| [**`fetcher completion help`**](#-fetcher-completion-help)                   | Show help for a completion command                        |
+| [**`fetcher completion help commands`**](#-fetcher-completion-help-commands) | List completion commands                                  |
+| [**`fetcher completion zsh`**](#-fetcher-completion-zsh)                     | Generate an autocompletion script for the zsh shell       |
+| [**`fetcher help`**](#-fetcher-help)                                         | Show help for a fetcher command                           |
+| [**`fetcher help commands`**](#-fetcher-help-commands)                       | List fetcher commands                                     |
+| [**`fetcher version`**](#-fetcher-version)                                   | Show version information                                  |
 
 ---
 
@@ -22,6 +24,12 @@ A simple fetcher example.
 Fetch a resource from the internet
 
 This command will fetch a resource from the internet and print the response.
+
+Example:
+
+```
+https://example.com
+```
 
 ### Arguments
 
@@ -93,7 +101,7 @@ Linux:
 $ fetcher completion bash > /etc/bash_completion.d/fetcher
 ```
 
-MacOS:
+macOS:
 
 ```
 $ fetcher completion bash > /usr/local/etc/bash_completion.d/fetcher
@@ -138,6 +146,60 @@ You will need to start a new shell for this setup to take effect.
 | Name              | Type      | Required? | Default | Description                     |
 | ----------------- | --------- | --------- | ------- | ------------------------------- |
 | --no-descriptions | `boolean` | No        |         | Disable completion descriptions |
+
+### Global Flags
+
+These flags are available on all commands.
+
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
+
+[**⇗ Back to top**](#available-commands)
+
+---
+
+## `$ fetcher completion help`
+
+Show help for a completion command
+
+### Arguments
+
+| Type                                  | Variadic? | Description                   |
+| ------------------------------------- | --------- | ----------------------------- |
+| `"bash" \| "zsh" \| "fish" \| "help"` | No        | The command to show help for. |
+
+### Global Flags
+
+These flags are available on all commands.
+
+| Name          | Type      | Required? | Default | Description                 |
+| ------------- | --------- | --------- | ------- | --------------------------- |
+| --verbose, -v | `boolean` | No        |         | Enable verbose logging      |
+| --raw, -r     | `boolean` | No        |         | Print a raw response output |
+| --help, -h    | `boolean` | No        |         | Show help for a command     |
+
+[**⇗ Back to top**](#available-commands)
+
+---
+
+## `$ fetcher completion help commands`
+
+List completion commands
+
+Example:
+
+```
+$ fetcher completion help commands
+```
+
+### Flags
+
+| Name      | Type      | Required? | Default | Description                              |
+| --------- | --------- | --------- | ------- | ---------------------------------------- |
+| --all, -a | `boolean` | No        |         | Show all commands, including hidden ones |
 
 ### Global Flags
 
@@ -233,6 +295,12 @@ These flags are available on all commands.
 ## `$ fetcher help commands`
 
 List fetcher commands
+
+Example:
+
+```
+$ fetcher help commands
+```
 
 ### Flags
 

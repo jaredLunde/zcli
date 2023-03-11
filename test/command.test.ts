@@ -1,17 +1,15 @@
 import {
   afterEach,
+  assertEquals,
+  assertSpyCall,
+  assertSpyCalls,
   beforeEach,
   describe,
   it,
-} from "https://deno.land/std@0.178.0/testing/bdd.ts";
-import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
-import {
-  assertSpyCall,
-  assertSpyCalls,
   spy,
   Stub,
   stub,
-} from "https://deno.land/std@0.178.0/testing/mock.ts";
+} from "./deps.ts";
 import { args, flag, flags, init, z } from "../mod.ts";
 import { colors } from "../fmt.ts";
 
@@ -327,7 +325,7 @@ describe("command()", () => {
   it("should add arguments usage to help 2", async () => {
     const cli = init();
     const cmd = cli.command("test", {
-      args: args().tuple([z.string()]),
+      args: args().tuple([z.string()]).rest(z.string()),
     });
 
     try {
@@ -338,7 +336,7 @@ describe("command()", () => {
 
     assertEquals(
       decoder.decode(stdoutStub.calls[1].args[0]),
-      `  test <arguments> [flags]\n`,
+      `  test <arguments> [arguments...] [flags]\n`,
     );
   });
 

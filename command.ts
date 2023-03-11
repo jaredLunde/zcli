@@ -43,6 +43,7 @@ export function command<
   Context extends DefaultContext,
   Args extends
     | ArgsTuple
+    | ArgsZodTypes
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
 >(
@@ -71,8 +72,57 @@ export function command<
     | undefined;
   const hasCmds = !!commands?.length;
 
+  function* usage(context: Context): Iterable<string> {
+    const displayName = context.path.join(" ") || name;
+    const hasAvailableCmds = hasCmds && commands.some((cmd) => !cmd.hidden);
+
+    if (use) {
+      yield `  ${
+        typeof use === "function" ? [...dedent(use(context))].join("\n  ") : use
+      }`;
+    } else {
+      if (hasAvailableCmds) {
+        yield `  ${displayName} [command]`;
+      }
+
+      if (args) {
+        let argsUsage = `  ${displayName}`;
+        // @ts-expect-error: all good
+        const usage = typeof args.usage === "function"
+          // @ts-expect-error: all good
+          ? args.usage(context)
+          : "";
+
+        if (usage) {
+          argsUsage += ` ${[...dedent(usage)].join("\n  ")}`;
+        } else {
+          const hasOptionalArgs = args instanceof z.ZodDefault ||
+            args instanceof z.ZodOptional ||
+            (args instanceof z.ZodArray && !args._def.minLength?.value);
+
+          walkArgs(args, (arg, { variadic }) => {
+            if (variadic) {
+              argsUsage += ` [arguments...]`;
+            } else {
+              argsUsage += hasOptionalArgs ||
+                  arg instanceof z.ZodOptional ||
+                  arg instanceof z.ZodDefault
+                ? ` [arguments]`
+                : ` <arguments>`;
+            }
+          });
+        }
+
+        yield argsUsage + ` [flags]`;
+      } else {
+        yield `  ${displayName} [flags]`;
+      }
+    }
+  }
+
   function* help(context: Context): Iterable<string> {
     const displayName = context.path.join(" ") || name;
+    const hasAvailableCmds = hasCmds && commands.some((cmd) => !cmd.hidden);
 
     if (long || short) {
       const desc = typeof long === "function"
@@ -102,42 +152,8 @@ export function command<
 
     yield colors.bold("Usage");
 
-    const hasAvailableCmds = hasCmds && commands.some((cmd) => !cmd.hidden);
-
-    if (use) {
-      yield `  ${use}`;
-    } else {
-      if (hasAvailableCmds) {
-        yield `  ${displayName} [command]`;
-      }
-
-      if (args) {
-        let argsUsage = `  ${displayName}`;
-
-        if (typeof args === "object" && "usage" in args && args.usage) {
-          argsUsage += ` ${args.usage}`;
-        } else {
-          const hasOptionalArgs = args instanceof z.ZodDefault ||
-            args instanceof z.ZodOptional ||
-            (args instanceof z.ZodArray && !args._def.minLength?.value);
-
-          walkArgs(args, (arg, { variadic }) => {
-            if (variadic) {
-              argsUsage += ` [arguments...]`;
-            } else {
-              argsUsage += hasOptionalArgs ||
-                  arg instanceof z.ZodOptional ||
-                  arg instanceof z.ZodDefault
-                ? ` [arguments]`
-                : ` <arguments>`;
-            }
-          });
-        }
-
-        yield argsUsage + ` [flags]`;
-      } else {
-        yield `  ${displayName} [flags]`;
-      }
+    for (const line of usage(context)) {
+      yield line;
     }
 
     if (aliases.length) {
@@ -247,14 +263,17 @@ export function command<
     aliases,
     commands: commands ?? [],
     // @ts-expect-error: so dumb
-    args: args,
+    args,
     // @ts-expect-error: so dumb
     flags: flags ?? {},
     hidden: hidden || typeof deprecated === "string",
     deprecated,
     help,
-    usage: use,
     meta,
+
+    usage(ctx) {
+      return [...usage(ctx)].join("\n");
+    },
 
     short(context) {
       let description: string | undefined;
@@ -466,14 +485,14 @@ export function command<
               if (e.code === z.ZodIssueCode.too_small) {
                 return `expected at least ${
                   intl.plural(
-                    e.minimum,
+                    Number(e.minimum),
                     "argument",
                   )
                 } arguments`;
               } else if (e.code === z.ZodIssueCode.too_big) {
                 return `expected at most ${
                   intl.plural(
-                    e.maximum,
+                    Number(e.maximum),
                     "argument",
                   )
                 }`;
@@ -597,6 +616,7 @@ export type Command<
   Context extends DefaultContext,
   Args extends
     | ArgsTuple
+    | ArgsZodTypes
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
   GlobalOpts extends Flags | unknown = unknown,
@@ -640,7 +660,7 @@ export type Command<
   /**
    * The usage string for the command
    */
-  usage?: Readonly<string>;
+  usage(context: Context): string;
   /**
    * A short description of the command
    */
@@ -707,6 +727,7 @@ export type CommandConfig<
   Context extends BaseContext = DefaultContext,
   Args extends
     | ArgsTuple
+    | ArgsZodTypes
     | unknown = unknown,
   Opts extends Flags | unknown = unknown,
 > = {
@@ -738,7 +759,7 @@ export type CommandConfig<
   /**
    * Command usage
    */
-  use?: string;
+  use?: string | ((context: Context) => string);
   /**
    * A short description of the command
    */
@@ -795,9 +816,7 @@ export type PersistentAction<
 
 export type Action<
   Context extends DefaultContext,
-  Args extends
-    | ArgsTuple
-    | unknown = unknown,
+  Args extends ArgsTuple | ArgsZodTypes | unknown = unknown,
   Opts extends Flags | unknown = unknown,
   GlobalOpts extends Flags | unknown = unknown,
 > = {

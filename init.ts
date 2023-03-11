@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { BaseContext, Command, command, CommandConfig } from "./command.ts";
-import { Args as ArgsTuple, args } from "./args.ts";
+import { Args as ArgsTuple, args, ArgsZodTypes } from "./args.ts";
 import { helpFlag } from "./help.ts";
 import { flag, Flags, flags, isFlags, walkFlags } from "./flags.ts";
 import { z } from "./z.ts";
@@ -32,6 +32,7 @@ export function init<
     command<
       Args extends
         | ArgsTuple
+        | ArgsZodTypes
         | unknown = unknown,
       Opts extends Flags | unknown = unknown,
     >(
@@ -57,7 +58,14 @@ export function init<
           commands: [
             command("commands", {
               short: `List ${name} commands`,
+              long: ({ path }) => `
+                List ${name} commands
 
+                Example:
+                \`\`\`
+                $ ${path.join(" ")} commands
+                \`\`\`
+              `,
               flags: gOpts.merge(
                 flags({
                   all: flag({
@@ -98,7 +106,9 @@ export function init<
                       yield line;
                     }
 
-                    yield `\nUse "${name} help [command]" for more information about a command.`;
+                    yield `\nUse "${
+                      ctx.path.join(" ")
+                    } [command]" for more information about a command.`;
                   })(),
                 );
               }),
@@ -211,6 +221,7 @@ export type CommandFactory<
   command<
     Args extends
       | ArgsTuple
+      | ArgsZodTypes
       | unknown = unknown,
     Opts extends Flags | unknown = unknown,
   >(

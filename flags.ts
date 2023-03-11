@@ -281,7 +281,7 @@ export type Flags<Shape extends FlagsShape = FlagsShape> =
       merging: Incoming,
     ): Flags<
       z.ZodObject<
-        z.extendShape<Shape, ReturnType<Incoming["_def"]["shape"]>>,
+        z.objectUtil.extendShape<Shape, ReturnType<Incoming["_def"]["shape"]>>,
         Incoming["_def"]["unknownKeys"],
         Incoming["_def"]["catchall"]
       >["shape"]

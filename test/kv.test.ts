@@ -1,14 +1,15 @@
 // deno-lint-ignore-file no-explicit-any
 import {
+  assertEquals,
   assertSpyCall,
   assertSpyCalls,
+  describe,
+  it,
   stub,
-} from "https://deno.land/std@0.178.0/testing/mock.ts";
-import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
-import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
+} from "./deps.ts";
 import { kv } from "../mod.ts";
 import { z } from "../z.ts";
-import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
+import { path } from "../deps.ts";
 
 describe("kv()", () => {
   it("should set a value", async () => {

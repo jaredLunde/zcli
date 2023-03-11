@@ -4,7 +4,7 @@ import { flag, flags, getDefault, innerType, walkFlags } from "./flags.ts";
 import { Command } from "./command.ts";
 import * as intl from "./intl.ts";
 import { z } from "./z.ts";
-import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.2";
+import zodToJsonSchema from "https://esm.sh/zod-to-json-schema@3.20.4";
 import { walkArgs } from "./args.ts";
 
 export async function zcliJson<
@@ -64,19 +64,11 @@ export async function zcliJson<
         ctx = { ...ctx };
         // @ts-expect-error: it's fine
         ctx.root = root;
-        // @ts-expect-error: it's fine
-        ctx.path = [root.name];
 
         function generateCommand(
           command: Command<any, any, any>,
+          path: string[],
         ): ZcliJsonCommand {
-          ctx = { ...ctx };
-
-          if (command !== root) {
-            // @ts-expect-error: all good
-            ctx.path = [...ctx.path, command.name];
-          }
-
           const commands: ZcliJsonCommand[] = [];
 
           for (
@@ -87,9 +79,11 @@ export async function zcliJson<
             })
           ) {
             if (flags.all || !cmd.hidden) {
-              commands.push(generateCommand(cmd));
+              commands.push(generateCommand(cmd, [...path, command.name]));
             }
           }
+
+          const context = { ...ctx, path };
 
           const a: any[] = [];
           const hasOptionalArgs = args instanceof z.ZodOptional ||
@@ -121,8 +115,8 @@ export async function zcliJson<
             commandFlags.push({
               name,
               aliases: flag.aliases,
-              description: flag.long(ctx) || flag.short(ctx) || "",
-              summary: flag.short(ctx) || "",
+              description: flag.long(context) || flag.short(context) || "",
+              summary: flag.short(context) || "",
               required: !(flag instanceof z.ZodOptional) &&
                 !(flag instanceof z.ZodDefault) && name !== "help",
               collects,
@@ -142,13 +136,14 @@ export async function zcliJson<
 
           return {
             name: command.name,
-            description: command.long(ctx) || command.short(ctx) || "",
-            summary: command.short(ctx) ?? "",
+            description: command.long(context) || command.short(context) || "",
+            summary: command.short(context) ?? "",
+            usage: command.usage(context),
             deprecated: command.deprecated,
             arguments: command.args
               ? {
-                description: command.args.long(ctx) ?? "",
-                summary: command.args.short(ctx) ?? "",
+                description: command.args.long(context) ?? "",
+                summary: command.args.short(context) ?? "",
                 items: a,
               }
               : undefined,
@@ -167,7 +162,7 @@ export async function zcliJson<
             description: root.long(ctx) || root.short(ctx) || "",
             summary: root.short(ctx) || "",
           },
-          commands: [generateCommand(root)],
+          commands: [generateCommand(root, [])],
         };
       });
   }
@@ -192,8 +187,9 @@ export type ZcliJson = {
 
 export type ZcliJsonCommand = {
   name: string;
-  description: string;
   summary: string;
+  description: string;
+  usage: string;
   deprecated?: string;
   arguments: undefined | {
     description: string;

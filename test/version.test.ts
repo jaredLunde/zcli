@@ -1,6 +1,4 @@
-import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
-import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
-import { stub } from "https://deno.land/std@0.178.0/testing/mock.ts";
+import { assertEquals, describe, it, stub } from "./deps.ts";
 import { init, intl } from "../mod.ts";
 import { version } from "../version.ts";
 

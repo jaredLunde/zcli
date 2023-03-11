@@ -25,7 +25,6 @@ export function args(
 
       return description && [...dedent(description)].join(" ");
     },
-
     long(context: any) {
       let description: string | undefined;
 
@@ -37,7 +36,17 @@ export function args(
 
       return description && [...dedent(description)].join("\n");
     },
-    usage: config.use,
+    usage(context: any) {
+      let usage: string | undefined;
+
+      if (typeof config.use === "function") {
+        usage = config.use(context);
+      } else {
+        usage = config.use;
+      }
+
+      return usage;
+    },
     __args: true,
   };
 
@@ -114,15 +123,15 @@ export type Args =
     /**
      * A usage string for the arguments.
      */
-    usage?: string;
+    usage<Context extends BaseContext>(context: Context): string | undefined;
     __args: true;
   };
 
 export type ArgsZodTypes =
-  | z.ZodTuple
+  | z.ZodTuple<any, any>
   | z.ZodArray<any>
-  | z.ZodDefault<z.ZodTuple | z.ZodArray<any>>
-  | z.ZodOptional<z.ZodTuple | z.ZodArray<any>>;
+  | z.ZodDefault<z.ZodTuple<any, any> | z.ZodArray<any>>
+  | z.ZodOptional<z.ZodTuple<any, any> | z.ZodArray<any>>;
 
 export type ArgsConfig = {
   /**
@@ -136,10 +145,11 @@ export type ArgsConfig = {
   /**
    * A usage string for the arguments.
    */
-  use?: string;
+  use?: string | (<Context extends BaseContext>(context: Context) => string);
 };
 
 export type ArgTypes = Pick<typeof z, "tuple" | "array">;
 export type inferArgs<T extends Args | ArgsZodTypes> = T extends
-  z.ZodOptional<z.ZodTuple | z.ZodArray<any>> ? [] | NonNullable<T["_output"]>
+  z.ZodOptional<z.ZodTuple<any, any> | z.ZodArray<any>>
+  ? [] | NonNullable<T["_output"]>
   : T["_output"];

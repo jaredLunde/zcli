@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
+import { path } from "./deps.ts";
 import { Command } from "./command.ts";
 import { CommandFactory } from "./init.ts";
 import { dedent } from "./lib/dedent.ts";
@@ -122,7 +122,7 @@ ${
 ### Flags
 
 | Name | Type | Required? | Default |  Description |
-| -------- | ---- | --------- | --- | --- | ------------ |
+| -------- | ---- | --------- | --- | --- | 
 ${localFlags.map(flagToMarkdown).join("\n")}
 `
   }
@@ -133,7 +133,7 @@ ${localFlags.map(flagToMarkdown).join("\n")}
 These flags are available on all commands.
 
 | Name | Type | Required? | Default |  Description |
-| -------- | ---- | --------- | --- | --- | ------------ |
+| -------- | ---- | --------- | --- | --- |
 ${globalFlags.map(flagToMarkdown).join("\n")}
 `
   }
