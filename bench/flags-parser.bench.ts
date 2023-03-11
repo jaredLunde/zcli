@@ -1,4 +1,4 @@
-import * as flags from "https://deno.land/std@0.178.0/flags/mod.ts";
+import * as flags from "https://deno.land/std@0.179.0/flags/mod.ts";
 import { parse } from "../flags-parser.ts";
 
 console.log(

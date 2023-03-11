@@ -1,9 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import * as YAML from "https://deno.land/std@0.178.0/encoding/yaml.ts";
-import * as TOML from "https://deno.land/std@0.178.0/encoding/toml.ts";
-import * as JSONc from "https://deno.land/std@0.178.0/encoding/jsonc.ts";
-import * as INI from "https://deno.land/x/ini@v2.1.0/mod.ts";
-import * as path from "https://deno.land/std@0.178.0/path/mod.ts";
+import { JSONc, path, TOML, YAML } from "./deps.ts";
 import { Join, NestedKeys, NestedValue, Split } from "./lib/types.ts";
 import { z } from "./z.ts";
 
@@ -111,7 +107,6 @@ export const parsers = {
   },
   yaml: YAML,
   toml: TOML,
-  ini: INI,
 } as const;
 
 export const configUtil = {
@@ -198,7 +193,7 @@ export type ConfigOptions<Schema extends z.ZodRawShape> = {
   /**
    * @default "toml"
    */
-  format?: "jsonc" | "yaml" | "toml" | "ini";
+  format?: "jsonc" | "yaml" | "toml";
   /**
    * The write mode for the config file.
    * @default 0o600

@@ -1,9 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.178.0/testing/asserts.ts";
+import { assert, assertEquals, describe, it } from "./deps.ts";
 import { z } from "../z.ts";
 import { args, isArgs, walkArgs } from "../mod.ts";
 
@@ -40,7 +36,8 @@ describe("args()", () => {
   it("should have a usage string", () => {
     const argv = args({ use: "hello" }).array(z.string());
     assert(isArgs(argv));
-    assertEquals(argv.usage, "hello");
+    // @ts-expect-error: it's ifne
+    assertEquals(argv.usage(), "hello");
   });
 });
 

@@ -1,6 +1,5 @@
 import { parse } from "../flags-parser.ts";
-import { describe, it } from "https://deno.land/std@0.178.0/testing/bdd.ts";
-import { assertEquals } from "https://deno.land/std@0.178.0/testing/asserts.ts";
+import { assertEquals, describe, it } from "./deps.ts";
 
 const defaults = {
   bools: {},

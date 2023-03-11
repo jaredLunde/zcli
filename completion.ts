@@ -44,7 +44,7 @@ export function completion<
     commands: [
       commandFactory.command("bash", {
         short: "Generate an autocompletion script for the bash shell",
-        long: ({ root }) => `
+        long: ({ root, path }) => `
           Generate the autocompletion script for the bash shell.
 
           This script depends on the \`bash-completion\` package.
@@ -52,19 +52,21 @@ export function completion<
 
           To load completions in your current shell session:
           \`\`\`
-          $ source <(${root.name} ${name} bash)
+          $ source <(${path.join(" ")} bash)
           \`\`\`
 
           To load completions for every new session, execute once:
           
           Linux:
           \`\`\`
-          $ ${root.name} ${name} bash > /etc/bash_completion.d/${root.name}
+          $ ${path.join(" ")} bash > /etc/bash_completion.d/${root.name}
           \`\`\`
 
-          MacOS:
+          macOS:
           \`\`\`
-          $ ${root.name} ${name} bash > /usr/local/etc/bash_completion.d/${root.name}
+          $ ${
+          path.join(" ")
+        } bash > /usr/local/etc/bash_completion.d/${root.name}
           \`\`\`
 
           You will need to start a new shell for this setup to take effect.
@@ -74,7 +76,7 @@ export function completion<
       }),
       commandFactory.command("zsh", {
         short: "Generate an autocompletion script for the zsh shell",
-        long: ({ root }) => `
+        long: ({ root, path }) => `
           Generate the autocompletion script for the zsh shell.
 
           If shell completion is not already enabled in your environment you will need
@@ -88,17 +90,19 @@ export function completion<
 
           Linux:
           \`\`\`
-          $ ${root.name} ${name} zsh > "\${fpath[1]}/_${root.name}"
+          $ ${path.join(" ")} zsh > "\${fpath[1]}/_${root.name}"
           \`\`\`
 
           macOS:
           \`\`\`
-          $ ${root.name} ${name} zsh > /usr/local/share/zsh/site-functions/_${root.name}
+          $ ${
+          path.join(" ")
+        } zsh > /usr/local/share/zsh/site-functions/_${root.name}
           \`\`\`
 
           Oh My Zsh:
           \`\`\`
-          $ ${root.name} ${name} zsh > ~/.oh-my-zsh/completions/_${root.name}
+          $ ${path.join(" ")} zsh > ~/.oh-my-zsh/completions/_${root.name}
           \`\`\`
 
           You will need to start a new shell for this setup to take effect.
@@ -115,17 +119,19 @@ export function completion<
       }),
       commandFactory.command("fish", {
         short: "Generate an autocompletion script for the fish shell",
-        long: ({ root }) => `
+        long: ({ root, path }) => `
           Generate the autocompletion script for the fish shell.
           
           To load completions in your current shell session:
           \`\`\`
-          $ ${root.name} ${name} fish | source
+          $ ${path.join(" ")} fish | source
           \`\`\`
 
           To load completions for every new session, execute once:
           \`\`\`
-          $ ${root.name} ${name} fish > ~/.config/fish/completions/${root.name}.fish
+          $ ${
+          path.join(" ")
+        } fish > ~/.config/fish/completions/${root.name}.fish
           \`\`\`
 
           You will need to start a new shell for this setup to take effect.
