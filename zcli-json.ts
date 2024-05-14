@@ -79,7 +79,7 @@ export async function zcliJson<
             })
           ) {
             if (flags.all || !cmd.hidden) {
-              commands.push(generateCommand(cmd, [...path, command.name]));
+              commands.push(generateCommand(cmd, [...path, cmd.name]));
             }
           }
 
