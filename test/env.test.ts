@@ -17,10 +17,13 @@ const originalEnv = Deno.env.toObject();
 
 // @ts-expect-error: it's fine
 let exitStub: Stub<typeof Deno, "exit">;
-
+// @ts-expect-error: it's fine
+let stderrStub: Stub<typeof Deno["stderr"], "write">;
 beforeAll(() => {
   // @ts-expect-error: it's fine
   exitStub = stub(Deno, "exit");
+  // @ts-expect-error: it's fine
+  stderrStub = stub(Deno.stderr, "write");
 });
 
 afterEach(() => {
@@ -31,6 +34,7 @@ afterEach(() => {
 
 afterAll(() => {
   exitStub.restore();
+  stderrStub.restore();
 });
 
 describe("env()", () => {

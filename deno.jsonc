@@ -8,13 +8,9 @@
     "test:coverage": "deno test --allow-env --allow-read --coverage=coverage && deno coverage coverage"
   },
   "bench": {
-    "files": {
-      "include": ["bench"]
-    }
+    "include": ["bench"]
   },
   "test": {
-    "files": {
-      "include": ["test"]
-    }
+    "include": ["test"]
   }
 }
