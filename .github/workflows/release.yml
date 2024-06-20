@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: lts
+          node-version: latest
 
       - name: Release
         run: npx semantic-release
